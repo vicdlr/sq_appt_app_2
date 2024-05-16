@@ -3,25 +3,18 @@ import 'dart:io';
 
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info/device_info.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/api/api.dart';
-
-import 'package:sq_notification/constant/dailog.dart';
 import 'package:sq_notification/view/auth/SignIn.dart';
-import 'package:sq_notification/view/home/home_page.dart';
 import 'package:unique_identifier/unique_identifier.dart';
-import 'package:dio/dio.dart';
 
 import '../../Model/UserDataModel.dart';
 import '../../SharedPrefrence/SharedPrefrence.dart';
 import '../../api/configurl.dart';
-import '../../constant/firebase_constant.dart';
-
 import '../../notification/notification.dart';
 import '../../provider/theme_provider.dart';
 import '../../widget/CustomTextFormField.dart';
@@ -83,7 +76,7 @@ class _SignupPageState extends State<SignupPage> {
 
     var data = {
       //"username": nameTextEditingController.text,
-      "username": firebaseUid,  // Use username as place holder
+      "username": firebaseUid, // Use username as place holder
       "email": emailTextEditingController.text,
       //"fcm_token": fcmToken
     };
@@ -106,15 +99,13 @@ class _SignupPageState extends State<SignupPage> {
         //SharedPref.setAuthToken("${response.data["token"]}");
         //SharedPref.setCustomerId("${response.data["customerid"]}");
         //SharedPref.setUserData(UserData.fromJson(response.data["user"]));
-       //print("shared auth token ${SharedPref.getAuthToken()}");
+        //print("shared auth token ${SharedPref.getAuthToken()}");
         //print("shared user data  ${SharedPref.getUserData().toJson()}");
         //print("shared Customer ID  ${SharedPref.getCustomerId()}");
-
       } else {
         print(response.statusMessage);
       }
     } catch (e) {
-
       print('Error occurred: $e');
       // Handle errors accordingly, like showing an error message to the user
     }
@@ -139,82 +130,81 @@ class _SignupPageState extends State<SignupPage> {
         "fcm_token": fcmToken,
         "phoneNo": phoneTextEditingController.text,
         "platForm": Platform.isAndroid ? "android" : "ios",
-        "city" : city
+        "city": city
       };
 
-        final result = await DioApi.post(path: "${ConfigUrl.signUpUrl}", data: data);
+      final result =
+          await DioApi.post(path: "${ConfigUrl.signUpUrl}", data: data);
 
+      if (result.response?.statusCode == 200) {
+        print("submit /register response data == ${result.response?.data}");
+        SharedPref.setAuthToken("${result.response?.data["token"]}");
+        SharedPref.setUserData(
+            UserData.fromJson(result.response?.data["user"]));
+        print("shared auth token ${SharedPref.getAuthToken()}");
+        print("shared user data  ${SharedPref.getUserData().toJson()}");
+        print("register customer ID ${SharedPref.getUserData().customerId}");
+        await Fluttertoast.showToast(msg: "successfully Registered");
+        setState(() {
+          isLoading = false;
+        });
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (c) => BottomNavBar(),
+          ),
+          (route) => false,
+        );
 
-        if (result.response?.statusCode == 200) {
-          print("submit /register response data == ${result.response?.data}");
-          SharedPref.setAuthToken("${result.response?.data["token"]}");
-          SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
-          print("shared auth token ${SharedPref.getAuthToken()}");
-          print("shared user data  ${SharedPref.getUserData().toJson()}");
-          print("register customer ID ${SharedPref.getUserData().customerId}");
-          await Fluttertoast.showToast(msg: "successfully Registered");
-          setState(() {
-            isLoading = false;
-          });
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (c) =>  BottomNavBar(),
-            ),
-                (route) => false,
-          );
-
-          // await firebaseAuth
-          //     .createUserWithEmailAndPassword(
-          //   email: emailTextEditingController.text.trim(),
-          //   password: passwordTextEditingController.text.trim(),
-          // ).then((auth) async {
-          //   currentUser = auth.user;
-          //
-          //   if (currentUser != null) {
-          //     print("Current User is == $currentUser");
-          //     Map<String, dynamic> userMap = {
-          //       "id": currentUser!.uid,
-          //       "name": nameTextEditingController.text.trim(),
-          //       "email": emailTextEditingController.text.trim(),
-          //       "phone": phoneTextEditingController.text.trim(),
-          //       "requestCode": result.response?.statusCode,
-          //       "deviceId": _identifier,
-          //       "platform": Platform.isAndroid ? "android" : "ios"
-          //     };
-          //
-          //     CollectionReference userRef = firestore.collection("users");
-          //     userRef.doc(currentUser!.uid).set(userMap);
-          //     submitData(currentUser!.uid);
-          //     setState(() {
-          //       isLoading = false;
-          //     });
-          //   }
-          //   else {
-          //     setState(() {
-          //       isLoading = false;
-          //     });
-          //     print("Current User is Null == $currentUser");
-          //   }
-          //
-          //
-          //
-          // }).catchError((errorMessage) {
-          //   setState(() {
-          //     isLoading = false;
-          //   });
-          //   print("error msg in $errorMessage");
-          //   Fluttertoast.showToast(msg: "Error Occured: \n $errorMessage");
-          // });
-
-        }  //if status 200
-        else {
-          setState(() {
-            isLoading = false;
-          });
-         result.handleError(context);
-        }
-
+        // await firebaseAuth
+        //     .createUserWithEmailAndPassword(
+        //   email: emailTextEditingController.text.trim(),
+        //   password: passwordTextEditingController.text.trim(),
+        // ).then((auth) async {
+        //   currentUser = auth.user;
+        //
+        //   if (currentUser != null) {
+        //     print("Current User is == $currentUser");
+        //     Map<String, dynamic> userMap = {
+        //       "id": currentUser!.uid,
+        //       "name": nameTextEditingController.text.trim(),
+        //       "email": emailTextEditingController.text.trim(),
+        //       "phone": phoneTextEditingController.text.trim(),
+        //       "requestCode": result.response?.statusCode,
+        //       "deviceId": _identifier,
+        //       "platform": Platform.isAndroid ? "android" : "ios"
+        //     };
+        //
+        //     CollectionReference userRef = firestore.collection("users");
+        //     userRef.doc(currentUser!.uid).set(userMap);
+        //     submitData(currentUser!.uid);
+        //     setState(() {
+        //       isLoading = false;
+        //     });
+        //   }
+        //   else {
+        //     setState(() {
+        //       isLoading = false;
+        //     });
+        //     print("Current User is Null == $currentUser");
+        //   }
+        //
+        //
+        //
+        // }).catchError((errorMessage) {
+        //   setState(() {
+        //     isLoading = false;
+        //   });
+        //   print("error msg in $errorMessage");
+        //   Fluttertoast.showToast(msg: "Error Occured: \n $errorMessage");
+        // });
+      } //if status 200
+      else {
+        setState(() {
+          isLoading = false;
+        });
+        result.handleError(context);
+      }
     } //Validate data
     else {
       Fluttertoast.showToast(msg: "Not all fields are valid");
@@ -245,7 +235,7 @@ class _SignupPageState extends State<SignupPage> {
           body: SingleChildScrollView(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 40),
-              height: MediaQuery.of(context).size.height - 50,
+              height: MediaQuery.of(context).size.height - 20,
               width: double.infinity,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -278,10 +268,11 @@ class _SignupPageState extends State<SignupPage> {
                     child: Column(
                       children: <Widget>[
                         Align(
-                          alignment : Alignment.topLeft,
+                          alignment: Alignment.topLeft,
                           child: Text(
                             "Name",
-                            style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                            style: TextStyle(
+                                fontSize: 15, color: Colors.grey[700]),
                           ),
                         ),
                         SizedBox(
@@ -302,10 +293,11 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         const SizedBox(height: 10),
                         Align(
-                          alignment : Alignment.topLeft,
+                          alignment: Alignment.topLeft,
                           child: Text(
                             "Email",
-                            style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                            style: TextStyle(
+                                fontSize: 15, color: Colors.grey[700]),
                           ),
                         ),
                         SizedBox(
@@ -327,10 +319,11 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         const SizedBox(height: 10),
                         Align(
-                          alignment : Alignment.topLeft,
+                          alignment: Alignment.topLeft,
                           child: Text(
                             "Phone",
-                            style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                            style: TextStyle(
+                                fontSize: 15, color: Colors.grey[700]),
                           ),
                         ),
                         SizedBox(
@@ -352,10 +345,11 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         const SizedBox(height: 10),
                         Align(
-                          alignment : Alignment.topLeft,
+                          alignment: Alignment.topLeft,
                           child: Text(
                             "Password",
-                            style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                            style: TextStyle(
+                                fontSize: 15, color: Colors.grey[700]),
                           ),
                         ),
                         SizedBox(
@@ -393,10 +387,11 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         const SizedBox(height: 10),
                         Align(
-                          alignment : Alignment.topLeft,
+                          alignment: Alignment.topLeft,
                           child: Text(
                             "City",
-                            style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                            style: TextStyle(
+                                fontSize: 15, color: Colors.grey[700]),
                           ),
                         ),
                         SizedBox(
@@ -408,10 +403,8 @@ class _SignupPageState extends State<SignupPage> {
                               textStyle: TextStyle(color: Colors.black),
                               prefix: const Icon(Icons.location_city),
                               readOnly: true,
-                              hintText:city.isEmpty ? "City" : "",
-                              onTap: () async {
-
-                              },
+                              hintText: city.isEmpty ? "City" : "",
+                              onTap: () async {},
                               // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
                             ),
                             Positioned(
@@ -437,42 +430,44 @@ class _SignupPageState extends State<SignupPage> {
                   const SizedBox(
                     height: 20,
                   ),
-                  isLoading ? const Center(child: CircularProgressIndicator()) : Container(
-                    height: 45,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: Colors.purple,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.5),
-                          spreadRadius: 1,
-                          blurRadius: 1,
-                          offset:
-                              const Offset(0, 1), // changes position of shadow
-                        ),
-                      ],
-                    ),
-                    child:  TextButton(
-                      onPressed: () {
-                        _submit();
-                        //submitData();
-                      },
-                      child:  const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Sign up",
-                            style: TextStyle(
-                              fontSize: 16,
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Container(
+                          height: 45,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
                               color: Colors.purple,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.5),
+                                spreadRadius: 1,
+                                blurRadius: 1,
+                                offset: const Offset(
+                                    0, 1), // changes position of shadow
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
+                          child: TextButton(
+                            onPressed: () {
+                              _submit();
+                              //submitData();
+                            },
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Sign up",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.purple,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                   const SizedBox(
                     height: 20,
                   ),
