@@ -1,5 +1,4 @@
-# sq_notification
-
+# SQ APPT APP 2
 A new Flutter project.
 
 ## Getting Started
