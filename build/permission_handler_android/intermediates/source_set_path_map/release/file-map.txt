@@ -1,0 +1,12 @@
+com.baseflow.permissionhandler.permission_handler_android-jetified-annotation-experimental-1.1.0-0 /Users/vcrmac/.gradle/caches/transforms-3/09db32a73384ac2dccccf916d7dc0262/transformed/jetified-annotation-experimental-1.1.0/res
+com.baseflow.permissionhandler.permission_handler_android-core-1.6.0-1 /Users/vcrmac/.gradle/caches/transforms-3/168e459aae59caaab0d2c703cf9d67ab/transformed/core-1.6.0/res
+com.baseflow.permissionhandler.permission_handler_android-jetified-window-1.0.0-beta04-2 /Users/vcrmac/.gradle/caches/transforms-3/29fe38a5fd6c3bf46cd8e59c2b63489e/transformed/jetified-window-1.0.0-beta04/res
+com.baseflow.permissionhandler.permission_handler_android-jetified-window-java-1.0.0-beta04-3 /Users/vcrmac/.gradle/caches/transforms-3/978180320ed1d29d66a82edc9d24751e/transformed/jetified-window-java-1.0.0-beta04/res
+com.baseflow.permissionhandler.permission_handler_android-main-4 /Users/vcrmac/.pub-cache/hosted/pub.dev/permission_handler_android-12.0.5/android/src/main/res
+com.baseflow.permissionhandler.permission_handler_android-release-5 /Users/vcrmac/.pub-cache/hosted/pub.dev/permission_handler_android-12.0.5/android/src/release/res
+com.baseflow.permissionhandler.permission_handler_android-pngs-6 /Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/build/permission_handler_android/generated/res/pngs/release
+com.baseflow.permissionhandler.permission_handler_android-resValues-7 /Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/build/permission_handler_android/generated/res/resValues/release
+com.baseflow.permissionhandler.permission_handler_android-rs-8 /Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/build/permission_handler_android/generated/res/rs/release
+com.baseflow.permissionhandler.permission_handler_android-mergeReleaseResources-9 /Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/build/permission_handler_android/intermediates/incremental/release/mergeReleaseResources/merged.dir
+com.baseflow.permissionhandler.permission_handler_android-mergeReleaseResources-10 /Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/build/permission_handler_android/intermediates/incremental/release/mergeReleaseResources/stripped.dir
+com.baseflow.permissionhandler.permission_handler_android-merged_res-11 /Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/build/permission_handler_android/intermediates/merged_res/release

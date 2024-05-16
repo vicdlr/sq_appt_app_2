@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "altercode.xyz.uniqueidentifier.unique_identifier-merged_res-10:/layout/notification_action.xml",
+        "source": "altercode.xyz.uniqueidentifier.unique_identifier-core-1.6.0-1:/layout/notification_action.xml"
+    },
+    {
+        "merged": "altercode.xyz.uniqueidentifier.unique_identifier-merged_res-10:/layout/notification_template_icon_group.xml",
+        "source": "altercode.xyz.uniqueidentifier.unique_identifier-core-1.6.0-1:/layout/notification_template_icon_group.xml"
+    },
+    {
+        "merged": "altercode.xyz.uniqueidentifier.unique_identifier-merged_res-10:/layout/notification_template_part_time.xml",
+        "source": "altercode.xyz.uniqueidentifier.unique_identifier-core-1.6.0-1:/layout/notification_template_part_time.xml"
+    },
+    {
+        "merged": "altercode.xyz.uniqueidentifier.unique_identifier-merged_res-10:/layout/notification_template_part_chronometer.xml",
+        "source": "altercode.xyz.uniqueidentifier.unique_identifier-core-1.6.0-1:/layout/notification_template_part_chronometer.xml"
+    },
+    {
+        "merged": "altercode.xyz.uniqueidentifier.unique_identifier-merged_res-10:/layout/custom_dialog.xml",
+        "source": "altercode.xyz.uniqueidentifier.unique_identifier-core-1.6.0-1:/layout/custom_dialog.xml"
+    },
+    {
+        "merged": "altercode.xyz.uniqueidentifier.unique_identifier-merged_res-10:/layout/notification_action_tombstone.xml",
+        "source": "altercode.xyz.uniqueidentifier.unique_identifier-core-1.6.0-1:/layout/notification_action_tombstone.xml"
+    }
+]

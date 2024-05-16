@@ -1,0 +1,25 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/build/ios/Release-iphoneos/unique_identifier/unique_identifier.framework/unique_identifier'
+relocations:
+  - { offsetInCU: 0x34, offset: 0x5AFD9, size: 0x8, addend: 0x0, symName: _unique_identifierVersionString, symObjAddr: 0x0, symBinAddr: 0x6B60, symSize: 0x0 }
+  - { offsetInCU: 0x69, offset: 0x5B00E, size: 0x8, addend: 0x0, symName: _unique_identifierVersionNumber, symObjAddr: 0x30, symBinAddr: 0x6B90, symSize: 0x0 }
+  - { offsetInCU: 0x27, offset: 0x5B04B, size: 0x8, addend: 0x0, symName: '+[UniqueIdentifierPlugin registerWithRegistrar:]', symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0xC }
+  - { offsetInCU: 0x91, offset: 0x5B0B5, size: 0x8, addend: 0x0, symName: '+[UniqueIdentifierPlugin registerWithRegistrar:]', symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0xC }
+  - { offsetInCU: 0x7A, offset: 0x5B19C, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginC8register4withySo07FlutterF9Registrar_p_tFZTo', symObjAddr: 0x24, symBinAddr: 0x4030, symSize: 0x30 }
+  - { offsetInCU: 0xDB, offset: 0x5B1FD, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginC6handle_6resultySo17FlutterMethodCallC_yypSgctFTo', symObjAddr: 0x21C, symBinAddr: 0x4228, symSize: 0x74 }
+  - { offsetInCU: 0x123, offset: 0x5B245, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginCACycfcTo', symObjAddr: 0x2C0, symBinAddr: 0x42CC, symSize: 0x3C }
+  - { offsetInCU: 0x174, offset: 0x5B296, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginC8register4withySo07FlutterF9Registrar_p_tFZTf4nd_n', symObjAddr: 0x32C, symBinAddr: 0x4338, symSize: 0xD4 }
+  - { offsetInCU: 0x207, offset: 0x5B329, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginC6handle_6resultySo17FlutterMethodCallC_yypSgctF015$syXlSgIeyBy_ypN7Iegn_TRyXlSgIeyBy_Tf1ncn_nTf4ddg_n', symObjAddr: 0x4E4, symBinAddr: 0x44F0, symSize: 0x250 }
+  - { offsetInCU: 0x251, offset: 0x5B373, size: 0x8, addend: 0x0, symName: ___swift_instantiateConcreteTypeFromMangledName, symObjAddr: 0x400, symBinAddr: 0x440C, symSize: 0x40 }
+  - { offsetInCU: 0x265, offset: 0x5B387, size: 0x8, addend: 0x0, symName: '_$s10Foundation4UUIDVSgWOb', symObjAddr: 0x440, symBinAddr: 0x444C, symSize: 0x48 }
+  - { offsetInCU: 0x279, offset: 0x5B39B, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginCMa', symObjAddr: 0x4C4, symBinAddr: 0x44D0, symSize: 0x20 }
+  - { offsetInCU: 0x298, offset: 0x5B3BA, size: 0x8, addend: 0x0, symName: '_$sypSgWOc', symObjAddr: 0x734, symBinAddr: 0x4740, symSize: 0x48 }
+  - { offsetInCU: 0x2AC, offset: 0x5B3CE, size: 0x8, addend: 0x0, symName: ___swift_project_boxed_opaque_existential_0, symObjAddr: 0x77C, symBinAddr: 0x4788, symSize: 0x24 }
+  - { offsetInCU: 0x2C0, offset: 0x5B3E2, size: 0x8, addend: 0x0, symName: ___swift_destroy_boxed_opaque_existential_0, symObjAddr: 0x7A0, symBinAddr: 0x47AC, symSize: 0x20 }
+  - { offsetInCU: 0x40C, offset: 0x5B52E, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginC8register4withySo07FlutterF9Registrar_p_tFZ', symObjAddr: 0x0, symBinAddr: 0x400C, symSize: 0x4 }
+  - { offsetInCU: 0x420, offset: 0x5B542, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginCACycfC', symObjAddr: 0x4, symBinAddr: 0x4010, symSize: 0x20 }
+  - { offsetInCU: 0x447, offset: 0x5B569, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginC6handle_6resultySo17FlutterMethodCallC_yypSgctF', symObjAddr: 0x54, symBinAddr: 0x4060, symSize: 0x1C8 }
+  - { offsetInCU: 0x49B, offset: 0x5B5BD, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginCACycfc', symObjAddr: 0x290, symBinAddr: 0x429C, symSize: 0x30 }
+  - { offsetInCU: 0x4D2, offset: 0x5B5F4, size: 0x8, addend: 0x0, symName: '_$s17unique_identifier27SwiftUniqueIdentifierPluginCfD', symObjAddr: 0x2FC, symBinAddr: 0x4308, symSize: 0x30 }
+...

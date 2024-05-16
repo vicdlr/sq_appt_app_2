@@ -1,0 +1,1 @@
+ /Users/vcrmac/Documents/development/VSCodeProjects/sq_appt_app_2/.dart_tool/flutter_build/90482493bb05be76934d782c197dc172/native_assets.yaml: 
