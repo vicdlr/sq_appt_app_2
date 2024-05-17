@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>sq_notification.ipa</key>
+	<key>sqapptapp.ipa</key>
 	<array>
 		<dict>
 			<key>architectures</key>
@@ -12,7 +12,7 @@
 			<key>bitcode</key>
 			<false/>
 			<key>buildNumber</key>
-			<string>2</string>
+			<string>7</string>
 			<key>certificate</key>
 			<dict>
 				<key>SHA1</key>
