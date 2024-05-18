@@ -4,6 +4,7 @@ import 'dart:io';
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info/device_info.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -76,7 +77,7 @@ class _SignupPageState extends State<SignupPage> {
 
     var data = {
       //"username": nameTextEditingController.text,
-      "username": firebaseUid, // Use username as place holder
+      "username": firebaseUid,  // Use username as place holder
       "email": emailTextEditingController.text,
       //"fcm_token": fcmToken
     };
@@ -102,10 +103,12 @@ class _SignupPageState extends State<SignupPage> {
         //print("shared auth token ${SharedPref.getAuthToken()}");
         //print("shared user data  ${SharedPref.getUserData().toJson()}");
         //print("shared Customer ID  ${SharedPref.getCustomerId()}");
+
       } else {
         print(response.statusMessage);
       }
     } catch (e) {
+
       print('Error occurred: $e');
       // Handle errors accordingly, like showing an error message to the user
     }
@@ -130,17 +133,16 @@ class _SignupPageState extends State<SignupPage> {
         "fcm_token": fcmToken,
         "phoneNo": phoneTextEditingController.text,
         "platForm": Platform.isAndroid ? "android" : "ios",
-        "city": city
+        "city" : city
       };
 
-      final result =
-          await DioApi.post(path: "${ConfigUrl.signUpUrl}", data: data);
+      final result = await DioApi.post(path: "${ConfigUrl.signUpUrl}", data: data);
+
 
       if (result.response?.statusCode == 200) {
         print("submit /register response data == ${result.response?.data}");
         SharedPref.setAuthToken("${result.response?.data["token"]}");
-        SharedPref.setUserData(
-            UserData.fromJson(result.response?.data["user"]));
+        SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
         print("shared auth token ${SharedPref.getAuthToken()}");
         print("shared user data  ${SharedPref.getUserData().toJson()}");
         print("register customer ID ${SharedPref.getUserData().customerId}");
@@ -151,9 +153,9 @@ class _SignupPageState extends State<SignupPage> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (c) => BottomNavBar(),
+            builder: (c) =>  BottomNavBar(),
           ),
-          (route) => false,
+              (route) => false,
         );
 
         // await firebaseAuth
@@ -198,13 +200,15 @@ class _SignupPageState extends State<SignupPage> {
         //   print("error msg in $errorMessage");
         //   Fluttertoast.showToast(msg: "Error Occured: \n $errorMessage");
         // });
-      } //if status 200
+
+      }  //if status 200
       else {
         setState(() {
           isLoading = false;
         });
         result.handleError(context);
       }
+
     } //Validate data
     else {
       Fluttertoast.showToast(msg: "Not all fields are valid");
@@ -226,270 +230,299 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
+
     return MaterialApp(
       home: GestureDetector(
         onTap: () {
           FocusManager.instance.primaryFocus?.unfocus();
         },
         child: Scaffold(
-          body: SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              height: MediaQuery.of(context).size.height - 20,
-              width: double.infinity,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Column(
+          body: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            height: MediaQuery.of(context).size.height - 20,
+            width: double.infinity,
+            child: ListView(
+              // mainAxisAlignment: MainAxisAlignment.center,
+              // crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Column(
+                  children: <Widget>[
+                    const SizedBox(height: 60.0),
+                    Text(
+
+                      "Sign up",
+                      style: TextStyle(
+                        fontSize: MediaQuery.textScalerOf(context).scale(40),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      "Create your account",
+                      style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                  ],
+                ),
+                Form(
+                  key: _formKey,
+                  child: Column(
                     children: <Widget>[
-                      const SizedBox(height: 60.0),
-                      const Text(
-                        "Sign up",
-                        style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
+                      Align(
+                        alignment : Alignment.topLeft,
+                        child: Text(
+                          "Name",
+                          style: TextStyle(fontSize:  15, color: Colors.grey[700]),
                         ),
                       ),
-                      const SizedBox(
-                        height: 10,
+                      SizedBox(
+                        height: 5,
                       ),
-                      Text(
-                        "Create your account",
-                        style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                      CustomTextFormField(
+                        textStyle: TextStyle(color: Colors.black),
+                        controller: nameTextEditingController,
+                        hintText: "Name",
+                        prefix: const Icon(Icons.person),
+                        validator: (val) {
+                          if (val!.isEmpty) {
+                            return "This field cannot be empty";
+                          } else {
+                            return null;
+                          }
+                        },
                       ),
-                      const SizedBox(
-                        height: 20,
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment : Alignment.topLeft,
+                        child: Text(
+                          "Email",
+                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 5,
+                      ),
+                      CustomTextFormField(
+                        textStyle: TextStyle(color: Colors.black),
+                        controller: emailTextEditingController,
+                        hintText: "Email",
+                        prefix: const Icon(Icons.email),
+                        validator: (val) {
+                          if (isEmailValid(emailTextEditingController.text) ==
+                              false) {
+                            return "Enter a valid email address";
+                          } else {
+                            return null;
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment : Alignment.topLeft,
+                        child: Text(
+                          "Phone",
+                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 5,
+                      ),
+                      CustomTextFormField(
+                        textStyle: TextStyle(color: Colors.black),
+                        textInputType: TextInputType.phone,
+                        controller: phoneTextEditingController,
+                        hintText: "Phone",
+                        prefix: const Icon(Icons.phone),
+                        validator: (val) {
+                          if (val!.isEmpty) {
+                            return "This field cannot be empty";
+                          } else {
+                            return null;
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment : Alignment.topLeft,
+                        child: Text(
+                          "Password",
+                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 5,
+                      ),
+                      CustomTextFormField(
+                        textStyle: TextStyle(color: Colors.black),
+                        controller: passwordTextEditingController,
+                        hintText: "Password",
+                        suffix: GestureDetector(
+                          onTap: () {
+                            print(" showPass  $showPass");
+                            setState(() {
+                              showPass = !showPass;
+                            });
+                          },
+                          child: Icon(
+                            showPass
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            // color: !showPass
+                            //     ? AppColor.borderColor
+                            //     : AppColor.placeholderColor,
+                          ),
+                        ),
+                        prefix: const Icon(Icons.password),
+                        obscureText: showPass,
+                        validator: (val) {
+                          if (val!.isEmpty) {
+                            return "This field cannot be empty";
+                          } else {
+                            return null;
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment : Alignment.topLeft,
+                        child: Text(
+                          "City",
+                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 5,
+                      ),
+                      Stack(
+                        children: [
+                          CustomTextFormField(
+                            textStyle: TextStyle(color: Colors.black),
+                            prefix: const Icon(Icons.location_city),
+                            readOnly: true,
+                            hintText:city.isEmpty ? "City" : "",
+                            onTap: () async {
+
+                            },
+                            // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+                          ),
+                          Positioned(
+                            left: 50,
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: TestPage(
+                              dropDownList: themeProvider.cityDropDown,
+                              hintText: "",
+                              changedValue: (val) {
+                                setState(() {
+                                  city = val.name;
+                                });
+                              },
+                            ),
+                          )
+                        ],
                       ),
                     ],
                   ),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: <Widget>[
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Name",
-                            style: TextStyle(
-                                fontSize: 15, color: Colors.grey[700]),
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+                isLoading ? const Center(child: CircularProgressIndicator()) : Container(
+                  height: 45,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: Colors.purple,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.5),
+                        spreadRadius: 1,
+                        blurRadius: 1,
+                        offset:
+                        const Offset(0, 1), // changes position of shadow
+                      ),
+                    ],
+                  ),
+                  child:  TextButton(
+                    onPressed: () {
+                      _submit();
+                      //submitData();
+                    },
+                    child:  const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Sign up",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.purple,
                           ),
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        CustomTextFormField(
-                          textStyle: TextStyle(color: Colors.black),
-                          controller: nameTextEditingController,
-                          hintText: "Name",
-                          prefix: const Icon(Icons.person),
-                          validator: (val) {
-                            if (val!.isEmpty) {
-                              return "This field cannot be empty";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Email",
-                            style: TextStyle(
-                                fontSize: 15, color: Colors.grey[700]),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        CustomTextFormField(
-                          textStyle: TextStyle(color: Colors.black),
-                          controller: emailTextEditingController,
-                          hintText: "Email",
-                          prefix: const Icon(Icons.email),
-                          validator: (val) {
-                            if (isEmailValid(emailTextEditingController.text) ==
-                                false) {
-                              return "Enter a valid email address";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Phone",
-                            style: TextStyle(
-                                fontSize: 15, color: Colors.grey[700]),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        CustomTextFormField(
-                          textStyle: TextStyle(color: Colors.black),
-                          textInputType: TextInputType.phone,
-                          controller: phoneTextEditingController,
-                          hintText: "Phone",
-                          prefix: const Icon(Icons.phone),
-                          validator: (val) {
-                            if (val!.isEmpty) {
-                              return "This field cannot be empty";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Password",
-                            style: TextStyle(
-                                fontSize: 15, color: Colors.grey[700]),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        CustomTextFormField(
-                          textStyle: TextStyle(color: Colors.black),
-                          controller: passwordTextEditingController,
-                          hintText: "Password",
-                          suffix: GestureDetector(
-                            onTap: () {
-                              print(" showPass  $showPass");
-                              setState(() {
-                                showPass = !showPass;
-                              });
-                            },
-                            child: Icon(
-                              showPass
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              // color: !showPass
-                              //     ? AppColor.borderColor
-                              //     : AppColor.placeholderColor,
-                            ),
-                          ),
-                          prefix: const Icon(Icons.password),
-                          obscureText: showPass,
-                          validator: (val) {
-                            if (val!.isEmpty) {
-                              return "This field cannot be empty";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "City",
-                            style: TextStyle(
-                                fontSize: 15, color: Colors.grey[700]),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        Stack(
-                          children: [
-                            CustomTextFormField(
-                              textStyle: TextStyle(color: Colors.black),
-                              prefix: const Icon(Icons.location_city),
-                              readOnly: true,
-                              hintText: city.isEmpty ? "City" : "",
-                              onTap: () async {},
-                              // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
-                            ),
-                            Positioned(
-                              left: 50,
-                              top: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: TestPage(
-                                dropDownList: themeProvider.cityDropDown,
-                                hintText: "",
-                                changedValue: (val) {
-                                  setState(() {
-                                    city = val.name;
-                                  });
-                                },
-                              ),
-                            )
-                          ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(
-                              color: Colors.purple,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.5),
-                                spreadRadius: 1,
-                                blurRadius: 1,
-                                offset: const Offset(
-                                    0, 1), // changes position of shadow
-                              ),
-                            ],
-                          ),
-                          child: TextButton(
-                            onPressed: () {
-                              _submit();
-                              //submitData();
-                            },
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Sign up",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.purple,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Text("Already have an account?"),
-                      GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (context) {
-                              return const LoginPage();
-                            }));
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+
+                RichText(
+                  textAlign : TextAlign.center,
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                          text: "Already have an account?",
+                          style: TextStyle(
+                              color: Colors.black
+                          )
+                      ),
+                      const TextSpan(
+                        text: " ",
+                      ),
+                      TextSpan(
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+
+                            Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context){
+                                  return LoginPage();
+                                })
+                            );
                           },
-                          child: const Text(
-                            " Login",
-                            style: TextStyle(color: Colors.purple),
-                          ))
+                        text: "Login",
+                        style: TextStyle(color: Colors.purple),
+                      ),
                     ],
-                  )
-                ],
-              ),
+                  ),
+
+                ),
+
+                // Flexible(
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     children: <Widget>[
+                //       const Text("Already have an account?"),
+                //       GestureDetector(
+                //           onTap: () {
+                //             Navigator.of(context).pushReplacement(
+                //                 MaterialPageRoute(builder: (context) {
+                //               return const LoginPage();
+                //             }));
+                //           },
+                //           child: const Text(
+                //             " Login",
+                //             style: TextStyle(color: Colors.purple),
+                //           ))
+                //     ],
+                //   ),
+                // )
+              ],
             ),
           ),
         ),
@@ -502,8 +535,8 @@ bool isEmailValid(String? email) {
   return email == null
       ? false
       : RegExp(
-              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-          .hasMatch(email);
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+      .hasMatch(email);
 }
 
 String extractDataFromXml(String xmlResponse, String tag) {

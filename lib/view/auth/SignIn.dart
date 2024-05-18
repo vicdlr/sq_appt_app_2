@@ -2,6 +2,7 @@ import 'dart:convert';
 
 
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
@@ -232,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                         spreadRadius: 1,
                         blurRadius: 1,
                         offset:
-                            const Offset(0, 1), // changes position of shadow
+                        const Offset(0, 1), // changes position of shadow
                       ),
                     ],
                   ),
@@ -333,7 +334,38 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   _signup(context) {
-    return Row(
+    return  RichText(
+      textAlign : TextAlign.center,
+      text: TextSpan(
+        children: [
+          TextSpan(
+              text: "Don't Have an Account?",
+              style: TextStyle(
+                  color: Colors.black
+              )
+          ),
+          const TextSpan(
+            text: " ",
+          ),
+          TextSpan(
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context){
+                      return SignupPage();
+                    })
+                );
+              },
+            text: "Sign Up",
+            style: TextStyle(color: Colors.purple),
+          ),
+        ],
+      ),
+
+    );
+
+    Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Text("Don't Have an Account?"),
@@ -352,3 +384,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

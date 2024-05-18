@@ -19,7 +19,7 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
- await SharedPref.init();
+  await SharedPref.init();
   runApp(
     MultiProvider(
       providers: [

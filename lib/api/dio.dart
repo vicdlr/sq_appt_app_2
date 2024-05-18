@@ -42,7 +42,7 @@ class Result {
         Dialogs.errorDialog(context, 'Request timed out. Try again.');
       } else if (dioError!.response != null &&
           dioError!.response!.data is Map) {
-        final errMsg = dioError!.response?.data;
+        final errMsg = dioError!.response?.data["message"];
 
         // log("ERR MSG: $errMsg");
 
