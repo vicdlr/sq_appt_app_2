@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
+import 'package:sq_notification/utils/utils.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
 import 'package:sq_notification/view/home/widget/search_dropdown.dart';
 
@@ -272,13 +273,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 10,
               ),*/
               ListTile(
-                onTap: () {
+                onTap: () async{
                   // firebaseAuth.signOut();
-                  SharedPref.deleteData();
-                  Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) {
-                    return const SignupPage();
-                  }), (route) => false);
+
+
+                  final bool isLogout = await Utils.logoutDialog(context) ?? false;
+                  if(isLogout) {
+                    SharedPref.deleteData();
+                    Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) {
+                      return const SignupPage();
+                    }), (route) => false);
+                  }
                 },
                 shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(
