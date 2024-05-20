@@ -12,7 +12,6 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>NSPhotoLibraryUsageDescription</key>
     <string>App needs access to photo lib for profile images</string>
-
      <key>NSCameraUsageDescription</key>
      <string>To capture profile photo please grant camera access</string>
 	<key>CFBundleDisplayName</key>
@@ -36,7 +35,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>The App requires access to your camera to allow you to take a photo of the item to process your request</string>
+	<string>The App requires access to your gallery to allow you to take a photo of the item to process your request</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
