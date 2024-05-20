@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/them_helper.dart';
 
 
-class CustomTextFormField extends StatelessWidget {
+class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField(
       {super.key,
         this.alignment,
@@ -76,48 +76,57 @@ class CustomTextFormField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final void Function(PointerDownEvent)? onTapOutside;
   final TextCapitalization? textCapitalization ;
+
+  @override
+  State<CustomTextFormField> createState() => _CustomTextFormFieldState();
+}
+
+class _CustomTextFormFieldState extends State<CustomTextFormField> {
   @override
   Widget build(BuildContext context) {
-    return alignment != null
+    return widget.alignment != null
         ? Align(
-      alignment: alignment ?? Alignment.center,
+      alignment: widget.alignment ?? Alignment.center,
       child: textFormFieldWidget,
     )
         : textFormFieldWidget;
   }
 
   Widget get textFormFieldWidget => SizedBox(
-    width: width ?? double.maxFinite,
+    width: widget.width ?? double.maxFinite,
     child: TextFormField(
-      onTapOutside: onTapOutside,
-      textCapitalization:textCapitalization ?? TextCapitalization.none ,
-      controller: controller,
-      onTap: onTap,
-      readOnly: readOnly,
-      onChanged: onChanged,
+      onTapOutside: widget.onTapOutside ?? (PointerDownEvent){
+        FocusScope.of(context).unfocus();
+      },
+      textCapitalization:widget.textCapitalization ?? TextCapitalization.none ,
+      controller: widget.controller,
+      onTap: widget.onTap,
+      readOnly: widget.readOnly,
+      onChanged: widget.onChanged,
       // focusNode: focusNode ?? FocusNode(),
       // style: textStyle ?? theme.textTheme.titleMedium,
-      obscureText: obscureText!,
-      textInputAction: textInputAction,
-      style: textStyle ?? theme.textTheme.titleMedium,
-      keyboardType: textInputType,
-      maxLines: maxLines ?? 1,
+      obscureText: widget.obscureText!,
+      textInputAction: widget.textInputAction,
+      style: widget.textStyle ?? theme.textTheme.titleMedium,
+      keyboardType: widget.textInputType,
+      maxLines: widget.maxLines ?? 1,
       decoration: decoration,
-      validator: validator,
+      validator: widget.validator,
     ),
   );
+
   InputDecoration get decoration => InputDecoration(
-    hintText: hintText ?? "",
-    hintStyle: hintStyle ?? theme.textTheme.titleMedium,
-    prefixIcon: prefix,
-    prefixIconConstraints: prefixConstraints,
-    suffixIcon: suffix,
-    suffixIconConstraints: suffixConstraints,
+    hintText: widget.hintText ?? "",
+    hintStyle: widget.hintStyle ?? theme.textTheme.titleMedium,
+    prefixIcon: widget.prefix,
+    prefixIconConstraints: widget.prefixConstraints,
+    suffixIcon: widget.suffix,
+    suffixIconConstraints: widget.suffixConstraints,
     isDense: true,
-    contentPadding: contentPadding ?? const EdgeInsets.all(14),
-    fillColor: fillColor ?? Colors.purple.withOpacity(0.1),
-    filled: filled ?? true,
-    border: borderDecoration ??
+    contentPadding: widget.contentPadding ?? const EdgeInsets.all(14),
+    fillColor: widget.fillColor ?? Colors.purple.withOpacity(0.1),
+    filled: widget.filled ?? true,
+    border: widget.borderDecoration ??
         OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
@@ -125,7 +134,7 @@ class CustomTextFormField extends StatelessWidget {
             width: 1,
           ),
         ),
-    enabledBorder: borderDecoration ??
+    enabledBorder: widget.borderDecoration ??
         OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
@@ -133,7 +142,7 @@ class CustomTextFormField extends StatelessWidget {
             width: 1,
           ),
         ),
-    focusedBorder: borderDecoration ??
+    focusedBorder: widget.borderDecoration ??
         OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(

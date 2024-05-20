@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
@@ -41,6 +42,7 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
             ),
             ListTile(
               onTap: () async {},
+              contentPadding: EdgeInsets.all(0),
               shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(
                 Radius.circular(10),
@@ -70,6 +72,7 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
               height: 10,
             ),
             ListTile(
+                contentPadding: EdgeInsets.all(0),
               onTap: () async {},
               shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(
@@ -99,6 +102,7 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
               height: 10,
             ),
             ListTile(
+                contentPadding: EdgeInsets.all(0),
               onTap: () async {},
               shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(
@@ -129,6 +133,7 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
               height: 10,
             ),
             ListTile(
+                contentPadding: EdgeInsets.all(0),
               onTap: () async {},
               shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(
@@ -157,6 +162,7 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
               height: 10,
             ),
             ListTile(
+                contentPadding: EdgeInsets.all(0),
               onTap: () async {},
               shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(
@@ -190,7 +196,7 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
             SizedBox(
               height: 10,
             ),
-            Text("Service type"),
+            Text("Service Type"),
             SizedBox(
               height: 10,
             ),
@@ -209,10 +215,11 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
               ),
             ),
             SizedBox(
-              height: 30,
+              height: 20,
             ),
-            Container(
-              margin: const EdgeInsets.all(8.0),
+            Padding(
+              
+              padding: EdgeInsets.symmetric(vertical: 10),
               child: ListTile(
                 onTap: () async {
                   final provider = homeProvider;

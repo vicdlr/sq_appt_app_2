@@ -119,9 +119,9 @@ class _CustomDropDownState extends State<CustomDropDown> {
           height: 40,
           width: 200,
         ),
-        dropdownStyleData:  DropdownStyleData(
+        dropdownStyleData: const  DropdownStyleData(
           decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondary
+              color: Colors.white
           ),
           maxHeight: 200,
         ),
@@ -129,35 +129,7 @@ class _CustomDropDownState extends State<CustomDropDown> {
 
           height: 40,
         ),
-        // dropdownSearchData: DropdownSearchData(
-        //   searchController: widget.controller,
-        //   searchInnerWidgetHeight: 50,
-        //   searchInnerWidget: Container(
-        //     height: 50,
-        //     padding: const EdgeInsets.only(
-        //       top: 8,
-        //       bottom: 4,
-        //       right: 8,
-        //       left: 8,
-        //     ),
-        //     child: CustomTextFormField(
-        //       textStyle: TextStyle(color: Colors.black),
-        //
-        //       maxLines: null,
-        //       controller: widget.controller,
-        //       onTap: () async {},
-        //     ),
-        //   ),
-        //   searchMatchFn: (item, searchValue) {
-        //     return item.value.toString().toLowerCase().contains(searchValue.toString());
-        //   },
-        // ),
-        //This to clear the search value when you close the menu
-        // onMenuStateChange: (isOpen) {
-        //   if (!isOpen) {
-        //     textEditingController.clear();
-        //   }
-        // },
+
       ),
     );
   }
