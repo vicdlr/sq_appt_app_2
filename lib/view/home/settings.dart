@@ -135,26 +135,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 10,
               ),
               ListTile(
-                onTap: () async {
-                  await dialogBuilder(context);
-                },
-                shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(
-                  Radius.circular(10),
-                )),
-                tileColor: Theme.of(context).colorScheme.secondary,
-                title: TestPage(
-                  dropDownList: themeProvider.cityDropDown,
-                  hintText: (SharedPref.getUserData().city != null &&
-                          SharedPref.getUserData().city.isNotEmpty)
-                      ? SharedPref.getUserData().city
-                      : 'City',
-                  changedValue: (val) {
-                    themeProvider.setSelectedCity({"city": val.name});
+                contentPadding: EdgeInsets.symmetric(horizontal: 2),
+                  onTap: () async {
+
                   },
-                ),
-                // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
-              ),
+                  shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                    Radius.circular(10),
+                  )),
+                  tileColor: Theme.of(context).colorScheme.secondary,
+                  title: CustomDropDown(
+                    changedValue: (val) {
+                      themeProvider.setSelectedCity({"city": val}).then((value) {
+                        setState(() {
+
+                        });
+                      });
+
+                    },
+                    // controller: TextEditingController(),
+                    selectedValue: "",
+                    dropDownList: themeProvider.cityDropDown,
+                    hintText: (SharedPref.getUserData().city != null &&
+                        SharedPref.getUserData().city.isNotEmpty)
+                        ? SharedPref.getUserData().city : 'City',
+                  )
+                  // TestPage(
+                  //   dropDownList: themeProvider.cityDropDown,
+                  //   hintText: (SharedPref.getUserData().city != null &&
+                  //           SharedPref.getUserData().city.isNotEmpty)
+                  //       ? SharedPref.getUserData().city
+                  //       : 'City',
+                  //   changedValue: (val) {
+                  //     themeProvider.setSelectedCity({"city": val.name});
+                  //   },
+                  // ),
+                  // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+                  ),
               const SizedBox(
                 height: 10,
               ),

@@ -1,5 +1,5 @@
 
-import 'package:dropdown_textfield/dropdown_textfield.dart';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sq_notification/Model/CityModel.dart';
@@ -15,7 +15,7 @@ class ThemeProvider extends ChangeNotifier {
 
   List<CityModel> cities = [];
 
-  List<DropDownValueModel> cityDropDown = [];
+  List<String> cityDropDown = [];
 
 
 
@@ -66,7 +66,8 @@ class ThemeProvider extends ChangeNotifier {
     final result = await DioApi.get(path: ConfigUrl.getCityurl);
     if(result.response != null){
      cities =  (result.response?.data["cities"] as  List<dynamic>).map((data) => CityModel.fromJson(data)).toList();
-     cityDropDown = cities.map((data) => DropDownValueModel(name: data.city, value: data.id)).toList();
+     cityDropDown = cities.map((data) =>  data.city ).toList();
+     print("city == $cityDropDown");
      notifyListeners();
     }else{
 

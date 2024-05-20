@@ -38,6 +38,8 @@ class _SignupPageState extends State<SignupPage> {
 
   TextEditingController passwordTextEditingController = TextEditingController();
 
+  TextEditingController cityTextEditingController = TextEditingController();
+
   final _formKey = GlobalKey<FormState>();
 
   bool isPasswordVisible = true;
@@ -410,19 +412,32 @@ class _SignupPageState extends State<SignupPage> {
                             // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
                           ),
                           Positioned(
-                            left: 50,
+                            left: 30,
                             top: 0,
                             right: 0,
                             bottom: 0,
-                            child: TestPage(
-                              dropDownList: themeProvider.cityDropDown,
-                              hintText: "",
+                            child:
+                            CustomDropDown(
                               changedValue: (val) {
                                 setState(() {
-                                  city = val.name;
+                                  city = val;
                                 });
                               },
+                              // controller: cityTextEditingController,
+                              selectedValue: "",
+                              dropDownList: themeProvider.cityDropDown ,
+                              hintText: city,
                             ),
+
+                            // TestPage(
+                            //   dropDownList: themeProvider.cityDropDown,
+                            //   hintText: "",
+                            //   changedValue: (val) {
+                            //     setState(() {
+                            //       city = val.name;
+                            //     });
+                            //   },
+                            // ),
                           )
                         ],
                       ),

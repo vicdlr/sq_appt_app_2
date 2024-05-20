@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:dropdown_textfield/dropdown_textfield.dart';
+// import 'package:dropdown_textfield/dropdown_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sq_notification/Model/BookingModel.dart';
@@ -28,19 +28,19 @@ class HomeProvider extends ChangeNotifier {
   int selectedIndex = 0;
   bool isLoading = false;
 
-  List<DropDownValueModel> industryList = [];
+  List<String> industryList = [];
   List<IndustryModel> industryDataList = [];
 
-  List<DropDownValueModel> companiesList = [];
+  List<String> companiesList = [];
   List<OrganizationModel> companiesDataList = [];
 
-  List<DropDownValueModel> departmentList = [];
+  List<String> departmentList = [];
   List<DepartmentModel> departmentDataList = [];
 
-  List<DropDownValueModel> groupList = [];
+  List<String> groupList = [];
   List<GroupModel> groupDataList = [];
 
-  List<DropDownValueModel> unitList = [];
+  List<String> unitList = [];
   List<UnitModel> unitDataList = [];
 
   List<BookingModel> bookingList = [];
@@ -56,7 +56,7 @@ class HomeProvider extends ChangeNotifier {
           .toList();
       industryList = industryDataList
           .map((data) =>
-              DropDownValueModel(name: data.industry, value: data.code))
+              data.industry)
           .toList();
       notifyListeners();
     } else {}
@@ -90,8 +90,7 @@ class HomeProvider extends ChangeNotifier {
               .map((data) => OrganizationModel.fromJson(data))
               .toList();
       companiesList = companiesDataList
-          .map((data) =>
-              DropDownValueModel(name: data.company, value: data.code))
+          .map((data) =>  data.company,)
           .toList();
       notifyListeners();
     } else {}
@@ -119,8 +118,7 @@ class HomeProvider extends ChangeNotifier {
               .map((data) => DepartmentModel.fromJson(data))
               .toList();
       departmentList = departmentDataList
-          .map((data) =>
-              DropDownValueModel(name: data.department, value: data.code))
+          .map((data) => data.department)
           .toList();
       notifyListeners();
     } else {}
@@ -148,8 +146,7 @@ class HomeProvider extends ChangeNotifier {
           .map((data) => GroupModel.fromJson(data))
           .toList();
       groupList = groupDataList
-          .map((data) =>
-              DropDownValueModel(name: data.groupname, value: data.code))
+          .map((data) => data.groupname, )
           .toList();
       notifyListeners();
     } else {}
@@ -176,10 +173,7 @@ class HomeProvider extends ChangeNotifier {
           .toList();
       unitList = unitDataList
           .map(
-            (data) => DropDownValueModel(
-              name: data.unit,
-              value: data.code,
-            ),
+            (data) => data.unit
           )
           .toList();
       notifyListeners();

@@ -46,16 +46,20 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
                 Radius.circular(10),
               )),
               tileColor: Theme.of(context).colorScheme.secondary,
-              title: TestPage(
-                dropDownList: homeProvider.industryList,
+              title:  CustomDropDown(
+                changedValue: (val) {
+
+                  homeProvider.setSelectedList(val);
+                },
+                // controller: TextEditingController(),
+                selectedValue: "",
+                dropDownList: homeProvider.industryList ,
                 hintText: homeProvider.selectedIndusty.isNotEmpty
                     ? homeProvider.selectedIndusty
                     : 'Industries',
-                changedValue: (val) {
-                  print("value of =  ${val.value}");
-                  homeProvider.setSelectedList(val.name);
-                },
-              ),
+              )
+
+              ,
               // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
             ),
             SizedBox(
@@ -72,17 +76,20 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
                 Radius.circular(10),
               )),
               tileColor: Theme.of(context).colorScheme.secondary,
-              title: TestPage(
-                dropDownList: homeProvider.companiesList,
+              title: CustomDropDown(
+                changedValue: (val) {
+
+                  homeProvider.setCompaniesList(val);
+                },
+                // controller: TextEditingController(),
+                selectedValue: "",
+                dropDownList: homeProvider.companiesList ,
                 hintText: homeProvider.selectedCompanies.isNotEmpty
                     ? homeProvider.selectedCompanies
                     : 'Organisations',
-                changedValue: (val) {
-                  print("value of =  ${val.value}");
-                  homeProvider.setCompaniesList(val.name);
-                },
-              ),
-              // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+              )
+
+
             ),
             SizedBox(
               height: 10,
@@ -98,17 +105,21 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
                 Radius.circular(10),
               )),
               tileColor: Theme.of(context).colorScheme.secondary,
-              title: TestPage(
-                dropDownList: homeProvider.departmentList,
+              title: CustomDropDown(
+                changedValue: (val) {
+
+                  homeProvider.setDepartmentList(val);
+                },
+                // controller: TextEditingController(),
+                selectedValue: "",
+                dropDownList:  homeProvider.departmentList ,
                 hintText: homeProvider.selectedDepartment.isNotEmpty
                     ? homeProvider.selectedDepartment
                     : 'Departments',
-                changedValue: (val) {
-                  print("value of =  ${val.value}");
-                  homeProvider.setDepartmentList(val.name);
-                },
-              ),
-              // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+              )
+
+
+
             ),
             SizedBox(
               height: 10,
@@ -124,17 +135,19 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
                 Radius.circular(10),
               )),
               tileColor: Theme.of(context).colorScheme.secondary,
-              title: TestPage(
-                dropDownList: homeProvider.groupList,
+              title: CustomDropDown(
+                changedValue: (val) {
+
+                  homeProvider.setGroupList(val);
+                },
+                // controller: TextEditingController(),
+                selectedValue: "",
+                dropDownList: homeProvider.groupList ,
                 hintText: homeProvider.selectedGroup.isNotEmpty
                     ? homeProvider.selectedGroup
                     : 'Groups',
-                changedValue: (val) {
-                  print("value of =  ${val.value}");
-                  homeProvider.setGroupList(val.name);
-                },
-              ),
-              // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+              )
+
             ),
             SizedBox(
               height: 10,
@@ -150,39 +163,51 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
                 Radius.circular(10),
               )),
               tileColor: Theme.of(context).colorScheme.secondary,
-              title: TestPage(
-                dropDownList: homeProvider.unitList,
+              title: CustomDropDown(
+                changedValue: (val) {
+
+                  homeProvider.setUnitList(val);
+                },
+                // controller: TextEditingController(),
+                selectedValue: "",
+                dropDownList: homeProvider.unitList ,
                 hintText: homeProvider.selectedUnit.isNotEmpty
                     ? homeProvider.selectedUnit
                     : 'Units',
-                changedValue: (val) {
-                  print("value of =  ${val.value}");
-                  homeProvider.setUnitList(val.name);
-                },
-              ),
+              )
+              // TestPage(
+              //   dropDownList: homeProvider.unitList,
+              //   hintText: homeProvider.selectedUnit.isNotEmpty
+              //       ? homeProvider.selectedUnit
+              //       : 'Units',
+              //   changedValue: (val) {
+              //     print("value of =  ${val.value}");
+              //     homeProvider.setUnitList(val.name);
+              //   },
+              // ),
               // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
             ),
-            // SizedBox(
-            //   height: 10,
-            // ),
-            // Text("Service type"),
-            // SizedBox(
-            //   height: 10,
-            // ),
-            // ListTile(
-            //   onTap: () {
-            //
-            //   },
-            //   shape: const RoundedRectangleBorder(
-            //       borderRadius: BorderRadius.all(
-            //         Radius.circular(10),
-            //       )),
-            //   tileColor: Theme.of(context).colorScheme.secondary,
-            //   title: Text(
-            //     "${homeProvider.serviceType}",
-            //     style: Theme.of(context).textTheme.labelMedium,
-            //   ),
-            // ),
+            SizedBox(
+              height: 10,
+            ),
+            Text("Service type"),
+            SizedBox(
+              height: 10,
+            ),
+            ListTile(
+              onTap: () {
+
+              },
+              shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(10),
+                  )),
+              tileColor: Theme.of(context).colorScheme.secondary,
+              title: Text(
+                "${homeProvider.serviceType}",
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
             SizedBox(
               height: 30,
             ),
