@@ -197,7 +197,8 @@ class _MyBookingState extends State<MyBooking> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text("Appointment time"),
-                                        Text(assignedTime ?? "")
+                                        Flexible(child : Text(assignedTime ?? ""))
+                                        // Text(assignedTime ?? "")
                                       ],
                                     )
                                   : SizedBox(),
