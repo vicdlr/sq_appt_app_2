@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
-
+import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -35,6 +35,14 @@ class _FormPageState extends State<FormPage> {
     setState(() {
       _image = pickedFile != null ? File(pickedFile.path) : null;
     });
+  }
+
+  Future<Map<Permission, PermissionStatus>> _requestPermissions() async {
+    print("This is thhhe stuff we are tring to access");
+    Map<Permission, PermissionStatus> statuses = {};
+    statuses[Permission.camera] = await _requestCameraPermission();
+    statuses[Permission.storage] = await _requestStoragePermission();
+    return statuses;
   }
 
   void _checkPermission(BuildContext context,ImageSource source) async {
@@ -121,6 +129,7 @@ class _FormPageState extends State<FormPage> {
    }
 
    void profilePiccker() {
+     Map<Permission, PermissionStatus> statuses = {};
      showModalBottomSheet(
        context: context,
        builder: (BuildContext context) {
@@ -132,9 +141,11 @@ class _FormPageState extends State<FormPage> {
                ListTile(
                  leading: const Icon(Icons.photo_library),
                  title: const Text('Choose from gallery'),
-                 onTap: () {
+                 onTap: () async {
+                  _checkPermission(context,ImageSource.gallery);
                    Navigator.pop(context);
-                   _checkPermission(context,ImageSource.gallery);
+                   //_checkPermission(context,ImageSource.gallery);//
+
                  },
                ),
                ListTile(
@@ -151,6 +162,27 @@ class _FormPageState extends State<FormPage> {
        },
      );
    }
+
+
+
+  Future<PermissionStatus> _requestCameraPermission() async {
+    try {
+      return await Permission.camera.request();
+    } on PlatformException catch (e) {
+      print("Failed to request camera permission: ${e.toString()}");
+      return PermissionStatus.denied;
+    }
+  }
+
+  Future<PermissionStatus> _requestStoragePermission() async {
+    try {
+      return await Permission.storage.request();
+    } on PlatformException catch (e) {
+      print("Failed to request storage permission: ${e.toString()}");
+      return PermissionStatus.denied;
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
