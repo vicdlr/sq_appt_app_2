@@ -192,71 +192,77 @@ class _MyBookingState extends State<MyBooking> {
                                     )
                                   : SizedBox(),
                               assignedTime != null
-                                  ? Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text("Appointment time"),
-                                        Flexible(child : Text(assignedTime ?? ""))
-                                        // Text(assignedTime ?? "")
-                                      ],
-                                    )
+                                  ? buildRow("Appointment time", assignedTime ?? "" )
+                              // Row(
+                              //         mainAxisAlignment:
+                              //             MainAxisAlignment.spaceBetween,
+                              //         children: [
+                              //           Text("Appointment time"),
+                              //           Flexible(child : Text(assignedTime ?? ""))
+                              //           // Text(assignedTime ?? "")
+                              //         ],
+                              //       )
                                   : SizedBox(),
                               const SizedBox(
                                 height: 10,
                               ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text("Industry"),
-                                  Text(bookingData.industry)
-                                ],
-                              ),
+                              buildRow("Industry", bookingData.industry ?? "" ),
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     Text("Industry"),
+                              //     Text(bookingData.industry)
+                              //   ],
+                              // ),
                               SizedBox(
                                 height: 10,
                               ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text("Company"),
-                                  Text(bookingData.organisation)
-                                ],
-                              ),
+                              buildRow("Company", bookingData.organisation ?? "" ),
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     Text("Company"),
+                              //     Text(bookingData.organisation)
+                              //   ],
+                              // ),
                               SizedBox(
                                 height: 10,
                               ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text("Department"),
-                                  Text(bookingData.department)
-                                ],
-                              ),
+                              buildRow("Department", bookingData.department ?? "" ),
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     const Text("Department"),
+                              //     Text(bookingData.department)
+                              //   ],
+                              // ),
                               SizedBox(
                                 height: 10,
                               ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text("Group"),
-                                  Text(bookingData.groups)
-                                ],
-                              ),
+                              buildRow("Group", bookingData.groups ?? "" ),
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     const Text("Group"),
+                              //     Text(bookingData.groups)
+                              //   ],
+                              // ),
                               SizedBox(
                                 height: 10,
                               ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text("Unit"),
-                                  Text(bookingData.unit)
-                                ],
-                              ),
+                              buildRow("Unit", bookingData.unit ?? "" ),
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     const Text("Unit"),
+                              //     Text(bookingData.unit)
+                              //   ],
+                              // ),
                               (bookingData.companyName != null &&
                                       bookingData.companyName
                                           .toString()
@@ -356,7 +362,7 @@ class _MyBookingState extends State<MyBooking> {
     );
   }
 
-  buildRow( String title ,String value){
+ Widget buildRow( String title ,String value){
    return  Row(
       mainAxisAlignment:
       MainAxisAlignment.spaceBetween,
