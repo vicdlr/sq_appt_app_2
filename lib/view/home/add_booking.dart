@@ -193,76 +193,159 @@ class _AddBookingState extends State<AddBooking> {
       appBar: AppBar(
         title: Text("Request new booking"),
       ),
-      body: Center(
-        child: Column(
-          children: [
-            SizedBox(height: 50),
+      body: Column(
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                SizedBox(height: 50),
 
-            _buildTimePick(context, "Date", date, () {
-              showDialogPicker(context);
-            }),
-            SizedBox(
-              height: 10,
+                _buildTimePick(context, "Date", date, () {
+                  showDialogPicker(context);
+                }),
+                SizedBox(
+                  height: 10,
+                ),
+                _buildTimePick(context, "I'm available from this time", firstTime, () {
+                  showDialogTimePicker(context);
+                }),
+                SizedBox(
+                  height: 10,
+                ),
+                _buildTimePick(context, "to this time", secondTime, () {
+                  showSecondTimePicker(context);
+                }),
+                SizedBox(
+                  height: 10,
+                ),
+                // Align(
+                //   alignment: Alignment.center,
+                //   child: ElevatedButton(
+                //
+                //     child: Text(
+                //       "PICK DATE & TIME",
+                //       style: Theme.of(context).textTheme.labelMedium,
+                //     ),
+                //     onPressed: () {
+                //       showDialogPicker(context);
+                //     },
+                //   ),
+                // ),
+              ],
             ),
-            _buildTimePick(context, "I'm available from this time", firstTime, () {
-              showDialogTimePicker(context);
-            }),
-            SizedBox(
-              height: 10,
+          ),
+         Container(
+           margin: EdgeInsets.all(20),
+            height: 45,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color: themeData.isDarkTheme ? Colors.white : Colors.black45,
+              ),
             ),
-            _buildTimePick(context, "to this time", secondTime, () {
-              showSecondTimePicker(context);
-            }),
-            SizedBox(
-              height: 10,
-            ),
-            // Align(
-            //   alignment: Alignment.center,
-            //   child: ElevatedButton(
-            //
-            //     child: Text(
-            //       "PICK DATE & TIME",
-            //       style: Theme.of(context).textTheme.labelMedium,
-            //     ),
-            //     onPressed: () {
-            //       showDialogPicker(context);
-            //     },
-            //   ),
-            // ),
-          ],
-        ),
-      ),
-      bottomSheet: Container(
-        margin: const EdgeInsets.all(8.0),
-        child: ListTile(
-          onTap: () async {
-            if (firstTime == "00" || date == "00" || secondTime == "00") {
-              await Fluttertoast.showToast(msg: "Date & Time are required");
-            } else {
-              if(firstDate != null && lastDate != null && selectedDateTime != null){
-                Provider.of<HomeProvider>(context, listen: false).createBooking(
-                  context,
-                  date: selectedDateTime?.toUtc().toString(),
-                  startTime: firstDate?.toUtc().toString(),
-                  endTime: lastDate?.toUtc().toString(),
-                );
-              }
-            }
-          },
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(
-            Radius.circular(10),
-          )),
-          tileColor: Theme.of(context).colorScheme.secondary,
-          title: homeProvider.isLoading
-              ? SizedBox(
-                  height: 30,
-                  child: Center(child: const CircularProgressIndicator()))
-              : SizedBox(height: 30, child: Center(child: Text("Submit"),),),
+            child:
+              homeProvider.isLoading
 
-          // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
-        ),
+                      ? SizedBox(
+                          height: 30,
+                          child: Center(child: const CircularProgressIndicator()))
+                      :
+
+            TextButton(
+              onPressed: () async {
+                if (firstTime == "00" || date == "00" || secondTime == "00") {
+                  await Fluttertoast.showToast(msg: "Date & Time are required");
+                } else {
+                  if(firstDate != null && lastDate != null && selectedDateTime != null){
+                    Provider.of<HomeProvider>(context, listen: false).createBooking(
+                      context,
+                      date: selectedDateTime?.toUtc().toString(),
+                      startTime: firstDate?.toUtc().toString(),
+                      endTime: lastDate?.toUtc().toString(),
+                    );
+                  }
+                }
+              },
+              child:   Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Add Booking",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: themeData.isDarkTheme ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Padding(
+          //
+          //   padding: EdgeInsets.symmetric(vertical: 10),
+          //   child: ListTile(
+          //     onTap: () async {
+          //       if (firstTime == "00" || date == "00" || secondTime == "00") {
+          //         await Fluttertoast.showToast(msg: "Date & Time are required");
+          //       } else {
+          //         if(firstDate != null && lastDate != null && selectedDateTime != null){
+          //           Provider.of<HomeProvider>(context, listen: false).createBooking(
+          //             context,
+          //             date: selectedDateTime?.toUtc().toString(),
+          //             startTime: firstDate?.toUtc().toString(),
+          //             endTime: lastDate?.toUtc().toString(),
+          //           );
+          //         }
+          //       }
+          //     },
+          //     shape: const RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.all(
+          //           Radius.circular(10),
+          //         )),
+          //     tileColor: Theme.of(context).colorScheme.secondary,
+          //     title: const SizedBox(
+          //       height: 30,
+          //       child: Center(
+          //         child: Text("Continue"),
+          //       ),
+          //     ),
+          //
+          //     // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+          //   ),
+          // )
+        ],
       ),
+      // bottomSheet: Container(
+      //   margin: const EdgeInsets.all(8.0),
+      //   child: ListTile(
+      //     onTap: () async {
+      //       if (firstTime == "00" || date == "00" || secondTime == "00") {
+      //         await Fluttertoast.showToast(msg: "Date & Time are required");
+      //       } else {
+      //         if(firstDate != null && lastDate != null && selectedDateTime != null){
+      //           Provider.of<HomeProvider>(context, listen: false).createBooking(
+      //             context,
+      //             date: selectedDateTime?.toUtc().toString(),
+      //             startTime: firstDate?.toUtc().toString(),
+      //             endTime: lastDate?.toUtc().toString(),
+      //           );
+      //         }
+      //       }
+      //     },
+      //     shape: const RoundedRectangleBorder(
+      //         borderRadius: BorderRadius.all(
+      //       Radius.circular(10),
+      //     )),
+      //     tileColor: Theme.of(context).colorScheme.secondary,
+      //     title: homeProvider.isLoading
+      //         ? SizedBox(
+      //             height: 30,
+      //             child: Center(child: const CircularProgressIndicator()))
+      //         : SizedBox(height: 30, child: Center(child: Text("Submit"),),),
+      //
+      //     // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+      //   ),
+      // ),
     );
   }
 }

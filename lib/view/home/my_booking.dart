@@ -197,7 +197,8 @@ class _MyBookingState extends State<MyBooking> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text("Appointment time"),
-                                        Text(assignedTime ?? "")
+                                        Flexible(child : Text(assignedTime ?? ""))
+                                        // Text(assignedTime ?? "")
                                       ],
                                     )
                                   : SizedBox(),
@@ -268,14 +269,15 @@ class _MyBookingState extends State<MyBooking> {
                                       bookingData.companyName
                                           .toString()
                                           .isNotEmpty)
-                                  ? Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text("Company name"),
-                                        Text(bookingData.companyName ?? "")
-                                      ],
-                                    )
+                                  ? buildRow("Company name", bookingData.companyName ?? "" )
+                              // Row(
+                              //         mainAxisAlignment:
+                              //             MainAxisAlignment.spaceBetween,
+                              //         children: [
+                              //           Text("Company name"),
+                              //           Text(bookingData.companyName ?? "")
+                              //         ],
+                              //       )
                                   : SizedBox(),
                               (bookingData.deliveryPersonName != null &&
                                       bookingData.deliveryPersonName
@@ -289,15 +291,17 @@ class _MyBookingState extends State<MyBooking> {
                                       bookingData.deliveryPersonName
                                           .toString()
                                           .isNotEmpty)
-                                  ? Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text("Deliver person name"),
-                                        Text(bookingData.deliveryPersonName ??
-                                            "")
-                                      ],
-                                    )
+                                  ? buildRow("Deliver person name", bookingData.deliveryPersonName ?? "" )
+
+                              // Row(
+                              //         mainAxisAlignment:
+                              //             MainAxisAlignment.spaceBetween,
+                              //         children: [
+                              //           Text("Deliver person name"),
+                              //           Text(bookingData.deliveryPersonName ??
+                              //               "")
+                              //         ],
+                              //       )
                                   : SizedBox(),
                               (bookingData.remarks != null &&
                                       bookingData.remarks.toString().isNotEmpty)
@@ -307,14 +311,16 @@ class _MyBookingState extends State<MyBooking> {
                                   : SizedBox(),
                               (bookingData.remarks != null &&
                                       bookingData.remarks.toString().isNotEmpty)
-                                  ? Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text("Remarks"),
-                                        Text(bookingData.remarks ?? "")
-                                      ],
-                                    )
+                                  ? buildRow("Remarks", bookingData.remarks )
+
+                              // Row(
+                              //         mainAxisAlignment:
+                              //             MainAxisAlignment.spaceBetween,
+                              //         children: [
+                              //           Text("Remarks"),
+                              //           Text(bookingData.remarks ?? "")
+                              //         ],
+                              //       )
                                   : SizedBox(),
                               SizedBox(
                                 height: 10,
@@ -323,14 +329,15 @@ class _MyBookingState extends State<MyBooking> {
                                       bookingData.servicetype
                                           .toString()
                                           .isNotEmpty)
-                                  ? Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text("Booking type"),
-                                        Text(bookingData.servicetype ?? "")
-                                      ],
-                                    )
+                                  ? buildRow("Booking type", bookingData.servicetype )
+                              // Row(
+                              //         mainAxisAlignment:
+                              //             MainAxisAlignment.spaceBetween,
+                              //         children: [
+                              //           Text("Booking type"),
+                              //           Text(bookingData.servicetype ?? "")
+                              //         ],
+                              //       )
                                   : SizedBox(),
                             ],
                           ),
@@ -341,7 +348,23 @@ class _MyBookingState extends State<MyBooking> {
                 ),
               );
             }),
+
       ),
+
+
+
+    );
+  }
+
+  buildRow( String title ,String value){
+   return  Row(
+      mainAxisAlignment:
+      MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title),
+        Flexible(child : Text(value))
+        // Text(assignedTime ?? "")
+      ],
     );
   }
 }

@@ -190,17 +190,17 @@ class _FormPageState extends State<FormPage> {
     final themeData = Provider.of<ThemeProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Request new booking"),
+        title: const Text("Request new booking"),
       ),
       backgroundColor:  themeData.isDarkTheme ? Colors.black : Colors.white,
       body: Container(
-        margin: EdgeInsets.all(20),
+        margin: const EdgeInsets.all(20),
         child: Form(
         key: formKey,
-          child: Column(
+          child: ListView(
             children: [
               _buildProfilePicture(),
-              SizedBox(height: 20,),
+              const SizedBox(height: 20,),
               CustomTextFormField(
                 borderDecoration: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),

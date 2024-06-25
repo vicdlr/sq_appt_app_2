@@ -107,7 +107,9 @@ class _CustomDropDownState extends State<CustomDropDown> {
           value: item,
           child: Text(
             item,
-            style:  Theme.of(context).textTheme.labelMedium,
+            style:  TextStyle(
+              color: Colors.black
+            ),
           ),
         ))
             .toList(),
