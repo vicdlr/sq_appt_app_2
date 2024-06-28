@@ -1,19 +1,12 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
-import 'package:flutter/widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/provider/home_provider.dart';
 
-import '../../constant/CustomImage.dart';
 import '../../provider/theme_provider.dart';
 import '../../utils/utils.dart';
 
@@ -26,9 +19,6 @@ class AddBooking extends StatefulWidget {
 
 class _AddBookingState extends State<AddBooking> {
   File? _image;
-
-
-
 
   late Future<DateTime?> selectedDate;
   DateTime? selectedDateTime;
@@ -50,7 +40,7 @@ class _AddBookingState extends State<AddBooking> {
   void showDialogPicker(BuildContext context) {
     selectedDate = showDatePicker(
       context: context,
-      helpText: 'Your Date of Birth',
+      helpText: 'Your preferred Date',
       initialDate: DateTime.now(),
       firstDate: DateTime.now().subtract(Duration(days: 0)),
       lastDate: DateTime(2050),
@@ -104,7 +94,6 @@ class _AddBookingState extends State<AddBooking> {
         DateTime isFuture = DateTime(utcDateTime!.year, utcDateTime!.month,
             utcDateTime!.day, value.hour, value.minute);
 
-
         if (!isFuture.isAfter(todayDate)) {
           Fluttertoast.showToast(msg: "Please select future time");
           return;
@@ -156,7 +145,6 @@ class _AddBookingState extends State<AddBooking> {
         DateTime isFuture = DateTime(utcDateTime!.year, utcDateTime!.month,
             utcDateTime!.day, value.hour, value.minute);
 
-
         if (!isFuture.isAfter(todayDate)) {
           Fluttertoast.showToast(msg: "Please select future time");
           return;
@@ -206,7 +194,8 @@ class _AddBookingState extends State<AddBooking> {
                 SizedBox(
                   height: 10,
                 ),
-                _buildTimePick(context, "I'm available from this time", firstTime, () {
+                _buildTimePick(
+                    context, "I'm available from this time", firstTime, () {
                   showDialogTimePicker(context);
                 }),
                 SizedBox(
@@ -234,8 +223,8 @@ class _AddBookingState extends State<AddBooking> {
               ],
             ),
           ),
-         Container(
-           margin: EdgeInsets.all(20),
+          Container(
+            margin: EdgeInsets.all(20),
             height: 45,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(25),
@@ -243,42 +232,46 @@ class _AddBookingState extends State<AddBooking> {
                 color: themeData.isDarkTheme ? Colors.white : Colors.black45,
               ),
             ),
-            child:
-              homeProvider.isLoading
-
-                      ? SizedBox(
-                          height: 30,
-                          child: Center(child: const CircularProgressIndicator()))
-                      :
-
-            TextButton(
-              onPressed: () async {
-                if (firstTime == "00" || date == "00" || secondTime == "00") {
-                  await Fluttertoast.showToast(msg: "Date & Time are required");
-                } else {
-                  if(firstDate != null && lastDate != null && selectedDateTime != null){
-                    Provider.of<HomeProvider>(context, listen: false).createBooking(
-                      context,
-                      date: selectedDateTime?.toUtc().toString(),
-                      startTime: firstDate?.toUtc().toString(),
-                      endTime: lastDate?.toUtc().toString(),
-                    );
-                  }
-                }
-              },
-              child:   Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Add Booking",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: themeData.isDarkTheme ? Colors.white : Colors.black,
+            child: homeProvider.isLoading
+                ? SizedBox(
+                    height: 30,
+                    child: Center(child: const CircularProgressIndicator()))
+                : TextButton(
+                    onPressed: () async {
+                      if (firstTime == "00" ||
+                          date == "00" ||
+                          secondTime == "00") {
+                        await Fluttertoast.showToast(
+                            msg: "Date & Time are required");
+                      } else {
+                        if (firstDate != null &&
+                            lastDate != null &&
+                            selectedDateTime != null) {
+                          Provider.of<HomeProvider>(context, listen: false)
+                              .createBooking(
+                            context,
+                            date: selectedDateTime?.toUtc().toString(),
+                            startTime: firstDate?.toUtc().toString(),
+                            endTime: lastDate?.toUtc().toString(),
+                          );
+                        }
+                      }
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Add Booking",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: themeData.isDarkTheme
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
           ),
           // Padding(
           //
