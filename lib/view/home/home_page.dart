@@ -13,6 +13,7 @@ import 'package:sq_notification/view/home/request_new_booking.dart';
 import 'package:sq_notification/view/home/settings.dart';
 
 import '../../SharedPrefrence/SharedPrefrence.dart';
+import 'get_ticket.dart';
 import 'my_booking.dart';
 import 'notification.dart';
 
@@ -28,18 +29,16 @@ class _HomePageState extends State<HomePage> {
   String fcmToken = "";
 
   void updateData(String token) async {
-
     var data = {
       "fcm_token": token,
     };
 
-    final result = await DioApi.put(path: ConfigUrl.updateProfile,data: data);
+    final result = await DioApi.put(path: ConfigUrl.updateProfile, data: data);
 
     if (result.response != null) {
       print("user updated successfully === ${result.response?.data}");
       SharedPref.setFcmToken(fcmToken);
-    }
-    else {
+    } else {
       result.handleError(context);
     }
   }
@@ -59,8 +58,7 @@ class _HomePageState extends State<HomePage> {
     final sharedPrefFcm = SharedPref.getFcmToken();
     print("Shared pref fcm == $sharedPrefFcm");
 
-
-    if(sharedPrefFcm != fcmToken){
+    if (sharedPrefFcm != fcmToken) {
       updateData(fcmToken);
 
       // print("currentUserid ==  ${firebaseAuth.currentUser?.uid}");
@@ -101,41 +99,48 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const SettingsScreen(),),);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
             },
             icon: const Icon(Icons.settings),
           ),
         ],
-        leading:  PopupMenuButton(
+        leading: PopupMenuButton(
           itemBuilder: (BuildContext context) => [
             const PopupMenuItem(
               child: Text('Request New Booking'),
               value: 'request_booking',
             ),
             const PopupMenuItem(
-              child: Text('My Bookings'),
-              value: 'my_bookings',
-            ),const PopupMenuItem(
+              child: Text('Get a Ticket'),
+              value: 'get_ticket',
+            ),
+            const PopupMenuItem(
+              child: Text('Get Appointment'),
+              value: 'get_appointment',
+            ),
+            const PopupMenuItem(
               child: Text('Notification'),
               value: 'notification',
             ),
           ],
           onSelected: (value) {
             if (value == 'request_booking') {
-               Provider.of<HomeProvider>(context,listen: false).setIndustriesEmpty();
-              Navigator.of(context).push(MaterialPageRoute(builder: (context){
+              Provider.of<HomeProvider>(context, listen: false)
+                  .setIndustriesEmpty();
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
                 return RequestNewBooking();
               }));
-
-            } else if (value == 'my_bookings') {
-              Navigator.of(context).push(MaterialPageRoute(builder: (context){
-                return MyBooking();
+            } else if (value == 'get_ticket') {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                return GetTicket();
               }));
-
-            } else if(value == "notification"){
-              Navigator.of(context).push(MaterialPageRoute(builder: (context){
-                return NotificationsScreen();
+            } else if (value == "get_appointment") {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                return MyBooking();
               }));
             }
           },

@@ -3,9 +3,9 @@
 3    package="com.baseflow.permissionhandler" >
 4
 5    <uses-sdk
-6        android:minSdkVersion="16"
-6-->/Users/vcrmac/.pub-cache/hosted/pub.dev/permission_handler_android-12.0.5/android/src/main/AndroidManifest.xml
-7        android:targetSdkVersion="16" />
-7-->/Users/vcrmac/.pub-cache/hosted/pub.dev/permission_handler_android-12.0.5/android/src/main/AndroidManifest.xml
+6        android:minSdkVersion="19"
+6-->/Users/codingearth/.pub-cache/hosted/pub.dev/permission_handler_android-12.0.13/android/src/main/AndroidManifest.xml
+7        android:targetSdkVersion="19" />
+7-->/Users/codingearth/.pub-cache/hosted/pub.dev/permission_handler_android-12.0.13/android/src/main/AndroidManifest.xml
 8
 9</manifest>

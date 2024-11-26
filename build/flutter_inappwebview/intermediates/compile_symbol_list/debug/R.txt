@@ -75,6 +75,7 @@ int attr allowStacking 0x0
 int attr alpha 0x0
 int attr alphabeticModifiers 0x0
 int attr alwaysExpand 0x0
+int attr animationBackgroundColor 0x0
 int attr arrowHeadLength 0x0
 int attr arrowShaftLength 0x0
 int attr autoCompleteTextViewStyle 0x0
@@ -161,6 +162,7 @@ int attr editTextStyle 0x0
 int attr elevation 0x0
 int attr emojiCompatEnabled 0x0
 int attr expandActivityOverflowButtonDrawable 0x0
+int attr finishPrimaryWithPlaceholder 0x0
 int attr finishPrimaryWithSecondary 0x0
 int attr finishSecondaryWithPrimary 0x0
 int attr firstBaselineToTopHeight 0x0
@@ -262,12 +264,16 @@ int attr spinBars 0x0
 int attr spinnerDropDownItemStyle 0x0
 int attr spinnerStyle 0x0
 int attr splitLayoutDirection 0x0
-int attr splitMinSmallestWidth 0x0
-int attr splitMinWidth 0x0
+int attr splitMaxAspectRatioInLandscape 0x0
+int attr splitMaxAspectRatioInPortrait 0x0
+int attr splitMinHeightDp 0x0
+int attr splitMinSmallestWidthDp 0x0
+int attr splitMinWidthDp 0x0
 int attr splitRatio 0x0
 int attr splitTrack 0x0
 int attr srcCompat 0x0
 int attr state_above_anchor 0x0
+int attr stickyPlaceholder 0x0
 int attr subMenuArrow 0x0
 int attr submitBackground 0x0
 int attr subtitle 0x0
@@ -280,6 +286,7 @@ int attr switchMinWidth 0x0
 int attr switchPadding 0x0
 int attr switchStyle 0x0
 int attr switchTextAppearance 0x0
+int attr tag 0x0
 int attr textAllCaps 0x0
 int attr textAppearanceLargePopupMenu 0x0
 int attr textAppearanceListItem 0x0
@@ -380,6 +387,8 @@ int color browser_actions_text_color 0x0
 int color browser_actions_title_color 0x0
 int color button_material_dark 0x0
 int color button_material_light 0x0
+int color call_notification_answer_color 0x0
+int color call_notification_decline_color 0x0
 int color dim_foreground_disabled_material_dark 0x0
 int color dim_foreground_disabled_material_light 0x0
 int color dim_foreground_material_dark 0x0
@@ -636,6 +645,12 @@ int drawable btn_radio_off_to_on_mtrl_animation 0x0
 int drawable btn_radio_on_mtrl 0x0
 int drawable btn_radio_on_to_off_mtrl_animation 0x0
 int drawable floating_action_mode_shape 0x0
+int drawable ic_call_answer 0x0
+int drawable ic_call_answer_low 0x0
+int drawable ic_call_answer_video 0x0
+int drawable ic_call_answer_video_low 0x0
+int drawable ic_call_decline 0x0
+int drawable ic_call_decline_low 0x0
 int drawable notification_action_background 0x0
 int drawable notification_bg 0x0
 int drawable notification_bg_low 0x0
@@ -644,6 +659,7 @@ int drawable notification_bg_low_pressed 0x0
 int drawable notification_bg_normal 0x0
 int drawable notification_bg_normal_pressed 0x0
 int drawable notification_icon_background 0x0
+int drawable notification_oversize_large_icon_bg 0x0
 int drawable notification_template_icon_bg 0x0
 int drawable notification_template_icon_low_bg 0x0
 int drawable notification_tile_bg 0x0
@@ -709,10 +725,15 @@ int id action_text 0x0
 int id actions 0x0
 int id activity_chooser_view_content 0x0
 int id add 0x0
+int id adjacent 0x0
 int id alertTitle 0x0
+int id always 0x0
+int id alwaysAllow 0x0
+int id alwaysDisallow 0x0
 int id androidx_window_activity_scope 0x0
 int id async 0x0
 int id blocking 0x0
+int id bottomToTop 0x0
 int id browser_actions_header_text 0x0
 int id browser_actions_menu_item_icon 0x0
 int id browser_actions_menu_item_text 0x0
@@ -731,11 +752,13 @@ int id decor_content_parent 0x0
 int id default_activity_button 0x0
 int id dialog_button 0x0
 int id edit_query 0x0
+int id edit_text_id 0x0
 int id expand_activities_button 0x0
 int id expanded_menu 0x0
 int id forever 0x0
 int id fragment_container_view_tag 0x0
 int id group_divider 0x0
+int id hide_ime_id 0x0
 int id home 0x0
 int id icon 0x0
 int id icon_group 0x0
@@ -751,6 +774,7 @@ int id ltr 0x0
 int id menu_search 0x0
 int id message 0x0
 int id multiply 0x0
+int id never 0x0
 int id none 0x0
 int id normal 0x0
 int id notification_background 0x0
@@ -764,6 +788,7 @@ int id progress_circular 0x0
 int id progress_horizontal 0x0
 int id pullToRefresh 0x0
 int id radio 0x0
+int id report_drawn 0x0
 int id right_icon 0x0
 int id right_side 0x0
 int id rtl 0x0
@@ -814,6 +839,7 @@ int id title 0x0
 int id titleDividerNoCustom 0x0
 int id title_template 0x0
 int id topPanel 0x0
+int id topToBottom 0x0
 int id unchecked 0x0
 int id uniform 0x0
 int id up 0x0
@@ -871,6 +897,8 @@ int layout chrome_custom_tabs_layout 0x0
 int layout custom_dialog 0x0
 int layout floating_action_mode 0x0
 int layout floating_action_mode_item 0x0
+int layout ime_base_split_test_activity 0x0
+int layout ime_secondary_split_test_activity 0x0
 int layout notification_action 0x0
 int layout notification_action_tombstone 0x0
 int layout notification_template_custom_big 0x0
@@ -914,6 +942,14 @@ int string action_go_back 0x0
 int string action_go_forward 0x0
 int string action_reload 0x0
 int string action_share 0x0
+int string androidx_startup 0x0
+int string call_notification_answer_action 0x0
+int string call_notification_answer_video_action 0x0
+int string call_notification_decline_action 0x0
+int string call_notification_hang_up_action 0x0
+int string call_notification_incoming_text 0x0
+int string call_notification_ongoing_text 0x0
+int string call_notification_screening_text 0x0
 int string copy_toast_msg 0x0
 int string fallback_menu_item_copy_link 0x0
 int string fallback_menu_item_open_in_browser 0x0
@@ -1322,8 +1358,9 @@ int styleable ActivityChooserView_initialActivityCount 1
 int[] styleable ActivityFilter { 0x0, 0x0 }
 int styleable ActivityFilter_activityAction 0
 int styleable ActivityFilter_activityName 1
-int[] styleable ActivityRule { 0x0 }
+int[] styleable ActivityRule { 0x0, 0x0 }
 int styleable ActivityRule_alwaysExpand 0
+int styleable ActivityRule_tag 1
 int[] styleable AlertDialog { 0x10100f2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 }
 int styleable AlertDialog_android_layout 0
 int styleable AlertDialog_buttonIconDimen 1
@@ -1686,20 +1723,32 @@ int[] styleable SplitPairFilter { 0x0, 0x0, 0x0 }
 int styleable SplitPairFilter_primaryActivityName 0
 int styleable SplitPairFilter_secondaryActivityAction 1
 int styleable SplitPairFilter_secondaryActivityName 2
-int[] styleable SplitPairRule { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 }
-int styleable SplitPairRule_clearTop 0
-int styleable SplitPairRule_finishPrimaryWithSecondary 1
-int styleable SplitPairRule_finishSecondaryWithPrimary 2
-int styleable SplitPairRule_splitLayoutDirection 3
-int styleable SplitPairRule_splitMinSmallestWidth 4
-int styleable SplitPairRule_splitMinWidth 5
-int styleable SplitPairRule_splitRatio 6
-int[] styleable SplitPlaceholderRule { 0x0, 0x0, 0x0, 0x0, 0x0 }
-int styleable SplitPlaceholderRule_placeholderActivityName 0
-int styleable SplitPlaceholderRule_splitLayoutDirection 1
-int styleable SplitPlaceholderRule_splitMinSmallestWidth 2
-int styleable SplitPlaceholderRule_splitMinWidth 3
-int styleable SplitPlaceholderRule_splitRatio 4
+int[] styleable SplitPairRule { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 }
+int styleable SplitPairRule_animationBackgroundColor 0
+int styleable SplitPairRule_clearTop 1
+int styleable SplitPairRule_finishPrimaryWithSecondary 2
+int styleable SplitPairRule_finishSecondaryWithPrimary 3
+int styleable SplitPairRule_splitLayoutDirection 4
+int styleable SplitPairRule_splitMaxAspectRatioInLandscape 5
+int styleable SplitPairRule_splitMaxAspectRatioInPortrait 6
+int styleable SplitPairRule_splitMinHeightDp 7
+int styleable SplitPairRule_splitMinSmallestWidthDp 8
+int styleable SplitPairRule_splitMinWidthDp 9
+int styleable SplitPairRule_splitRatio 10
+int styleable SplitPairRule_tag 11
+int[] styleable SplitPlaceholderRule { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 }
+int styleable SplitPlaceholderRule_animationBackgroundColor 0
+int styleable SplitPlaceholderRule_finishPrimaryWithPlaceholder 1
+int styleable SplitPlaceholderRule_placeholderActivityName 2
+int styleable SplitPlaceholderRule_splitLayoutDirection 3
+int styleable SplitPlaceholderRule_splitMaxAspectRatioInLandscape 4
+int styleable SplitPlaceholderRule_splitMaxAspectRatioInPortrait 5
+int styleable SplitPlaceholderRule_splitMinHeightDp 6
+int styleable SplitPlaceholderRule_splitMinSmallestWidthDp 7
+int styleable SplitPlaceholderRule_splitMinWidthDp 8
+int styleable SplitPlaceholderRule_splitRatio 9
+int styleable SplitPlaceholderRule_stickyPlaceholder 10
+int styleable SplitPlaceholderRule_tag 11
 int[] styleable StateListDrawable { 0x1010196, 0x101011c, 0x101030c, 0x101030d, 0x1010195, 0x1010194 }
 int styleable StateListDrawable_android_constantSize 0
 int styleable StateListDrawable_android_dither 1

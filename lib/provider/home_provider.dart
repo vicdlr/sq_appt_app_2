@@ -54,10 +54,7 @@ class HomeProvider extends ChangeNotifier {
       industryDataList = (result.response?.data["industries"] as List<dynamic>)
           .map((data) => IndustryModel.fromJson(data))
           .toList();
-      industryList = industryDataList
-          .map((data) =>
-              data.industry)
-          .toList();
+      industryList = industryDataList.map((data) => data.industry).toList();
       notifyListeners();
     } else {}
   }
@@ -90,7 +87,9 @@ class HomeProvider extends ChangeNotifier {
               .map((data) => OrganizationModel.fromJson(data))
               .toList();
       companiesList = companiesDataList
-          .map((data) =>  data.company,)
+          .map(
+            (data) => data.company,
+          )
           .toList();
       notifyListeners();
     } else {}
@@ -117,9 +116,8 @@ class HomeProvider extends ChangeNotifier {
           (result.response?.data["departments"] as List<dynamic>)
               .map((data) => DepartmentModel.fromJson(data))
               .toList();
-      departmentList = departmentDataList
-          .map((data) => data.department)
-          .toList();
+      departmentList =
+          departmentDataList.map((data) => data.department).toList();
       notifyListeners();
     } else {}
   }
@@ -146,7 +144,9 @@ class HomeProvider extends ChangeNotifier {
           .map((data) => GroupModel.fromJson(data))
           .toList();
       groupList = groupDataList
-          .map((data) => data.groupname, )
+          .map(
+            (data) => data.groupname,
+          )
           .toList();
       notifyListeners();
     } else {}
@@ -171,11 +171,7 @@ class HomeProvider extends ChangeNotifier {
       unitDataList = (result.response?.data["filteredData"] as List<dynamic>)
           .map((data) => UnitModel.fromJson(data))
           .toList();
-      unitList = unitDataList
-          .map(
-            (data) => data.unit
-          )
-          .toList();
+      unitList = unitDataList.map((data) => data.unit).toList();
       notifyListeners();
     } else {}
   }
@@ -262,9 +258,13 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool isLoadingBooking = false;
+
   Future<void> getAllBooking(
     BuildContext context,
   ) async {
+    isLoadingBooking = true;
+    notifyListeners();
     final result = await DioApi.get(
       path: (ConfigUrl.getBookingUrl + SharedPref.getUserData().id),
     );
@@ -276,8 +276,11 @@ class HomeProvider extends ChangeNotifier {
       // bookingList.sort((a, b) {
       //   return b.bookingDate!.compareTo(a.bookingDate!);
       // });
+      isLoadingBooking = false;
       notifyListeners();
     } else {
+      isLoadingBooking = false;
+      notifyListeners();
       result.handleError(context);
     }
   }

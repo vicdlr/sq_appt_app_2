@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sq_notification/Model/CityModel.dart';
@@ -9,16 +7,11 @@ import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 
 class ThemeProvider extends ChangeNotifier {
-
   late ThemeData _themeData;
-
 
   List<CityModel> cities = [];
 
   List<String> cityDropDown = [];
-
-
-
 
   bool isDarkTheme = false;
   double fSize = 14;
@@ -62,117 +55,121 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> getRegionData()async{
+  Future<void> getRegionData() async {
     final result = await DioApi.get(path: ConfigUrl.getCityurl);
-    if(result.response != null){
-     cities =  (result.response?.data["cities"] as  List<dynamic>).map((data) => CityModel.fromJson(data)).toList();
-     cityDropDown = cities.map((data) =>  data.city ).toList();
-     print("city == $cityDropDown");
-     notifyListeners();
-    }else{
-
-    }
+    if (result.response != null) {
+      cities = (result.response?.data["cities"] as List<dynamic>)
+          .map((data) => CityModel.fromJson(data))
+          .toList();
+      cityDropDown = cities.map((data) => data.city).toList();
+      print("city == $cityDropDown");
+      notifyListeners();
+    } else {}
   }
 
-  Future<void> setSelectedCity(var dataProfile)async{
-
-    final result = await DioApi.put(path: ConfigUrl.updateProfile, data: dataProfile);
-    if(result.response != null){
+  Future<void> setSelectedCity(var dataProfile) async {
+    final result =
+        await DioApi.put(path: ConfigUrl.updateProfile, data: dataProfile);
+    if (result.response != null) {
       await Fluttertoast.showToast(msg: "Updated successfully");
-    final userData = SharedPref.getUserData();
-    userData.city = result.response?.data["city"];
-    SharedPref.setUserData(userData);
-    }else{
-
-    }
+      final userData = SharedPref.getUserData();
+      userData.city = result.response?.data["city"];
+      SharedPref.setUserData(userData);
+    } else {}
   }
-
-  }
-
-
-
+}
 
 ThemeData lightMode(double fSize) => ThemeData(
-    brightness: Brightness.light,
-    dialogBackgroundColor: Colors.white,
-    textTheme: TextTheme(
-      displayLarge: TextStyle(
-        fontSize: (fSize + 20), // Use fSize dynamically here
-        fontWeight: FontWeight.bold,
+      brightness: Brightness.light,
+      dialogBackgroundColor: Colors.white,
+      appBarTheme: const AppBarTheme(
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
       ),
-      headlineMedium:  TextStyle(
-        fontSize: (fSize),
-      ),
-      titleMedium: TextStyle(
-        fontSize: (fSize), // Use fSize dynamically here
-        fontWeight: FontWeight.bold,
-      ),
-      labelLarge: TextStyle(
+      textTheme: TextTheme(
+        displayLarge: TextStyle(
+          fontSize: (fSize + 20),
+          fontWeight: FontWeight.bold,
+        ),
+        headlineMedium: TextStyle(
           fontSize: (fSize),
-          color: Colors.black// Use fSize dynamically here
+        ),
+        titleMedium: TextStyle(
+          fontSize: (fSize),
+          fontWeight: FontWeight.bold,
+        ),
+        labelLarge: TextStyle(
+          fontSize: (fSize),
+          color: Colors.black,
+        ),
+        labelMedium: TextStyle(
+          fontSize: (fSize),
+        ),
+        labelSmall: TextStyle(
+          fontSize: (fSize),
+          color: Colors.black54,
+        ),
+        titleLarge: TextStyle(
+          fontSize: (fSize + 10),
+          fontWeight: FontWeight.bold,
+        ),
       ),
-      labelMedium: TextStyle(
-        fontSize: (fSize), // Use fSize dynamically here
+      colorScheme: ColorScheme.light(
+        background: Colors.white70,
+        primary: Colors.black,
+        secondary: Colors.white,
+        secondaryContainer: Colors.grey[200],
       ),
-      labelSmall: TextStyle(
-          fontSize: (fSize), // Use fSize dynamically here
-          color: Colors.black54
+      sliderTheme: const SliderThemeData(
+        inactiveTrackColor: Colors.black26,
       ),
-
-      titleLarge:  TextStyle(
-        fontSize: (fSize + 10),
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    colorScheme:  ColorScheme.light(
-      background: Colors.white70,
-      primary: Colors.black,
-      secondary: Colors.white,
-        secondaryContainer: Colors.grey[200]
-    ),
-    sliderTheme: const SliderThemeData(
-        inactiveTrackColor: Colors.black26
-    )
-);
+    );
 
 ThemeData darkMode(double fSize) => ThemeData(
-
-  brightness: Brightness.dark,
-  dialogBackgroundColor: Colors.black,
-  textTheme: TextTheme(
-
-    displayLarge: TextStyle(
-      fontSize: (fSize + 20), // Use fSize dynamically here
-      fontWeight: FontWeight.bold,
-    ),
-
-    headlineMedium:  TextStyle(
-      fontSize: (fSize),
-    ),
-    titleMedium: TextStyle(
-      fontSize: (fSize), // Use fSize dynamically here
-      fontWeight: FontWeight.bold,
-    ),
-    labelLarge: TextStyle(
-      fontSize: (fSize),
-      color: Colors.white// Use fSize dynamically here
-    ),
-    labelMedium: TextStyle(
-      fontSize: (fSize), // Use fSize dynamically here
-    ),
-    labelSmall: TextStyle(
-      fontSize: (fSize), // Use fSize dynamically here
-      color: Colors.white38,
-    ),
-    titleLarge:  TextStyle(
-      fontSize: (fSize + 10),
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-  colorScheme:  ColorScheme.dark(
-    background: Colors.black,
-    primary: Colors.white,
-    secondary: Colors.white38,
-      secondaryContainer: Colors.grey[500]
-  ),
-);
+      brightness: Brightness.dark,
+      dialogBackgroundColor: Colors.black,
+      appBarTheme: const AppBarTheme(
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      textTheme: TextTheme(
+        displayLarge: TextStyle(
+          fontSize: (fSize + 20),
+          fontWeight: FontWeight.bold,
+        ),
+        headlineMedium: TextStyle(
+          fontSize: (fSize),
+        ),
+        titleMedium: TextStyle(
+          fontSize: (fSize),
+          fontWeight: FontWeight.bold,
+        ),
+        labelLarge: TextStyle(
+          fontSize: (fSize),
+          color: Colors.white,
+        ),
+        labelMedium: TextStyle(
+          fontSize: (fSize),
+        ),
+        labelSmall: TextStyle(
+          fontSize: (fSize),
+          color: Colors.white38,
+        ),
+        titleLarge: TextStyle(
+          fontSize: (fSize + 10),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      colorScheme: ColorScheme.dark(
+        background: Colors.black,
+        primary: Colors.white,
+        secondary: Colors.white38,
+        secondaryContainer: Colors.grey[500],
+      ),
+    );

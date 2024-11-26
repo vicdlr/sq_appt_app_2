@@ -76,6 +76,7 @@ attr allowStacking
 attr alpha
 attr alphabeticModifiers
 attr alwaysExpand
+attr animationBackgroundColor
 attr arrowHeadLength
 attr arrowShaftLength
 attr autoCompleteTextViewStyle
@@ -165,6 +166,7 @@ attr editTextStyle
 attr elevation
 attr emojiCompatEnabled
 attr expandActivityOverflowButtonDrawable
+attr finishPrimaryWithPlaceholder
 attr finishPrimaryWithSecondary
 attr finishSecondaryWithPrimary
 attr firstBaselineToTopHeight
@@ -269,12 +271,16 @@ attr spinBars
 attr spinnerDropDownItemStyle
 attr spinnerStyle
 attr splitLayoutDirection
-attr splitMinSmallestWidth
-attr splitMinWidth
+attr splitMaxAspectRatioInLandscape
+attr splitMaxAspectRatioInPortrait
+attr splitMinHeightDp
+attr splitMinSmallestWidthDp
+attr splitMinWidthDp
 attr splitRatio
 attr splitTrack
 attr srcCompat
 attr state_above_anchor
+attr stickyPlaceholder
 attr subMenuArrow
 attr submitBackground
 attr subtitle
@@ -287,6 +293,7 @@ attr switchMinWidth
 attr switchPadding
 attr switchStyle
 attr switchTextAppearance
+attr tag
 attr textAllCaps
 attr textAppearanceLargePopupMenu
 attr textAppearanceListItem
@@ -698,6 +705,7 @@ drawable notification_bg_low_pressed
 drawable notification_bg_normal
 drawable notification_bg_normal_pressed
 drawable notification_icon_background
+drawable notification_oversize_large_icon_bg
 drawable notification_template_icon_bg
 drawable notification_template_icon_low_bg
 drawable notification_tile_bg
@@ -771,16 +779,20 @@ id action_text
 id actions
 id activity_chooser_view_content
 id add
+id adjacent
 id adjust_height
 id adjust_width
 id alertTitle
 id always
+id alwaysAllow
+id alwaysDisallow
 id androidx_window_activity_scope
 id async
 id auto
 id beginning
 id blocking
 id bottom
+id bottomToTop
 id browser_actions_header_text
 id browser_actions_menu_item_icon
 id browser_actions_menu_item_text
@@ -804,6 +816,7 @@ id default_activity_button
 id dialog_button
 id disableHome
 id edit_query
+id edit_text_id
 id end
 id end_padder
 id expand_activities_button
@@ -811,6 +824,7 @@ id expanded_menu
 id forever
 id fragment_container_view_tag
 id group_divider
+id hide_ime_id
 id home
 id homeAsUp
 id icon
@@ -903,6 +917,7 @@ id titleDividerNoCustom
 id title_template
 id top
 id topPanel
+id topToBottom
 id unchecked
 id uniform
 id up
@@ -964,6 +979,8 @@ layout chrome_custom_tabs_layout
 layout custom_dialog
 layout floating_action_mode
 layout floating_action_mode_item
+layout ime_base_split_test_activity
+layout ime_secondary_split_test_activity
 layout notification_action
 layout notification_action_tombstone
 layout notification_media_action
@@ -1420,7 +1437,7 @@ styleable ActionMenuView
 styleable ActionMode background backgroundSplit closeItemLayout height subtitleTextStyle titleTextStyle
 styleable ActivityChooserView expandActivityOverflowButtonDrawable initialActivityCount
 styleable ActivityFilter activityAction activityName
-styleable ActivityRule alwaysExpand
+styleable ActivityRule alwaysExpand tag
 styleable AlertDialog android_layout buttonIconDimen buttonPanelSideLayout listItemLayout listLayout multiChoiceItemLayout showTitle singleChoiceItemLayout
 styleable AnimatedStateListDrawableCompat android_dither android_visible android_variablePadding android_constantSize android_enterFadeDuration android_exitFadeDuration
 styleable AnimatedStateListDrawableItem android_id android_drawable
@@ -1457,8 +1474,8 @@ styleable SearchView android_focusable android_maxWidth android_inputType androi
 styleable SignInButton buttonSize colorScheme scopeUris
 styleable Spinner android_entries android_popupBackground android_prompt android_dropDownWidth popupTheme
 styleable SplitPairFilter primaryActivityName secondaryActivityAction secondaryActivityName
-styleable SplitPairRule clearTop finishPrimaryWithSecondary finishSecondaryWithPrimary splitLayoutDirection splitMinSmallestWidth splitMinWidth splitRatio
-styleable SplitPlaceholderRule placeholderActivityName splitLayoutDirection splitMinSmallestWidth splitMinWidth splitRatio
+styleable SplitPairRule animationBackgroundColor clearTop finishPrimaryWithSecondary finishSecondaryWithPrimary splitLayoutDirection splitMaxAspectRatioInLandscape splitMaxAspectRatioInPortrait splitMinHeightDp splitMinSmallestWidthDp splitMinWidthDp splitRatio tag
+styleable SplitPlaceholderRule animationBackgroundColor finishPrimaryWithPlaceholder placeholderActivityName splitLayoutDirection splitMaxAspectRatioInLandscape splitMaxAspectRatioInPortrait splitMinHeightDp splitMinSmallestWidthDp splitMinWidthDp splitRatio stickyPlaceholder tag
 styleable StateListDrawable android_dither android_visible android_variablePadding android_constantSize android_enterFadeDuration android_exitFadeDuration
 styleable StateListDrawableItem android_drawable
 styleable SwipeRefreshLayout swipeRefreshLayoutProgressSpinnerBackgroundColor

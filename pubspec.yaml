@@ -41,7 +41,7 @@ dependencies:
   fluttertoast: ^8.0.9
 #  cloud_firestore: ^4.14.0
   firebase_messaging: ^14.7.10
-  flutter_local_notifications: ^16.3.2
+  flutter_local_notifications: ^18.0.1
   qr_flutter: ^4.1.0
   shared_preferences: ^2.2.2
   provider: ^6.1.1
@@ -60,6 +60,8 @@ dependencies:
   omni_datetime_picker: ^1.0.9
   grouped_list: ^5.1.2
   permission_handler: ^11.3.1
+  flex_color_scheme: ^8.0.1
+  mobile_scanner: ^3.5.6
 
 #New Upgraded Defective WebView
   # The following adds the Cupertino Icons font to your application.
