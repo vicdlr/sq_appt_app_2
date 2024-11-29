@@ -142,6 +142,10 @@ class _HomePageState extends State<HomePage> {
               Navigator.of(context).push(MaterialPageRoute(builder: (context) {
                 return MyBooking();
               }));
+            } else if (value == "notification") {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                return NotificationsScreen();
+              }));
             }
           },
         ),
