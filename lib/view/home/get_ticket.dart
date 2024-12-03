@@ -83,9 +83,6 @@ class _GetTicketState extends State<GetTicket> {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              // can you test  current changes yes ?tested already
-              // connect phyical device yes
-
               builder: (context) =>
                   WebViewPage(url: url + "/?ID=${SharedPref.getUserData().id}"),
             ),
