@@ -2,14 +2,14 @@
   "project_info": {
     "project_number": "1089386024720",
     "project_id": "sqnotification",
-    "storage_bucket": "sqnotification.appspot.com"
+    "storage_bucket": "sqnotification.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1089386024720:android:5a3aa22517dc139252df95",
+        "mobilesdk_app_id": "1:1089386024720:android:87b31924641d294852df95",
         "android_client_info": {
-          "package_name": "com.example.sq_notification"
+          "package_name": "com.smartqsys.sq_notification"
         }
       },
       "oauth_client": [],
