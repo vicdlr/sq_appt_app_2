@@ -127,7 +127,7 @@ class _LoginPageState extends State<LoginPage> {
   //     Fluttertoast.showToast(msg: "Not all fields are valid");
   //   }
   // }
-
+  
   bool showPass = true;
 
   @override

@@ -9,6 +9,7 @@
 //   int minutesLeft = startTime.difference(currentTime).inMinutes;
 
 abstract class ConfigUrl {
+  // https://node-app-server.onrender.com/
   static String baseUrl = "https://node-app-server.onrender.com";
   static String loginUrl = "/login";
   static String signUpUrl = "/register";
