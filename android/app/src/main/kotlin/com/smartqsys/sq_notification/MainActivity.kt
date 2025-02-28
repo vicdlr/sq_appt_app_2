@@ -1,4 +1,4 @@
-package com.example.sq_notification
+package com.smartqsys.sq_notification
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -31,7 +31,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     //namespace "com.example.sq_notification"
     namespace "com.smartqsys.sq_notification"
-    compileSdkVersion 33
+    compileSdkVersion 34
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -55,7 +55,7 @@ android {
         minSdkVersion 21
         //versionCode  3
         //versionName "3.0.1"
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
