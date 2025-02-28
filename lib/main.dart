@@ -9,9 +9,6 @@ import 'package:sq_notification/provider/home_provider.dart';
 import 'package:sq_notification/provider/theme_provider.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
 import 'package:sq_notification/view/home/bottom_nav_bar.dart';
-import 'package:sq_notification/view/home/home_page.dart';
-
-import 'constant/firebase_constant.dart';
 import 'firebase_options.dart';
 
 double globalFontSize = 0.0;
@@ -30,7 +27,7 @@ void main() async {
         ChangeNotifierProvider(
             create: (BuildContext context) => HomeProvider()),
       ],
-      child: const MyApp(),
+      child:  MyApp(),
     ),
   );
 }
@@ -63,7 +60,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    log("profile details ${SharedPref.getUserData()}");
+    //log("profile details ${SharedPref.getUserData()}");
     return Consumer<ThemeProvider>(
       builder: (context, value, child) {
         return MaterialApp(
