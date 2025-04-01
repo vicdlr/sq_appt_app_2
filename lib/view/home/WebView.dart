@@ -27,7 +27,7 @@ class _WebViewState extends State<WebView> {
           children: [
             InAppWebView(
               initialUrlRequest: URLRequest(
-                  url: Uri.parse(widget.url)),
+                  url: WebUri(widget.url)),
               onWebViewCreated: (InAppWebViewController controller) {
                 inAppWebViewController = controller;
               },

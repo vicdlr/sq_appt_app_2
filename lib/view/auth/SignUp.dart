@@ -271,6 +271,7 @@ class _SignupPageState extends State<SignupPage> {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: GestureDetector(
         onTap: () {
           FocusManager.instance.primaryFocus?.unfocus();

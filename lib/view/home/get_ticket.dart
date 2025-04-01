@@ -127,7 +127,7 @@ class WebViewPage extends StatelessWidget {
         ),
       ),
       body: InAppWebView(
-        initialUrlRequest: URLRequest(url: Uri.parse(url)),
+        initialUrlRequest: URLRequest(url: WebUri(url)),
       ),
     );
   }

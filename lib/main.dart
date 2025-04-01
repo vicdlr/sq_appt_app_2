@@ -52,6 +52,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       Provider.of<ThemeProvider>(context, listen: false).getThemeData();
     });
