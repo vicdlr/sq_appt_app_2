@@ -56,6 +56,10 @@ class Result {
           Dialogs.errorDialog(context, 'There was a problem. Try again.');
         }
       }
+      else if (dioError!.response != null){
+        final errMsg = dioError!.response?.data;
+        Dialogs.errorDialog(context, errMsg);
+      }
     }
   }
 }

@@ -20,11 +20,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+
   void deleteAccount() async {
     var headers = {'x-access-token': SharedPref.getAuthToken()};
     var dio = Dio();
     var response = await dio.request(
-      'https://node-app-server.onrender.com/device/${SharedPref.getUserData().id}',
+      'https://node-app-server.onrender.com/users/${SharedPref.getUserData().id}',
       options: Options(
         method: 'DELETE',
         headers: headers,
@@ -245,6 +246,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(
                 height: 10,
               ),
+
+
+              const SizedBox(
+                height: 10,
+              ),
+
+
+
+
+
+
+
+
+
               /*ListTile(
                 onTap: () {
                   Dialogs.confirmDelete(context, "Do you really want to delete your account ?", () async{
@@ -299,6 +314,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(
                 height: 10,
               ),
+
+              // Delete Account Button
+              ElevatedButton(
+                onPressed: () {
+                  // Show a confirmation dialog before deleting the account
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Delete Account"),
+                          content: Text("Are you sure you want to delete your account? This action is irreversible."),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop(); // Close dialog
+                              },
+                              child: Text("No"),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Navigator.of(context).pop(); // Close dialog
+                                deleteAccount(); // Call the deleteAccount method
+                                // Optionally, log out and navigate to signup page
+                                SharedPref.deleteData();
+                                Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(builder: (context) {
+                                      return const SignupPage();
+                                    }),
+                                        (route) => false
+                                );
+                              },
+                              child: Text("Yes"),
+                            ),
+                          ],
+                        );
+                      }
+                  );
+                },
+                child: Text("Delete Account"),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+                  backgroundColor: Colors.red, // Red color for delete action
+                ),
+              ),
+
+              SizedBox(
+                height: 10,
+              ),
+
             ],
           ),
         ),

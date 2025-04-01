@@ -30,7 +30,7 @@ class Dialogs {
               ),
               InkWell(
                 child: const Text(
-                  'Back',
+                  'Ok',
                   style: TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
@@ -75,7 +75,7 @@ class Dialogs {
               ),
               InkWell(
                 child: const Text(
-                  'Back',
+                  'Ok',
                   style: TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.bold,),

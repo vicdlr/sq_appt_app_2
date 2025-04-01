@@ -17,7 +17,7 @@ import '../../provider/theme_provider.dart';
 import '../../widget/CustomTextFormField.dart';
 import '../home/bottom_nav_bar.dart';
 import '../home/home_page.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -64,8 +64,10 @@ class _LoginPageState extends State<LoginPage> {
       print("login response data == ${result.response?.data}");
       SharedPref.setAuthToken("${result.response?.data["token"]}");
       SharedPref.setUserData(UserData.fromJson(result.response?.data["device"]));
+      SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
       print("shared auth token ${SharedPref.getAuthToken()}");
       print("shared user data  ${SharedPref.getUserData().toJson()}");
+      print("register customer ID ${SharedPref.getUserData().customerId}");
       setState(() {
         isLoading = false;
       });
@@ -129,6 +131,17 @@ class _LoginPageState extends State<LoginPage> {
   // }
   
   bool showPass = true;
+
+
+  // Function to launch the URL for the Forgot Password page
+  void _launchURL() async {
+    final Uri url = Uri.parse('https://www.google.com');  // Replace with actual URL for Forgot Password
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);  // Use launchUrl instead of launch
+    } else {
+      throw 'Could not launch $url';  // Error handling
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +229,18 @@ class _LoginPageState extends State<LoginPage> {
                           }
                         },
                       ),
+
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: TextButton(
+                          onPressed: _launchURL, // Call the function when tapped
+                          child: Text(
+                            "Forgot Password?",
+                            style: TextStyle(color: Colors.purple),
+                          ),
+                        ),
+                      ),
+
                     ],
                   ),
                 ),

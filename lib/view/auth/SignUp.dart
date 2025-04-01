@@ -144,21 +144,58 @@ class _SignupPageState extends State<SignupPage> {
       if (result.response?.statusCode == 200) {
         print("submit /register response data == ${result.response?.data}");
         SharedPref.setAuthToken("${result.response?.data["token"]}");
-        SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
+        //SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
         print("shared auth token ${SharedPref.getAuthToken()}");
-        print("shared user data  ${SharedPref.getUserData().toJson()}");
-        print("register customer ID ${SharedPref.getUserData().customerId}");
+        // print("shared user data  ${SharedPref.getUserData().toJson()}");
+        // print("register customer ID ${SharedPref.getUserData().customerId}");
         await Fluttertoast.showToast(msg: "successfully Registered");
         setState(() {
           isLoading = false;
         });
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (c) =>  BottomNavBar(),
-          ),
-              (route) => false,
+
+
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Prevents closing by tapping outside
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Registration Successful"),
+              content: Text("Please check your email for the activation link."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                    nameTextEditingController.clear();
+                    emailTextEditingController.clear();
+                    phoneTextEditingController.clear();
+                    passwordTextEditingController.clear();
+                    cityTextEditingController.clear();
+                    // Navigator.pushAndRemoveUntil(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (c) => BottomNavBar(),
+                    //   ),
+                    //       (route) => false,
+                    // );
+
+                    // delete all the previous entries
+
+
+
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
         );
+        // Navigator.pushAndRemoveUntil(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (c) =>  BottomNavBar(),
+        //   ),
+        //       (route) => false,
+        // );
 
         // await firebaseAuth
         //     .createUserWithEmailAndPassword(
