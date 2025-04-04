@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
 
       print("login response data == ${result.response?.data}");
       SharedPref.setAuthToken("${result.response?.data["token"]}");
-      SharedPref.setUserData(UserData.fromJson(result.response?.data["device"]));
+      // SharedPref.setUserData(UserData.fromJson(result.response?.data["device"]));
       SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
       print("shared auth token ${SharedPref.getAuthToken()}");
       print("shared user data  ${SharedPref.getUserData().toJson()}");
