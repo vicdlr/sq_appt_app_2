@@ -37,10 +37,28 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>We need access to Apple Music to play music directly from your library.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>We need Bluetooth access at all times to keep devices connected.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>We need Bluetooth access to connect with nearby devices.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>We need access to your calendar to add events.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>To capture profile photo please grant camera access</string>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to your contacts to enable social features.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to provide location-based services.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location when the app is in use to provide relevant information.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>We need access to your device's motion sensors for activity tracking.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>The App requires access to your gallery to allow you to take a photo of the item to process your request</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We need access to speech recognition to transcribe your voice input.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
@@ -56,11 +74,6 @@
 	<true/>
 	<key>UIStatusBarStyle</key>
 	<string></string>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
