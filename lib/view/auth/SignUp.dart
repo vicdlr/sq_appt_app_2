@@ -80,7 +80,7 @@ class _SignupPageState extends State<SignupPage> {
     var data = {
       //"username": nameTextEditingController.text,
       "username": firebaseUid,  // Use username as place holder
-      "email": emailTextEditingController.text,
+      "email": emailTextEditingController.text.toLowerCase(),
       //"fcm_token": fcmToken
     };
 
@@ -131,7 +131,7 @@ class _SignupPageState extends State<SignupPage> {
         "deviceId": _identifier,
         "username": nameTextEditingController.text,
         "password": passwordTextEditingController.text,
-        "email": emailTextEditingController.text,
+        "email": emailTextEditingController.text.toLowerCase(),
         "fcm_token": fcmToken,
         "phoneNo": phoneTextEditingController.text,
         "platForm": Platform.isAndroid ? "android" : "ios",
