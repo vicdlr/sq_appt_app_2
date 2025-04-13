@@ -119,7 +119,7 @@ class _HomePageState extends State<HomePage> {
               value: 'get_ticket',
             ),
             const PopupMenuItem(
-              child: Text('Get Appointment'),
+              child: Text('My Bookings'),
               value: 'get_appointment',
             ),
             const PopupMenuItem(
