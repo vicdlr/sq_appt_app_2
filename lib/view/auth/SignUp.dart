@@ -164,24 +164,20 @@ class _SignupPageState extends State<SignupPage> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
+                    // Clear the text fields
                     nameTextEditingController.clear();
                     emailTextEditingController.clear();
                     phoneTextEditingController.clear();
                     passwordTextEditingController.clear();
                     cityTextEditingController.clear();
-                    // Navigator.pushAndRemoveUntil(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (c) => BottomNavBar(),
-                    //   ),
-                    //       (route) => false,
-                    // );
 
-                    // delete all the previous entries
+                    // First dismiss the dialog
+                    Navigator.of(context).pop();
 
-
-
+                    // Then navigate to the login page
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context) => LoginPage()),
+                    );
                   },
                   child: Text("OK"),
                 ),
@@ -189,6 +185,7 @@ class _SignupPageState extends State<SignupPage> {
             );
           },
         );
+as
         // Navigator.pushAndRemoveUntil(
         //   context,
         //   MaterialPageRoute(
