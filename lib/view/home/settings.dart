@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/utils/utils.dart';
+import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
 import 'package:sq_notification/view/home/widget/search_dropdown.dart';
 
@@ -297,7 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SharedPref.deleteData();
                     Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (context) {
-                      return const SignupPage();
+                      return const LoginPage();
                     }), (route) => false);
                   }
                 },
