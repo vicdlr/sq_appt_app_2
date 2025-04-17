@@ -32,7 +32,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: themeData.isDarkTheme ? Colors.black : Colors.white,
       appBar: AppBar(
-        title: Text("Notification"),
+        title: Text("Notifications"),
       ),
       // appBar: _buildAppBar(context),
       body: notificationList.isLoading
