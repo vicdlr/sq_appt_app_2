@@ -135,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
 
   // Function to launch the URL for the Forgot Password page
   void _launchURL() async {
-    final Uri url = Uri.parse('https://node-app-server.onrender.com/forgetPasswordPage');  // Replace with actual URL for Forgot Password
+    final Uri url = Uri.parse('https://node-app-server.onrender.com/resetPage');  // Replace with actual URL for Forgot Password
     if (await canLaunchUrl(url)) {
       await launchUrl(url);  // Use launchUrl instead of launch
     } else {

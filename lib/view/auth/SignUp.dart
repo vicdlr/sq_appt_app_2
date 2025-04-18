@@ -185,7 +185,6 @@ class _SignupPageState extends State<SignupPage> {
             );
           },
         );
-as
         // Navigator.pushAndRemoveUntil(
         //   context,
         //   MaterialPageRoute(
