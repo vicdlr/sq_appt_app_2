@@ -143,9 +143,9 @@ class _SignupPageState extends State<SignupPage> {
 
       if (result.response?.statusCode == 200) {
         print("submit /register response data == ${result.response?.data}");
-        SharedPref.setAuthToken("${result.response?.data["token"]}");
+        //SharedPref.setAuthToken("${result.response?.data["token"]}");
         //SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
-        print("shared auth token ${SharedPref.getAuthToken()}");
+        //print("shared auth token ${SharedPref.getAuthToken()}");
         // print("shared user data  ${SharedPref.getUserData().toJson()}");
         // print("register customer ID ${SharedPref.getUserData().customerId}");
         await Fluttertoast.showToast(msg: "successfully Registered");
