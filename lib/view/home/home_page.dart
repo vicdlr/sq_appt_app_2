@@ -161,7 +161,8 @@ class _HomePageState extends State<HomePage> {
               ? const CircularProgressIndicator()
               : QrImageView(
                   //data: "${firebaseAuth.currentUser?.uid}  $fcmToken",
-                  data: "${SharedPref.getUserData().customerId}$fcmToken",
+                  data:
+                      "${SharedPref.getUserData().customerId}${fcmToken}sqs${SharedPref.getAuthToken()}",
                   version: QrVersions.auto,
                   size: 200.0,
                 ),
