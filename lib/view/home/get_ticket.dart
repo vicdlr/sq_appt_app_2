@@ -84,7 +84,7 @@ class _GetTicketState extends State<GetTicket> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  WebViewPage(url: url + "?ID=${SharedPref.getUserData().id}"),
+                  WebViewPage(url: url + "customerID?=${SharedPref.getUserData().customerId}&email=${SharedPref.getUserData().email}"),
             ),
           );
 
