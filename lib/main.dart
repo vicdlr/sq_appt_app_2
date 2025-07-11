@@ -12,12 +12,14 @@ import 'package:sq_notification/view/home/bottom_nav_bar.dart';
 import 'firebase_options.dart';
 
 double globalFontSize = 0.0;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   await SharedPref.init();
   runApp(
     MultiProvider(
@@ -66,6 +68,7 @@ class _MyAppState extends State<MyApp> {
       builder: (context, value, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          navigatorKey: navigatorKey,
           title: 'Sq notifications',
           theme: value.themeData,
           home: SharedPref.getAuthToken() != null
