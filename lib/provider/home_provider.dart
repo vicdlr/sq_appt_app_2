@@ -14,6 +14,7 @@ import 'package:sq_notification/api/configurl.dart';
 
 import '../Model/DepartmentModel.dart';
 import '../Model/GroupModel.dart';
+import '../Model/ServiceOptionModel.dart';
 import '../Model/UnitModel.dart';
 import '../view/home/bottom_nav_bar.dart';
 
@@ -45,6 +46,7 @@ class HomeProvider extends ChangeNotifier {
 
   List<BookingModel> bookingList = [];
   List<NotificationModel> notificationList = [];
+  List<ServiceOptionModel> serviceOptions = [];
 
   Future<void> getIndustriesList() async {
     final result = await DioApi.get(
@@ -208,6 +210,7 @@ class HomeProvider extends ChangeNotifier {
       'organisation': selectedCompanies,
       'department': selectedDepartment,
       'groups': selectedGroup,
+      'customerid': SharedPref.getUserData().customerId,
       if (file != null)
         'image': [
           await MultipartFile.fromFile(
@@ -333,5 +336,39 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
       result.handleError(context);
     }
+  }
+
+
+  // get the servotpions and notes
+  Future<void> getServiceOptions(BuildContext context) async {
+    isLoading = true;
+    notifyListeners();
+
+    final result = await DioApi.post(path: "/service-options", data: {
+      "industry": selectedIndusty,
+      "department": selectedDepartment,
+      "groupname": selectedGroup,
+      "city": SharedPref.getUserData().city,
+      "company": selectedCompanies,
+      "servicetype": serviceType,
+      "unit": selectedUnit,
+    });
+
+    if (result.response != null) {
+      try {
+        serviceOptions = (result.response?.data["data"] as List<dynamic>)
+            .map((data) => ServiceOptionModel.fromJson(data))
+            .toList();
+
+        notifyListeners();
+      } catch (e) {
+        Fluttertoast.showToast(msg: "Something went wrong. Please try again.");
+      }
+    } else {
+      result.handleError(context); // Graceful error message fallback
+    }
+
+    isLoading = false;
+    notifyListeners();
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/services.dart';
-
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,7 +12,7 @@ import '../../provider/home_provider.dart';
 import '../../widget/CustomTextFormField.dart';
 
 class FormPage extends StatefulWidget {
-   FormPage({super.key});
+  FormPage({super.key});
 
   @override
   State<FormPage> createState() => _FormPageState();
@@ -22,300 +21,218 @@ class FormPage extends StatefulWidget {
 class _FormPageState extends State<FormPage> {
   File? _image;
   TextEditingController companyNameController = TextEditingController();
-
   TextEditingController deliveryPersonController = TextEditingController();
-
   TextEditingController remarksController = TextEditingController();
 
   final formKey = GlobalKey<FormState>();
 
+  String? note1Hint;
+  String? note2Hint;
+  String? note3Hint;
+  bool isServiceOptionsLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero, () async {
+      final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      await homeProvider.getServiceOptions(context);
+      for (var item in homeProvider.serviceOptions) {
+        switch (item.key) {
+          case 'note1':
+            note1Hint = item.value.trim();
+            break;
+          case 'note2':
+            note2Hint = item.value.trim();
+            break;
+          case 'note3':
+            note3Hint = item.value.trim();
+            break;
+        }
+      }
+      setState(() {
+        isServiceOptionsLoading = false;
+      });
+    });
+  }
+
   Future _getImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
-
     setState(() {
       _image = pickedFile != null ? File(pickedFile.path) : null;
     });
   }
 
-  Future<Map<Permission, PermissionStatus>> _requestPermissions() async {
-    print("This is thhhe stuff we are tring to access");
-    Map<Permission, PermissionStatus> statuses = {};
-    statuses[Permission.camera] = await _requestCameraPermission();
-    statuses[Permission.storage] = await _requestStoragePermission();
-    return statuses;
-  }
-
-  void _checkPermission(BuildContext context,ImageSource source) async {
-    // FocusScope.of(context).requestFocus(FocusNode());
-    Map<Permission, PermissionStatus> statues = await [
+  void _checkPermission(BuildContext context, ImageSource source) async {
+    Map<Permission, PermissionStatus> statuses = await [
       Permission.camera,
       Permission.storage
     ].request();
 
-    PermissionStatus? statusCamera = statues[Permission.camera];
-
-    log("status camera $statusCamera");
-
-    bool isGranted = statusCamera == PermissionStatus.granted ;
-    if (isGranted) {
+    if (statuses[Permission.camera] == PermissionStatus.granted) {
       _getImage(source);
-    }else{
-
     }
-
   }
-
-
-
-
-
-
 
   Widget _buildProfilePicture() {
-     return GestureDetector(
-       onTap: () {
-         profilePiccker();
-         // Show a bottom sheet to choose the image source
-         // showModalBottomSheet(
-         //   context: context,
-         //   builder: (BuildContext context) {
-         //     return SafeArea(
-         //       child: Column(
-         //         mainAxisSize: MainAxisSize.min,
-         //         children: [
-         //           ListTile(
-         //             leading: const Icon(Icons.photo_library),
-         //             title: const Text('Choose from gallery'),
-         //             onTap: () {
-         //               Navigator.pop(context);
-         //               _getImage(ImageSource.gallery);
-         //             },
-         //           ),
-         //           ListTile(
-         //             leading: const Icon(Icons.camera),
-         //             title: const Text('Take a picture'),
-         //             onTap: () {
-         //               Navigator.pop(context);
-         //               _getImage(ImageSource.camera);
-         //             },
-         //           ),
-         //         ],
-         //       ),
-         //     );
-         //   },
-         // );
-       },
-       child: Container(
-         height: 101,
-         width: 101,
-         // padding: EdgeInsets.all(30.h),
-         decoration: const BoxDecoration(
-             color: Color(0XFFF0F0F0), shape: BoxShape.circle),
-         child: _image != null
-             ? CircleAvatar(
-           backgroundImage: FileImage(
-             _image!,
-             // height: 41.adaptSize,
-             // width: 41.adaptSize,
-             // fit: BoxFit.contain,
-           ),
-         )
-             : Icon(
-           Icons.add,
-           size: 41,
-         ),
-       ),
-     );
-   }
-
-   void profilePiccker() {
-     Map<Permission, PermissionStatus> statuses = {};
-     showModalBottomSheet(
-       context: context,
-       builder: (BuildContext context) {
-         return SafeArea(
-           child: Column(
-             mainAxisSize: MainAxisSize.min,
-             children: [
-
-               ListTile(
-                 leading: const Icon(Icons.photo_library),
-                 title: const Text('Choose from gallery'),
-                 onTap: () async {
-                  _checkPermission(context,ImageSource.gallery);
-                   Navigator.pop(context);
-                   //_checkPermission(context,ImageSource.gallery);//
-
-                 },
-               ),
-               ListTile(
-                 leading: const Icon(Icons.camera),
-                 title: const Text('Take a picture'),
-                 onTap: () {
-                   Navigator.pop(context);
-                   _checkPermission(context,ImageSource.camera);
-                 },
-               ),
-             ],
-           ),
-         );
-       },
-     );
-   }
-
-
-
-  Future<PermissionStatus> _requestCameraPermission() async {
-    try {
-      return await Permission.camera.request();
-    } on PlatformException catch (e) {
-      print("Failed to request camera permission: ${e.toString()}");
-      return PermissionStatus.denied;
-    }
+    return GestureDetector(
+      onTap: () {
+        profilePiccker();
+      },
+      child: Container(
+        height: 101,
+        width: 101,
+        decoration: const BoxDecoration(
+          color: Color(0XFFF0F0F0),
+          shape: BoxShape.circle,
+        ),
+        child: _image != null
+            ? CircleAvatar(backgroundImage: FileImage(_image!))
+            : Icon(Icons.add, size: 41),
+      ),
+    );
   }
 
-  Future<PermissionStatus> _requestStoragePermission() async {
-    try {
-      return await Permission.storage.request();
-    } on PlatformException catch (e) {
-      print("Failed to request storage permission: ${e.toString()}");
-      return PermissionStatus.denied;
-    }
+  void profilePiccker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from gallery'),
+                onTap: () {
+                  _checkPermission(context, ImageSource.gallery);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera),
+                title: const Text('Take a picture'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _checkPermission(context, ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
-
 
   @override
   Widget build(BuildContext context) {
     final homeData = Provider.of<HomeProvider>(context);
     final themeData = Provider.of<ThemeProvider>(context);
+    final isDark = themeData.isDarkTheme;
+
+    final instruction = homeData.serviceOptions
+        .firstWhereOrNull((e) => e.key == 'instructions');
+
+    final inputTextStyle = TextStyle(
+      color: isDark ? Colors.white : Colors.black,
+      fontSize: 16,
+    );
+
+    final inputHintStyle = TextStyle(
+      color: isDark ? Colors.grey[400] : Colors.grey[600],
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Request new booking"),
       ),
-      backgroundColor:  themeData.isDarkTheme ? Colors.black : Colors.white,
-      body: Container(
+      backgroundColor: isDark ? Colors.black : Colors.white,
+      body: isServiceOptionsLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Container(
         margin: const EdgeInsets.all(20),
         child: Form(
-        key: formKey,
+          key: formKey,
           child: ListView(
             children: [
               _buildProfilePicture(),
-              const SizedBox(height: 20,),
+              const SizedBox(height: 10),
+              if (instruction != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    instruction.value.trim(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ),
               CustomTextFormField(
-                borderDecoration: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: themeData.isDarkTheme ? Colors.white : Colors.black45,
-                    width: 1,
-                  ),
-                ),
-                textStyle: Theme.of(context).textTheme.labelLarge,
-                hintStyle: Theme.of(context).textTheme.labelSmall,
                 controller: companyNameController,
-                hintText: "Company name",
-
-                validator: (val) {
-                  if (companyNameController.text.isEmpty) {
-                    return "Please enter company name";
-                  } else {
-                    return null;
-                  }
-                },
+                hintText: note1Hint ?? "Company name",
+                textStyle: inputTextStyle,
+                hintStyle: inputHintStyle,
+                validator: (val) =>
+                val!.isEmpty ? "Please enter company name" : null,
               ),
-              SizedBox(
-                height: 10,
-              ),CustomTextFormField(
-                borderDecoration: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: themeData.isDarkTheme ? Colors.white : Colors.black45,
-                    width: 1,
-                  ),
-                ),
-                textStyle: Theme.of(context).textTheme.labelLarge,
-                hintStyle: Theme.of(context).textTheme.labelSmall,
+              const SizedBox(height: 10),
+              CustomTextFormField(
                 controller: deliveryPersonController,
-                hintText: "Delivery person name",
-
-
-                validator: (val) {
-                  if (companyNameController.text.isEmpty) {
-                    return "Please enter delivery person name";
-                  } else {
-                    return null;
-                  }
-                },
+                hintText: note2Hint ?? "Delivery person name",
+                textStyle: inputTextStyle,
+                hintStyle: inputHintStyle,
+                validator: (val) => val!.isEmpty
+                    ? "Please enter delivery person name"
+                    : null,
               ),
-              SizedBox(
-                height: 10,
-              ),CustomTextFormField(
-                borderDecoration: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: themeData.isDarkTheme ? Colors.white : Colors.black45,
-                    width: 1,
-                  ),
-                ),
-                textStyle: Theme.of(context).textTheme.labelLarge,
-                hintStyle: Theme.of(context).textTheme.labelSmall,
+              const SizedBox(height: 10),
+              CustomTextFormField(
                 controller: remarksController,
-                hintText: "Remarks",
-
-                validator: (val) {
-                  if (companyNameController.text.isEmpty) {
-                    return "Please enter remarks";
-                  } else {
-                    return null;
+                hintText: note3Hint ?? "Remarks",
+                textStyle: inputTextStyle,
+                hintStyle: inputHintStyle,
+                validator: (val) =>
+                val!.isEmpty ? "Please enter remarks" : null,
+              ),
+              const SizedBox(height: 10),
+              homeData.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    if (_image == null) {
+                      Fluttertoast.showToast(
+                          msg: "Please select an image");
+                    } else {
+                      Provider.of<HomeProvider>(context,
+                          listen: false)
+                          .createBooking(
+                        context,
+                        file: _image,
+                        companyName: companyNameController.text,
+                        deliveryPerson:
+                        deliveryPersonController.text,
+                        remarks: remarksController.text,
+                      );
+                    }
                   }
                 },
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              homeData.isLoading ? const Center(child: CircularProgressIndicator()) :Container(
-                height: 45,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(
-                    color: themeData.isDarkTheme ? Colors.white : Colors.black45,
-                  ),
-                ),
-                child:  TextButton(
-                  onPressed: () {
-
-
-                    if(formKey.currentState!.validate()){
-                      if(_image == null){
-                             Fluttertoast.showToast(msg: "Please select an image");
-                            }else{
-                        Provider.of<HomeProvider>(context, listen: false)
-                            .createBooking(context,
-                            file: _image,
-                            companyName: companyNameController.text,
-                            deliveryPerson:
-                            deliveryPersonController.text,
-                            remarks: remarksController.text);
-                      }
-                          }
-                  },
-                  child:   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Add Booking",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: themeData.isDarkTheme ? Colors.white : Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                child: const Text("Add Booking"),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+extension FirstWhereOrNullExtension<E> on Iterable<E> {
+  E? firstWhereOrNull(bool Function(E) test) {
+    for (E element in this) {
+      if (test(element)) return element;
+    }
+    return null;
   }
 }

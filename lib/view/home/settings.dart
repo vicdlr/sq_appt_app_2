@@ -39,33 +39,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Future<void> deleteUser() async {
-  //   // Obtain explicit user consent for deletion (not shown here)
-  //
-  //   try {
-  //     // Re-authenticate if necessary (not shown here)
-  //
-  //     // Delete document in Cloud Firestore (if applicable)
-  //     final colRef = firestore.doc("users/${firebaseAuth.currentUser?.uid}");
-  //     await colRef.delete();
-  //
-  //     // Delete user authentication data
-  //
-  //     await firebaseAuth.currentUser?.delete();
-  //
-  //     // Deletion successful, handle next steps (e.g., redirect, logout)
-  //     print("User deleted successfully.");
-  //   } on FirebaseAuthException catch (error) {
-  //     // Handle Firebase Authentication errors
-  //     print("Error deleting user:${error.code}${error.message}");
-  //     // Provide informative error message to the user
-  //   } catch (error) {
-  //     // Handle other unforeseen errors
-  //     print("Unexpected error:$error");
-  //     // Provide general error message to the user
-  //   }
-  // }
-
   @override
   void initState() {
     // TODO: implement initState
@@ -162,17 +135,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ? SharedPref.getUserData().city
                               : 'City',
                         )
-                        // TestPage(
-                        //   dropDownList: themeProvider.cityDropDown,
-                        //   hintText: (SharedPref.getUserData().city != null &&
-                        //           SharedPref.getUserData().city.isNotEmpty)
-                        //       ? SharedPref.getUserData().city
-                        //       : 'City',
-                        //   changedValue: (val) {
-                        //     themeProvider.setSelectedCity({"city": val.name});
-                        //   },
-                        // ),
-                        // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
                         ),
                     const SizedBox(
                       height: 10,
@@ -372,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: Center(
                     child: Text(
-                      'Version: ${snapshot.data!.version}+${snapshot.data!.buildNumber}',
+                      'Version: ${snapshot.data!.version}',
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                   ),
