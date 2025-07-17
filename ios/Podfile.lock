@@ -34,13 +34,13 @@ PODS:
     - GoogleUtilities/UserDefaults (~> 7.8)
     - nanopb (< 2.30911.0, >= 2.30908.0)
   - Flutter (1.0.0)
-  - flutter_inappwebview (0.0.1):
+  - flutter_inappwebview_ios (0.0.1):
     - Flutter
-    - flutter_inappwebview/Core (= 0.0.1)
-    - OrderedSet (~> 5.0)
-  - flutter_inappwebview/Core (0.0.1):
+    - flutter_inappwebview_ios/Core (= 0.0.1)
+    - OrderedSet (~> 6.0.3)
+  - flutter_inappwebview_ios/Core (0.0.1):
     - Flutter
-    - OrderedSet (~> 5.0)
+    - OrderedSet (~> 6.0.3)
   - flutter_local_notifications (0.0.1):
     - Flutter
   - fluttertoast (0.0.2):
@@ -123,7 +123,9 @@ PODS:
     - nanopb/encode (= 2.30910.0)
   - nanopb/decode (2.30910.0)
   - nanopb/encode (2.30910.0)
-  - OrderedSet (5.0.0)
+  - OrderedSet (6.0.3)
+  - package_info_plus (0.4.5):
+    - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
   - PromisesObjC (2.4.0)
@@ -133,20 +135,24 @@ PODS:
   - Toast (4.1.1)
   - unique_identifier (0.0.1):
     - Flutter
+  - url_launcher_ios (0.0.1):
+    - Flutter
 
 DEPENDENCIES:
   - device_info (from `.symlinks/plugins/device_info/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
-  - flutter_inappwebview (from `.symlinks/plugins/flutter_inappwebview/ios`)
+  - flutter_inappwebview_ios (from `.symlinks/plugins/flutter_inappwebview_ios/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - mobile_scanner (from `.symlinks/plugins/mobile_scanner/ios`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - unique_identifier (from `.symlinks/plugins/unique_identifier/ios`)
+  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 SPEC REPOS:
   trunk:
@@ -179,8 +185,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_messaging/ios"
   Flutter:
     :path: Flutter
-  flutter_inappwebview:
-    :path: ".symlinks/plugins/flutter_inappwebview/ios"
+  flutter_inappwebview_ios:
+    :path: ".symlinks/plugins/flutter_inappwebview_ios/ios"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   fluttertoast:
@@ -189,46 +195,52 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   mobile_scanner:
     :path: ".symlinks/plugins/mobile_scanner/ios"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   unique_identifier:
     :path: ".symlinks/plugins/unique_identifier/ios"
+  url_launcher_ios:
+    :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  device_info: d7d233b645a32c40dfdc212de5cf646ca482f175
+  device_info: 52e8c0c9c61def8d0a92bf175f5f500abbea04bc
   Firebase: 0312a2352584f782ea56f66d91606891d4607f06
-  firebase_core: a626d00494efa398e7c54f25f1454a64c8abf197
-  firebase_messaging: 1541105e2a2a6ef8bd869bcc44157d31e82f3a50
+  firebase_core: 3b49a055ff54114cae400581c13671fe53936c36
+  firebase_messaging: 394589dcda43e42ec9807558a409a975e285c45b
   FirebaseCore: 7ec4d0484817f12c3373955bc87762d96842d483
   FirebaseCoreInternal: df84dd300b561c27d5571684f389bf60b0a5c934
   FirebaseInstallations: 913cf60d0400ebd5d6b63a28b290372ab44590dd
   FirebaseMessaging: 88950ba9485052891ebe26f6c43a52bb62248952
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_inappwebview: 3d32228f1304635e7c028b0d4252937730bbc6cf
-  flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
-  fluttertoast: e9a18c7be5413da53898f660530c56f35edfba9c
+  flutter_inappwebview_ios: b89ba3482b96fb25e00c967aae065701b66e9b99
+  flutter_local_notifications: 395056b3175ba4f08480a7c5de30cd36d69827e4
+  fluttertoast: 76fea30fcf04176325f6864c87306927bd7d2038
   GoogleDataTransport: 6c09b596d841063d76d4288cc2d2f42cc36e1e2a
   GoogleMLKit: 2bd0dc6253c4d4f227aad460f69215a504b2980e
   GoogleToolboxForMac: 8bef7c7c5cf7291c687cf5354f39f9db6399ad34
   GoogleUtilities: ea963c370a38a8069cc5f7ba4ca849a60b6d7d15
   GoogleUtilitiesComponents: 679b2c881db3b615a2777504623df6122dd20afe
   GTMSessionFetcher: 3a63d75eecd6aa32c2fc79f578064e1214dfdec2
-  image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
+  image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   MLImage: 7bb7c4264164ade9bf64f679b40fb29c8f33ee9b
   MLKitBarcodeScanning: 04e264482c5f3810cb89ebc134ef6b61e67db505
   MLKitCommon: c1b791c3e667091918d91bda4bba69a91011e390
   MLKitVision: 8baa5f46ee3352614169b85250574fde38c36f49
-  mobile_scanner: 38dcd8a49d7d485f632b7de65e4900010187aef2
+  mobile_scanner: b67191637a5ea7ba15652ca208069d2bae1900ab
   nanopb: 438bc412db1928dac798aa6fd75726007be04262
-  OrderedSet: aaeb196f7fef5a9edf55d89760da9176ad40b93c
-  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
+  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   Toast: 1f5ea13423a1e6674c4abdac5be53587ae481c4e
-  unique_identifier: 5b4b48cfe07a95df6aa11746944c0dce22ab5400
+  unique_identifier: 759d781cf134d96de2161628a1d52014df19599c
+  url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
 
-PODFILE CHECKSUM: 6a0f0c76a52fece7d311ab0a5647a2cc1581f712
+PODFILE CHECKSUM: 4ee79a0691ea9b76359e29559a33ca54a19a7711
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2
