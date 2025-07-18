@@ -84,11 +84,11 @@ class _GetTicketState extends State<GetTicket> {
             context,
             MaterialPageRoute(
               builder: (context) => WebViewPage(
-                  url: url +
-                      "/customerID?=${SharedPref.getUserData().customerId}&email=${SharedPref.getUserData().email}"),
-            ),
-          );
-
+                url: url +
+                    (url.contains('&')
+                        ? "&customerID=${SharedPref.getUserData().customerId}&email=${SharedPref.getUserData().email}"
+                        : "?customerID=${SharedPref.getUserData().customerId}&email=${SharedPref.getUserData().email}"),
+          )));
           // Reset scanner when returning
           if (mounted) {
             setState(() {
