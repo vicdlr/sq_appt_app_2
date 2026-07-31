@@ -117,20 +117,27 @@ class DioConfig {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("Update Required"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              final uri = Uri.parse(url);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
-            child: const Text("Update Now"),
-          ),
-        ],
+      // barrierDismissible:false only blocks tap-outside-to-dismiss -- the
+      // Android hardware/gesture back button still pops the dialog's route
+      // unless explicitly blocked too, which would defeat the whole point
+      // of a *forced* update. PopScope(canPop: false) closes that gap.
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text("Update Required"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: const Text("Update Now"),
+            ),
+          ],
+        ),
       ),
     );
   }

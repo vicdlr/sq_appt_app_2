@@ -54,6 +54,12 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 21
+        // Hardcoded rather than derived from pubspec.yaml (flutterVersionCode/
+        // Name below, intentionally commented out) -- keep pubspec.yaml's
+        // `version:` in sync with these two whenever they change, since the
+        // node_app_server force-update check (checkMinimumVersionAndroid.js)
+        // compares a device's real installed versionName against this exact
+        // numbering scheme.
         versionCode  47
         versionName "47.0.1"
         targetSdkVersion 35
