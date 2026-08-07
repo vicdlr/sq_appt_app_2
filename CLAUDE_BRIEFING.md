@@ -108,7 +108,15 @@ account that would let anyone build and submit a new iOS release.** Before any i
    using that certificate.
 
 This requires physical/remote access to a Mac — can't be done from this Windows checkout or the
-browser alone. Not attempted this session; flagging as a hard blocker for any iOS release work.
+browser alone.
+
+**RESOLVED 2026-08-07:** user generated a CSR on their Mac and created both a new Apple
+Distribution certificate ("Victoriano Dela Rosa", valid until 2027/08/07) and a new App Store
+distribution provisioning profile ("SQ Appt App - App Store", iOS, valid until 2027/08/07) for
+`com.smartqsys.sqapptapp`. Confirmed present via developer.apple.com. The old expired `SQProfile`
+(Development, expired 2025/03/25) is still listed but harmless — can be deleted as cleanup
+whenever convenient, not urgent. iOS builds should now be signable from a Mac with this
+certificate installed in Keychain.
 
 ### Store listing name mismatch — CONFIRMED via App Store Connect (2026-08-07)
 
@@ -174,9 +182,10 @@ Don't start UI/feature work yet. Publish-setup checklist:
    section above. Remaining follow-up: archive the two stale keystores and add `.gitignore`
    entries, pending user go-ahead.
 2. App Store Connect: confirm certificate/provisioning-profile status for
-   `com.smartqsys.sqapptapp` is current and buildable. **DONE, 2026-08-07 — BLOCKER FOUND:** zero
-   certificates and no valid distribution profile exist. See iOS certificates section above. Needs
-   a Mac to generate a new cert + profile before any iOS release can be built.
+   `com.smartqsys.sqapptapp` is current and buildable. **DONE, 2026-08-07 — RESOLVED.** Initial
+   check found zero certificates and no valid distribution profile; user generated a new
+   certificate + App Store distribution profile on their Mac same day. See iOS certificates
+   section above.
 3. App Store Connect → App Information → Name: confirmed set to `SQ Appt App`, needs to become
    "SmartQ" — but per Apple's own UI this requires cutting a new app version, not an inline edit.
    **Confirmed 2026-08-07, fix not yet applied.**
