@@ -57,57 +57,99 @@ Note the certificate `Owner` is the **contractor's own company identity** ("code
 SmartQ's — not necessarily wrong (contractors often generate keystores under their own details),
 but worth the user consciously confirming that's expected.
 
-**What's still needed (requires the user's Play Console access, not something Claude can check
-from the repo):** log into Google Play Console → the app → Release → Setup → App integrity → App
-signing, and compare the SHA1/SHA256 fingerprint shown there against the `keystore.jks` one
-above.
-- **If it matches**: `keystore.jks` is confirmed as the real upload key. The other two
-  (`.keystore`, `releasekey.jks`) are almost certainly stale/leftover — safe to archive out of
-  the way (not delete outright without asking) once confirmed, and add explicit `.gitignore`
-  entries (`android/key.properties`, `*.jks`, `*.keystore`) so this can't become an accidental
-  git-tracked secret later.
-- **If it does NOT match**: stop. That means the *real* signing key is one of the other two files
-  (get their passwords from wherever the contractor/prior team stored them, or from a password
-  manager/handoff doc) — or worse, isn't present in this checkout at all, which would need
-  resolving with Google Play support before any update could ship. Do not attempt to build/submit
-  a release with the wrong key; Play Store will reject an update signed with a non-matching key.
+**CONFIRMED MATCH (2026-08-07, via browser in Play Console):** `keystore.jks` is the correct,
+currently-registered upload key. Both fingerprints match exactly:
+```
+SHA-1:   29:19:0C:F2:4E:93:37:8C:A8:C4:15:48:9F:C5:63:F9:BD:CF:C7:55
+SHA-256: 7F:C2:5F:9F:41:3D:46:51:32:C9:B8:F9:15:41:D2:D6:61:D6:E0:9F:A2:7C:96:D3:7F:4E:72:AE:CC:74:5A:43
+```
+Google Play App Signing is enabled (Google holds the actual app signing key; `keystore.jks` is
+the *upload* key used to sign AABs before Google re-signs them) — confirmed via Protected with
+Play → App signing → Upload key certificate. The other two keystores (`.keystore`,
+`releasekey.jks`) are confirmed stale/unused — safe to archive out of the way (not delete
+outright without asking), and add explicit `.gitignore` entries (`android/key.properties`,
+`*.jks`, `*.keystore`) so this can't become an accidental git-tracked secret later. **Not yet
+done — still needs the user's go-ahead before touching those files.**
 
-**iOS side, not yet checked as deeply:** no `.p12`/`.mobileprovision`/provisioning-profile files
-found in the repo (normal — these usually live in the developer's Keychain/Apple Developer
-account, not the repo). Whoever has Apple Developer Program access (the user, per CareConnect's
-own DEVLOG: "paying the renewal" after an App Store visibility lapse likely caused by a lapsed
-membership) needs to confirm the certificates/provisioning profiles for
-`com.smartqsys.sqapptapp` are current and that Xcode/Fastlane on whatever machine builds iOS
-releases can actually sign with them. Not verified this session.
+**Important side-finding: the Play Console developer account lives under a DIFFERENT Google
+account than expected.** `vic@smartqsys.com` (the account initially tried) has no Play Console
+developer account at all — navigating there prompts to *create* a new one. The account that
+actually owns and published this app is `vic10809@gmail.com` ("Vic10809", a Personal account,
+Account ID `7397171470470613499`), which required enabling 2-Step Verification to access (done
+this session). This is worth the user being aware of for any future publishing work — don't
+assume `vic@smartqsys.com` has Play Console access. App Store Connect, by contrast, IS under
+`vic@smartqsys.com` (see Apple Developer Program section below) — the two stores' owning
+accounts are not the same identity.
 
-### Store listing name mismatch (found, not yet fixed)
+### iOS certificates/provisioning — CHECKED, real problem found (2026-08-07)
+
+Checked developer.apple.com/account → Certificates, Identifiers & Profiles under `vic@smartqsys.com`
+(Team ID `FN232J5K2B`):
+
+- **Certificates: zero.** No signing certificates exist on this account at all — none active,
+  none expired-but-listed. Completely empty.
+- **Identifiers: `com.smartqsys.sqapptapp` is correctly registered** (as "SQ Appointment App") —
+  so the account/team itself is right. (The identifiers list is cluttered with several Xcode
+  auto-generated "XC ..." entries from ad-hoc dev signing, plus a few unrelated bundle IDs
+  `com.credit.creditvault12`, `com.mixerltd.mixer32`, etc. — not this app's concern, ignore.)
+- **Profiles: only one exists**, `SQProfile` — type **Development** (not App Store distribution),
+  platform iOS, **expired 2025/03/25** (well over a year stale). No App Store distribution
+  profile exists at all.
+
+**Conclusion:** even though App Store Connect shows a build already at "1.0.4 Ready for
+Distribution" (presumably built and signed by the contractor at the time, using certificates
+that were never shared into this account and have since disappeared/expired), **there is
+currently no valid certificate or App Store distribution provisioning profile under this
+account that would let anyone build and submit a new iOS release.** Before any iOS update ships:
+1. Generate a Certificate Signing Request (CSR) from whatever Mac/Xcode installation will do the
+   actual building (Keychain Access → Certificate Assistant → Request a Certificate).
+2. Create a new **Apple Distribution** certificate at developer.apple.com using that CSR.
+3. Create a new **App Store** distribution provisioning profile for `com.smartqsys.sqapptapp`,
+   using that certificate.
+
+This requires physical/remote access to a Mac — can't be done from this Windows checkout or the
+browser alone. Not attempted this session; flagging as a hard blocker for any iOS release work.
+
+### Store listing name mismatch — CONFIRMED via App Store Connect (2026-08-07)
 
 User-reported: app shows as "SmartQ" in Play Store search but "sq appt app" (or similar) in App
 Store search. Checked the source — **both platforms already have the correct in-app display name**
 (`AndroidManifest.xml`'s `android:label="SmartQ"`, iOS `Info.plist`'s `CFBundleDisplayName =
 SmartQ`) — this is not a code bug. Store *search-result* names are a separate metadata field set
 directly in each console (Play Console's Store Listing "App name", App Store Connect's App
-Information "Name"), independent of the manifest/plist values, though normally kept in sync. Play
-Console's is apparently already right; App Store Connect's isn't — needs updating there directly.
-Requires App Store Connect access, which Claude doesn't have.
+Information "Name"), independent of the manifest/plist values, though normally kept in sync.
 
-### App Store "Seller" shows the user's personal name (found, not a simple fix)
+**Confirmed via browser (App Store Connect → SQ Appt App → App Information):** the "Name" field
+is literally `SQ Appt App` (19 chars), Subtitle is `Booking made easy`. This is the source of the
+search-result mismatch. App Store Connect's own UI warns: *"To make changes to the app name,
+category, or privacy policy, create a new app version."* — i.e. this can't be edited in place on
+the current 1.0.4 "Ready for Distribution" version; changing it means cutting a new version.
+There's also a second app in the same App Store Connect account, `SQ_Notify` (iOS 1.0.0, "Prepare
+for Submission", bundle ID not yet checked) — worth understanding what that's for before touching
+anything, in case it's a notification-service counterpart app.
+
+Play Console's Store Listing name not re-verified this session (was reported already correct
+previously) — worth a quick re-check when next in Play Console.
+
+**User decision (2026-08-07): keep the "SQ Appt App" name for now.** Do not change App Store
+Connect's Name field or cut a new version for this reason unless the user explicitly asks again.
+
+### App Store "Seller" shows the user's personal name — CONFIRMED via developer.apple.com (2026-08-07)
 
 User-reported: their own name appears on the App Store download page instead of something like
 "SmartQ Team." This is **not a free-text field** — Apple ties the "Seller" name shown on a listing
-to the Apple Developer Program account type itself:
-- **Individual account**: seller name is legally required to be the account holder's real/legal
-  name (tied to tax/contract details on file with Apple). This is almost certainly what's
-  happening here — can't just be retyped to something else.
-- **Organization account**: shows the verified legal business name on file, which requires
-  enrolling as an org (D-U-N-S number + business verification). Even then it must be a real
-  registered legal entity name — "SmartQ Team" specifically wouldn't be accepted unless that's
-  literally SmartQ's registered business name.
+to the Apple Developer Program account type itself.
 
-So before doing anything here, find out what type of Apple Developer account this actually is.
-If Individual, changing the displayed seller means converting to an Organization account under
-SmartQ's real legal entity — an Apple-side re-enrollment process (documents, D-U-N-S
-verification), not a settings toggle. Worth scoping as its own task, not a quick fix.
+**Confirmed via browser (developer.apple.com/account → Membership details):** `Enrolled as:
+Individual`. Team ID `FN232J5K2B`, address on file is the user's personal Las Piñas address. This
+means the Seller name showing the user's personal/legal name is expected Apple behavior for an
+Individual account, not a bug or oversight — it's legally tied to tax/contract details on file.
+
+Fixing it requires converting to an **Organization** account: D-U-N-S number + business
+verification under SmartQ's real registered legal entity name (not just "SmartQ Team" unless
+that's literally the registered business name) — an Apple-side re-enrollment process (documents,
+verification lead time), not a settings toggle. Scope as its own task if the user wants to pursue
+it; not attempted this session.
 
 Play Store's equivalent ("Developer name" in Play Console → Store presence → Store listing) is a
 plain editable text field on an established account, not tied to legal-entity verification the
@@ -126,19 +168,39 @@ intentional/known, not a surprise.
 
 ## Recommended next step
 
-Don't start UI/feature work yet. Publish-setup checklist, all pending the user checking their own
-consoles (Claude has no access to either):
+Don't start UI/feature work yet. Publish-setup checklist:
 1. Play Console → App integrity → App signing: cross-check the fingerprint shown there against
-   `keystore.jks`'s SHA1/SHA256 above.
+   `keystore.jks`'s SHA1/SHA256 above. **DONE, confirmed match, 2026-08-07** — see Android signing
+   section above. Remaining follow-up: archive the two stale keystores and add `.gitignore`
+   entries, pending user go-ahead.
 2. App Store Connect: confirm certificate/provisioning-profile status for
-   `com.smartqsys.sqapptapp` is current and buildable.
-3. App Store Connect → App Information → Name: update from whatever contractor-era value it has
-   to "SmartQ" (Play Console's already correct).
-4. Confirm what type of Apple Developer account this is (Individual vs Organization) before
-   deciding whether/how to fix the Seller-name-shows-personal-name issue.
+   `com.smartqsys.sqapptapp` is current and buildable. **DONE, 2026-08-07 — BLOCKER FOUND:** zero
+   certificates and no valid distribution profile exist. See iOS certificates section above. Needs
+   a Mac to generate a new cert + profile before any iOS release can be built.
+3. App Store Connect → App Information → Name: confirmed set to `SQ Appt App`, needs to become
+   "SmartQ" — but per Apple's own UI this requires cutting a new app version, not an inline edit.
+   **Confirmed 2026-08-07, fix not yet applied.**
+4. Apple Developer account type: **confirmed Individual** (2026-08-07, via
+   developer.apple.com/account). Seller-name-shows-personal-name is expected behavior for this
+   account type; fixing it means an Organization-account conversion (D-U-N-S + business
+   verification) — a separate, larger task if the user wants to pursue it.
 
 Once signing is confirmed solid on both platforms, THEN move on to whatever the actual
 improvement work is (not yet scoped when this briefing was written).
+
+### Contractor's App Store Connect access — CHECKED, more serious than initially flagged (2026-08-07)
+
+Ashish Mittal (`mittal.30ashish@gmail.com`) has **every role enabled**: Admin, App Manager,
+Finance, Customer Support, Sales, Marketing, Developer — plus the "Create Apps" additional
+permission. That's broader than a typical Admin grant (Finance/Sales aren't roles you'd expect a
+contractor to need). **Last Login: Thursday, July 23, 2026** — about 2 weeks before this check,
+so this is not a dormant leftover account; it's still being actively used.
+
+**User decision (2026-08-07): do not revoke.** Leave Ashish Mittal's access as-is unless the user
+explicitly asks again — this was a conscious choice, not an oversight. Two other
+`@icloud.com`/`@gmail.com` accounts (Josefina Alejandro, Charito de La Rosa) hold Customer
+Support only, and Harley Pangandaman holds Customer Support scoped to just the SmartQ app — those
+look appropriately scoped by comparison.
 
 ## Ecosystem context (from the broader SmartQ project family, `D:\Claude\`)
 
