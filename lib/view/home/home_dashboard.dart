@@ -4,6 +4,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../Model/BookingModel.dart';
 import '../../SharedPrefrence/SharedPrefrence.dart';
+import '../../api/api.dart';
+import '../../api/configurl.dart';
 import '../../constant/app_colors.dart';
 import '../../provider/home_provider.dart';
 import '../../utils/utils.dart';
@@ -318,7 +320,12 @@ class _QuickActionsGrid extends StatelessWidget {
   }
 }
 
-class _BadgeFeatureCard extends StatelessWidget {
+class _BadgeFeatureCard extends StatefulWidget {
+  @override
+  State<_BadgeFeatureCard> createState() => _BadgeFeatureCardState();
+}
+
+class _BadgeFeatureCardState extends State<_BadgeFeatureCard> {
   static const List<String> _uses = [
     "Check in using a SmartQ kiosk",
     "Check in with a receptionist",
@@ -326,9 +333,32 @@ class _BadgeFeatureCard extends StatelessWidget {
     "Receive notifications when your turn is approaching",
   ];
 
+  String? _badgeToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _badgeToken = SharedPref.getBadgeToken();
+    _fetchBadgeToken();
+  }
+
+  // Fetches independently of the full-screen Badge view (home_page.dart) so the preview here
+  // shows a live QR on first load too, instead of only after the user has visited that screen at
+  // least once and populated the cache.
+  Future<void> _fetchBadgeToken() async {
+    final result = await DioApi.get(path: ConfigUrl.getBadgeTokenUrl);
+    if (result.response != null) {
+      final String? freshToken = result.response?.data["data"]?["badgeToken"];
+      if (freshToken != null && freshToken.isNotEmpty) {
+        SharedPref.setBadgeToken(freshToken);
+        if (mounted) setState(() => _badgeToken = freshToken);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final badgeToken = SharedPref.getBadgeToken();
+    final badgeToken = _badgeToken;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () {
