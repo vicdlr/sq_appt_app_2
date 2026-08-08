@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info/device_info.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,13 +11,11 @@ import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:unique_identifier/unique_identifier.dart';
 
-import '../../Model/UserDataModel.dart';
 import '../../SharedPrefrence/SharedPrefrence.dart';
 import '../../api/configurl.dart';
 import '../../notification/notification.dart';
 import '../../provider/theme_provider.dart';
 import '../../widget/CustomTextFormField.dart';
-import '../home/bottom_nav_bar.dart';
 import '../home/widget/search_dropdown.dart';
 
 class SignupPage extends StatefulWidget {
@@ -31,18 +27,12 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   TextEditingController nameTextEditingController = TextEditingController();
-
   TextEditingController emailTextEditingController = TextEditingController();
-
   TextEditingController phoneTextEditingController = TextEditingController();
-
   TextEditingController passwordTextEditingController = TextEditingController();
-
-  TextEditingController cityTextEditingController = TextEditingController();
+  TextEditingController confirmPasswordTextEditingController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
-
-  bool isPasswordVisible = true;
 
   String _identifier = '';
 
@@ -67,53 +57,7 @@ class _SignupPageState extends State<SignupPage> {
     if (!mounted) return;
     setState(() {
       _identifier = identifier!;
-      print("identifiers == $_identifier");
     });
-  }
-
-  void submitData(String firebaseUid) async {
-    NotificationServices notification = NotificationServices();
-    String fcmToken = await notification.getDeviceToken();
-    print(" submitData fcmToken ==  $fcmToken");
-    var headers = {'Content-Type': 'application/json'};
-
-    var data = {
-      //"username": nameTextEditingController.text,
-      "username": firebaseUid,  // Use username as place holder
-      "email": emailTextEditingController.text.toLowerCase(),
-      //"fcm_token": fcmToken
-    };
-
-    var dio = Dio();
-    dio.options.connectTimeout = const Duration(seconds: 30);
-
-    try {
-      var response = await dio.post(
-        'https://sq-notification-middleware.onrender.com/setRegistered',
-        //'https://sqapp.smartqsys.com/sync/RegisterDevice',
-        options: Options(headers: headers),
-        data: json.encode(data),
-      );
-
-      //print("register $response.data");
-
-      if (response.statusCode == 200) {
-        print("set registered response data == ${response.data}");
-        //SharedPref.setAuthToken("${response.data["token"]}");
-        //SharedPref.setCustomerId("${response.data["customerid"]}");
-        //SharedPref.setUserData(UserData.fromJson(response.data["user"]));
-        //print("shared auth token ${SharedPref.getAuthToken()}");
-        //print("shared user data  ${SharedPref.getUserData().toJson()}");
-        //print("shared Customer ID  ${SharedPref.getCustomerId()}");
-
-      } else {
-        print(response.statusMessage);
-      }
-    } catch (e) {
-
-      print('Error occurred: $e');
-      // Handle errors accordingly, like showing an error message to the user
-    }
   }
 
   void _submit() async {
@@ -135,130 +79,58 @@ class _SignupPageState extends State<SignupPage> {
         "fcm_token": fcmToken,
         "phoneNo": phoneTextEditingController.text,
         "platForm": Platform.isAndroid ? "android" : "ios",
-        "city" : city
+        "city": city
       };
 
-      final result = await DioApi.post(path: "${ConfigUrl.signUpUrl}", data: data);
-
+      final result = await DioApi.post(path: ConfigUrl.signUpUrl, data: data);
 
       if (result.response?.statusCode == 200) {
-        print("submit /register response data == ${result.response?.data}");
         SharedPref.setAuthToken("${result.response?.data["token"]}");
-        //SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
-        print("shared auth token ${SharedPref.getAuthToken()}");
-        // print("shared user data  ${SharedPref.getUserData().toJson()}");
-        // print("register customer ID ${SharedPref.getUserData().customerId}");
         await Fluttertoast.showToast(msg: "successfully Registered");
         setState(() {
           isLoading = false;
         });
 
-
+        if (!mounted) return;
         showDialog(
           context: context,
-          barrierDismissible: false, // Prevents closing by tapping outside
+          barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text("Registration Successful"),
-              content: Text("Please check your email for the activation link."),
+              title: const Text("Registration Successful"),
+              content: const Text("Please check your email for the activation link."),
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
                     nameTextEditingController.clear();
                     emailTextEditingController.clear();
                     phoneTextEditingController.clear();
                     passwordTextEditingController.clear();
-                    cityTextEditingController.clear();
-                    // Navigator.pushAndRemoveUntil(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (c) => BottomNavBar(),
-                    //   ),
-                    //       (route) => false,
-                    // );
-
-                    // delete all the previous entries
-
-
-
+                    confirmPasswordTextEditingController.clear();
                   },
-                  child: Text("OK"),
+                  child: const Text("OK"),
                 ),
               ],
             );
           },
         );
-        // Navigator.pushAndRemoveUntil(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (c) =>  BottomNavBar(),
-        //   ),
-        //       (route) => false,
-        // );
-
-        // await firebaseAuth
-        //     .createUserWithEmailAndPassword(
-        //   email: emailTextEditingController.text.trim(),
-        //   password: passwordTextEditingController.text.trim(),
-        // ).then((auth) async {
-        //   currentUser = auth.user;
-        //
-        //   if (currentUser != null) {
-        //     print("Current User is == $currentUser");
-        //     Map<String, dynamic> userMap = {
-        //       "id": currentUser!.uid,
-        //       "name": nameTextEditingController.text.trim(),
-        //       "email": emailTextEditingController.text.trim(),
-        //       "phone": phoneTextEditingController.text.trim(),
-        //       "requestCode": result.response?.statusCode,
-        //       "deviceId": _identifier,
-        //       "platform": Platform.isAndroid ? "android" : "ios"
-        //     };
-        //
-        //     CollectionReference userRef = firestore.collection("users");
-        //     userRef.doc(currentUser!.uid).set(userMap);
-        //     submitData(currentUser!.uid);
-        //     setState(() {
-        //       isLoading = false;
-        //     });
-        //   }
-        //   else {
-        //     setState(() {
-        //       isLoading = false;
-        //     });
-        //     print("Current User is Null == $currentUser");
-        //   }
-        //
-        //
-        //
-        // }).catchError((errorMessage) {
-        //   setState(() {
-        //     isLoading = false;
-        //   });
-        //   print("error msg in $errorMessage");
-        //   Fluttertoast.showToast(msg: "Error Occured: \n $errorMessage");
-        // });
-
-      }  //if status 200
-      else {
+      } else {
         setState(() {
           isLoading = false;
         });
         result.handleError(context);
       }
-
-    } //Validate data
-    else {
+    } else {
       Fluttertoast.showToast(msg: "Not all fields are valid");
     }
   }
 
   bool showPass = true;
+  bool showConfirmPass = true;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     initUniqueIdentifierState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -266,315 +138,283 @@ class _SignupPageState extends State<SignupPage> {
     });
   }
 
+  InputBorder _fieldBorder() => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      );
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: GestureDetector(
-        onTap: () {
-          FocusManager.instance.primaryFocus?.unfocus();
-        },
-        child: Scaffold(
-          body: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            height: MediaQuery.of(context).size.height - 20,
-            width: double.infinity,
-            child: ListView(
-              // mainAxisAlignment: MainAxisAlignment.center,
-              // crossAxisAlignment: CrossAxisAlignment.stretch,
+    return GestureDetector(
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    const SizedBox(height: 60.0),
-                    Text(
-
-                      "Sign up",
-                      style: TextStyle(
-                        fontSize: MediaQuery.textScalerOf(context).scale(40),
-                        fontWeight: FontWeight.bold,
-                      ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: kSmartQGreen),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
-                    const SizedBox(
-                      height: 10,
+                    const Spacer(),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(color: kSmartQGreen, shape: BoxShape.circle),
+                      alignment: Alignment.center,
+                      child: const Text("S",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
-                    Text(
-                      "Create your account",
-                      style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
+                    const SizedBox(width: 6),
+                    const Text("SmartQ",
+                        style: TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold, fontSize: 18)),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  "Create your account",
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(color: kSmartQGreen, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Join SmartQ and enjoy a faster, smarter way to manage your queue.",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 20),
                 Form(
                   key: _formKey,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Align(
-                        alignment : Alignment.topLeft,
-                        child: Text(
-                          "Name",
-                          style: TextStyle(fontSize:  15, color: Colors.grey[700]),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 5,
-                      ),
+                      const Text("Full Name", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
                       CustomTextFormField(
-                        textStyle: TextStyle(color: Colors.black),
+                        textStyle: const TextStyle(color: Colors.black),
                         controller: nameTextEditingController,
-                        hintText: "Name",
-                        prefix: const Icon(Icons.person),
+                        hintText: "Enter your full name",
+                        prefix: const Icon(Icons.person_outline, color: kSmartQGreen),
+                        borderDecoration: _fieldBorder(),
                         validator: (val) {
-                          if (val!.isEmpty) {
+                          if (val == null || val.isEmpty) {
                             return "This field cannot be empty";
-                          } else {
-                            return null;
                           }
+                          return null;
                         },
                       ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment : Alignment.topLeft,
-                        child: Text(
-                          "Email",
-                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 5,
-                      ),
+                      const SizedBox(height: 16),
+                      const Text("Email Address", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
                       CustomTextFormField(
-                        textStyle: TextStyle(color: Colors.black),
+                        textStyle: const TextStyle(color: Colors.black),
                         controller: emailTextEditingController,
-                        hintText: "Email",
-                        prefix: const Icon(Icons.email),
+                        hintText: "Enter your email address",
+                        prefix: const Icon(Icons.email_outlined, color: kSmartQGreen),
+                        borderDecoration: _fieldBorder(),
                         validator: (val) {
-                          if (isEmailValid(emailTextEditingController.text) ==
-                              false) {
+                          if (isEmailValid(emailTextEditingController.text) == false) {
                             return "Enter a valid email address";
-                          } else {
-                            return null;
                           }
+                          return null;
                         },
                       ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment : Alignment.topLeft,
-                        child: Text(
-                          "Phone",
-                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 5,
-                      ),
+                      const SizedBox(height: 16),
+                      const Text("Phone Number", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
                       CustomTextFormField(
-                        textStyle: TextStyle(color: Colors.black),
+                        textStyle: const TextStyle(color: Colors.black),
                         textInputType: TextInputType.phone,
                         controller: phoneTextEditingController,
-                        hintText: "Phone",
-                        prefix: const Icon(Icons.phone),
+                        hintText: "Enter your phone number",
+                        prefix: const Icon(Icons.phone_outlined, color: kSmartQGreen),
+                        borderDecoration: _fieldBorder(),
                         validator: (val) {
-                          if (val!.isEmpty) {
+                          if (val == null || val.isEmpty) {
                             return "This field cannot be empty";
-                          } else {
-                            return null;
                           }
+                          return null;
                         },
                       ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment : Alignment.topLeft,
-                        child: Text(
-                          "Password",
-                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 5,
-                      ),
+                      const SizedBox(height: 4),
+                      Text("We'll send a verification code to this number.",
+                          style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 16),
+                      const Text("Password", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
                       CustomTextFormField(
-                        textStyle: TextStyle(color: Colors.black),
+                        textStyle: const TextStyle(color: Colors.black),
                         controller: passwordTextEditingController,
-                        hintText: "Password",
+                        hintText: "Create a password",
+                        prefix: const Icon(Icons.lock_outline, color: kSmartQGreen),
+                        borderDecoration: _fieldBorder(),
                         suffix: GestureDetector(
                           onTap: () {
-                            print(" showPass  $showPass");
                             setState(() {
                               showPass = !showPass;
                             });
                           },
-                          child: Icon(
-                            showPass
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            // color: !showPass
-                            //     ? AppColor.borderColor
-                            //     : AppColor.placeholderColor,
-                          ),
+                          child: Icon(showPass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                         ),
-                        prefix: const Icon(Icons.password),
                         obscureText: showPass,
                         validator: (val) {
-                          if (val!.isEmpty) {
+                          if (val == null || val.isEmpty) {
                             return "This field cannot be empty";
-                          } else {
-                            return null;
                           }
+                          return null;
                         },
                       ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment : Alignment.topLeft,
-                        child: Text(
-                          "City",
-                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                      const SizedBox(height: 4),
+                      Text("At least 8 characters with a mix of letters, numbers & symbols",
+                          style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 16),
+                      const Text("Confirm Password", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      CustomTextFormField(
+                        textStyle: const TextStyle(color: Colors.black),
+                        controller: confirmPasswordTextEditingController,
+                        hintText: "Confirm your password",
+                        prefix: const Icon(Icons.lock_outline, color: kSmartQGreen),
+                        borderDecoration: _fieldBorder(),
+                        suffix: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              showConfirmPass = !showConfirmPass;
+                            });
+                          },
+                          child: Icon(
+                              showConfirmPass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                         ),
+                        obscureText: showConfirmPass,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return "This field cannot be empty";
+                          }
+                          if (val != passwordTextEditingController.text) {
+                            return "Passwords do not match";
+                          }
+                          return null;
+                        },
                       ),
-                      SizedBox(
-                        height: 5,
-                      ),
+                      const SizedBox(height: 16),
+                      const Text("City", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
                       Stack(
                         children: [
                           CustomTextFormField(
-                            textStyle: TextStyle(color: Colors.black),
-                            prefix: const Icon(Icons.location_city),
+                            textStyle: const TextStyle(color: Colors.black),
+                            prefix: const Icon(Icons.location_city_outlined, color: kSmartQGreen),
+                            borderDecoration: _fieldBorder(),
                             readOnly: true,
-                            hintText:city.isEmpty ? "City" : "",
-                            onTap: () async {
-
-                            },
-                            // title: TestPage(dropDownList: [], hintText: 'Country', changedValue: (val) {  },),
+                            hintText: city.isEmpty ? "Select your city" : "",
+                            onTap: () async {},
                           ),
                           Positioned(
                             left: 30,
                             top: 0,
                             right: 0,
                             bottom: 0,
-                            child:
-                            CustomDropDown(
+                            child: CustomDropDown(
                               changedValue: (val) {
                                 setState(() {
                                   city = val;
                                 });
                               },
-                              // controller: cityTextEditingController,
                               selectedValue: "",
-                              dropDownList: themeProvider.cityDropDown ,
+                              dropDownList: themeProvider.cityDropDown,
                               hintText: city,
                             ),
-
-                            // TestPage(
-                            //   dropDownList: themeProvider.cityDropDown,
-                            //   hintText: "",
-                            //   changedValue: (val) {
-                            //     setState(() {
-                            //       city = val.name;
-                            //     });
-                            //   },
-                            // ),
                           )
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(
-                  height: 20,
-                ),
-                isLoading ? const Center(child: CircularProgressIndicator()) : Container(
-                  height: 45,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.purple,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.5),
-                        spreadRadius: 1,
-                        blurRadius: 1,
-                        offset:
-                        const Offset(0, 1), // changes position of shadow
-                      ),
-                    ],
-                  ),
-                  child:  TextButton(
-                    onPressed: () {
-                      _submit();
-                      //submitData();
-                    },
-                    child:  const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Sign up",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.purple,
+                const SizedBox(height: 20),
+                isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kSmartQGreen,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          ),
+                          onPressed: _submit,
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text("Sign Up", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward, size: 18),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text("or sign up with", style: Theme.of(context).textTheme.bodySmall),
                     ),
-                  ),
+                    const Expanded(child: Divider()),
+                  ],
                 ),
-                const SizedBox(
-                  height: 20,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            Fluttertoast.showToast(msg: "Google sign-up is coming soon"),
+                        icon: const Icon(Icons.g_mobiledata, size: 24),
+                        label: const Text("Google"),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            Fluttertoast.showToast(msg: "Apple sign-up is coming soon"),
+                        icon: const Icon(Icons.apple, size: 20),
+                        label: const Text("Apple"),
+                      ),
+                    ),
+                  ],
                 ),
-
+                const SizedBox(height: 20),
                 RichText(
-                  textAlign : TextAlign.center,
+                  textAlign: TextAlign.center,
                   text: TextSpan(
                     children: [
-                      TextSpan(
-                          text: "Already have an account?",
-                          style: TextStyle(
-                              color: Colors.black
-                          )
-                      ),
-                      const TextSpan(
-                        text: " ",
-                      ),
+                      const TextSpan(text: "Already have an account? ", style: TextStyle(color: Colors.black)),
                       TextSpan(
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-
                             Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (context){
-                                  return LoginPage();
-                                })
+                              MaterialPageRoute(builder: (context) {
+                                return const LoginPage();
+                              }),
                             );
                           },
-                        text: "Login",
-                        style: TextStyle(color: Colors.purple),
+                        text: "Log in",
+                        style: const TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-
                 ),
-
-                // Flexible(
-                //   child: Row(
-                //     mainAxisAlignment: MainAxisAlignment.center,
-                //     children: <Widget>[
-                //       const Text("Already have an account?"),
-                //       GestureDetector(
-                //           onTap: () {
-                //             Navigator.of(context).pushReplacement(
-                //                 MaterialPageRoute(builder: (context) {
-                //               return const LoginPage();
-                //             }));
-                //           },
-                //           child: const Text(
-                //             " Login",
-                //             style: TextStyle(color: Colors.purple),
-                //           ))
-                //     ],
-                //   ),
-                // )
               ],
             ),
           ),
@@ -587,105 +427,6 @@ class _SignupPageState extends State<SignupPage> {
 bool isEmailValid(String? email) {
   return email == null
       ? false
-      : RegExp(
-      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-      .hasMatch(email);
+      : RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+          .hasMatch(email);
 }
-
-String extractDataFromXml(String xmlResponse, String tag) {
-  int startIndex = xmlResponse.indexOf('<$tag>') + tag.length + 2;
-  int endIndex = xmlResponse.indexOf('</$tag>', startIndex);
-  return xmlResponse.substring(startIndex, endIndex);
-}
-
-
-/* void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        isLoading = true;
-      });
-      NotificationServices notification = NotificationServices();
-      String fcmToken = "";
-      fcmToken = await notification.getDeviceToken();
-      print(" submit fcmToken ==  $fcmToken");
-      var dio = Dio();
-      var response = await dio.request(
-        //'https://sq-notification-middleware.onrender.com/register',
-        'https://sqapp.smartqsys.com/sync/RegisterDevice?RequestCode=Register Device&DeviceID=$_identifier&FCMToken=$fcmToken&CustomerEmail=${emailTextEditingController.text}&PhoneNo=${phoneTextEditingController.text}&Platform=${Platform.isAndroid ? "android" : "ios"}',
-        options: Options(
-          method: 'GET',
-        ),
-      );
-
-      print("submit response data  ==  ${response.data}");
-      String xmlResponse = '''${response.data}''';
-      String? resultCode = extractDataFromXml(xmlResponse, 'ResultCode');
-      String? ResultMessage = extractDataFromXml(xmlResponse, 'ResultMessage');
-
-      //const resultCode = "Success";
-
-      if (resultCode == "Success") {
-
-        print("resultCode === $resultCode");
-
-        if (resultCode == "Success") {
-          await firebaseAuth
-              .createUserWithEmailAndPassword(
-            email: emailTextEditingController.text.trim(),
-            password: passwordTextEditingController.text.trim(),
-          )
-              .then((auth) async {
-            currentUser = auth.user;
-
-            if (currentUser != null) {
-              print("Current User is == $currentUser");
-                Map<String, dynamic> userMap = {
-                "id": currentUser!.uid,
-                "name": nameTextEditingController.text.trim(),
-                "email": emailTextEditingController.text.trim(),
-                "phone": phoneTextEditingController.text.trim(),
-                "requestCode": "",
-                "deviceId": _identifier,
-                "platform": Platform.isAndroid ? "android" : "ios"
-              };
-
-              CollectionReference userRef = firestore.collection("users");
-              userRef.doc(currentUser!.uid).set(userMap);
-              setState(() {
-                isLoading = false;
-              });
-            }
-            else {
-              print("Current USer is Null == $currentUser");
-            }
-
-            await Fluttertoast.showToast(msg: "successfully Registered");
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (c) => const HomePage(),
-              ),
-            );
-          }).catchError((errorMessage) {
-            setState(() {
-              isLoading = false;
-            });
-            print("error msg in $errorMessage");
-            Fluttertoast.showToast(msg: "Error Occured: \n $errorMessage");
-          });
-        }
-      } else {
-        setState(() {
-          isLoading = false;
-        });
-        Dialogs.errorDialog(context, ResultMessage);
-        //Dialogs.errorDialog(context, "No uplink");
-      }
-
-    } else {
-      Fluttertoast.showToast(msg: "Not all fields are valid");
-    }
-  }
-
- */

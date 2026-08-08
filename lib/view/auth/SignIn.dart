@@ -1,23 +1,19 @@
-import 'dart:convert';
-
-
-import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:provider/provider.dart';
-import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../Model/UserDataModel.dart';
-import '../../constant/firebase_constant.dart';
-import '../../provider/theme_provider.dart';
+import '../../SharedPrefrence/SharedPrefrence.dart';
 import '../../widget/CustomTextFormField.dart';
 import '../home/bottom_nav_bar.dart';
-import '../home/home_page.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+const Color kSmartQGreen = Color(0xFF1B7A3D);
+const Color kSmartQGreenLight = Color(0xFFEAF6EE);
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -26,62 +22,46 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-
-  bool isLoading = false ;
-  TextEditingController nameTextEditingController = TextEditingController();
+  bool isLoading = false;
 
   TextEditingController emailTextEditingController = TextEditingController();
-
-  TextEditingController phoneTextEditingController = TextEditingController();
-
   TextEditingController passwordTextEditingController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
 
-  bool isPasswordVisible = true;
-
-  final String _identifier = '';
-
+  bool showPass = true;
 
   void submitData() async {
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       isLoading = true;
     });
 
-    var headers = {
-      'Content-Type': 'application/json'
-    };
     var data = {
       "email": emailTextEditingController.text.toLowerCase(),
       "password": passwordTextEditingController.text,
     };
 
-    final result =await DioApi.post(path: ConfigUrl.loginUrl, data: data);
+    final result = await DioApi.post(path: ConfigUrl.loginUrl, data: data);
 
     if (result.response?.data != null) {
-
-      print("login response data == ${result.response?.data}");
       SharedPref.setAuthToken("${result.response?.data["token"]}");
-      // SharedPref.setUserData(UserData.fromJson(result.response?.data["device"]));
       SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
-      print("shared auth token ${SharedPref.getAuthToken()}");
-      print("shared user data  ${SharedPref.getUserData().toJson()}");
-      print("register customer ID ${SharedPref.getUserData().customerId}");
       setState(() {
         isLoading = false;
       });
       await Fluttertoast.showToast(msg: "Successfully Logged In");
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (c) =>  BottomNavBar(),
-        ),
-            (route) => false,
-      );
-      // _submit();
-    }
-    else {
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (c) => BottomNavBar(),
+          ),
+          (route) => false,
+        );
+      }
+    } else {
       setState(() {
         isLoading = false;
       });
@@ -89,324 +69,226 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // void _submit() async {
-  //   if (_formKey.currentState!.validate()) {
-  //     try {
-  //       setState(() {
-  //         isLoading = true;
-  //       });
-  //       final authResult = await firebaseAuth.signInWithEmailAndPassword(
-  //         email: emailTextEditingController.text.trim(),
-  //         password: passwordTextEditingController.text.trim(),
-  //       );
-  //
-  //       currentUser = authResult.user;
-  //
-  //       if (currentUser != null) {
-  //         setState(() {
-  //           isLoading = false;
-  //         });
-  //         await Fluttertoast.showToast(msg: "Successfully Logged In");
-  //         Navigator.pushAndRemoveUntil(
-  //           context,
-  //           MaterialPageRoute(
-  //             builder: (c) =>  BottomNavBar(),
-  //           ),
-  //           (route) => false,
-  //         );
-  //         setState(() {
-  //           isLoading = false;
-  //         });
-  //       }
-  //     } catch (error) {
-  //       setState(() {
-  //         isLoading = false;
-  //       });
-  //       print("Error message: $error");
-  //       Fluttertoast.showToast(msg: "Error Occurred: \n$error");
-  //     }
-  //   } else {
-  //     Fluttertoast.showToast(msg: "Not all fields are valid");
-  //   }
-  // }
-  
-  bool showPass = true;
-
-
-  // Function to launch the URL for the Forgot Password page
   void _launchURL() async {
-    final Uri url = Uri.parse('https://node-app-server.onrender.com/forgetPasswordPage');  // Replace with actual URL for Forgot Password
+    final Uri url = Uri.parse('https://node-app-server.onrender.com/forgetPasswordPage');
     if (await canLaunchUrl(url)) {
-      await launchUrl(url);  // Use launchUrl instead of launch
+      await launchUrl(url);
     } else {
-      throw 'Could not launch $url';  // Error handling
+      throw 'Could not launch $url';
     }
   }
 
+  void _socialComingSoon(String provider) {
+    Fluttertoast.showToast(msg: "$provider sign-in is coming soon");
+  }
+
+  InputBorder _fieldBorder() => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      );
+
   @override
   Widget build(BuildContext context) {
-    final themeData = Provider.of<ThemeProvider>(context);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            height: MediaQuery.of(context).size.height - 50,
-            width: double.infinity,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                _header(context),
-                const SizedBox(height: 20),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: <Widget>[
-                      Align(
-                        alignment : Alignment.topLeft,
-                        child: Text(
-                          "Email",
-                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 5,
-                      ),
-                      CustomTextFormField(
-                        textStyle: TextStyle(color: Colors.black),
-                        controller: emailTextEditingController,
-                        hintText: "Email",
-                        prefix: const Icon(Icons.email),
-                        validator: (val) {
-                          if (isEmailValid(emailTextEditingController.text) ==
-                              false) {
-                            return "Enter a valid email address";
-                          } else {
-                            return null;
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment : Alignment.topLeft,
-                        child: Text(
-                          "Password",
-                          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 5,
-                      ),
-                      CustomTextFormField(
-                        textStyle: TextStyle(color: Colors.black),
-                        controller: passwordTextEditingController,
-                        hintText: "Password",
-                        prefix: const Icon(Icons.password),
-                        obscureText: showPass,
-                        suffix: GestureDetector(
-                          onTap: () {
-                            print(" showPass  $showPass");
-                            setState(() {
-                              showPass = !showPass;
-                            });
-                          },
-                          child: Icon(
-                            showPass
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            // color: !showPass
-                            //     ? AppColor.borderColor
-                            //     : AppColor.placeholderColor,
-                          ),
-                        ),
-                        validator: (val) {
-                          if (val!.isEmpty) {
-                            return "This field cannot be empty";
-                          } else {
-                            return null;
-                          }
-                        },
-                      ),
-
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: TextButton(
-                          onPressed: _launchURL, // Call the function when tapped
-                          child: Text(
-                            "Forgot Password?",
-                            style: TextStyle(color: Colors.purple),
-                          ),
-                        ),
-                      ),
-
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                isLoading ? const Center(child: CircularProgressIndicator()) :Container(
-                  height: 45,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.purple,
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(context),
+              const SizedBox(height: 24),
+              Text(
+                "Welcome Back!",
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(color: kSmartQGreen, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Sign in to continue to your queue dashboard.",
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 24),
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text("Email Address", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    CustomTextFormField(
+                      textStyle: const TextStyle(color: Colors.black),
+                      controller: emailTextEditingController,
+                      hintText: "Enter your email",
+                      prefix: Icon(Icons.email_outlined, color: kSmartQGreen),
+                      borderDecoration: _fieldBorder(),
+                      validator: (val) {
+                        if (isEmailValid(emailTextEditingController.text) == false) {
+                          return "Enter a valid email address";
+                        }
+                        return null;
+                      },
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.5),
-                        spreadRadius: 1,
-                        blurRadius: 1,
-                        offset:
-                        const Offset(0, 1), // changes position of shadow
+                    const SizedBox(height: 16),
+                    const Text("Password", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    CustomTextFormField(
+                      textStyle: const TextStyle(color: Colors.black),
+                      controller: passwordTextEditingController,
+                      hintText: "Enter your password",
+                      prefix: Icon(Icons.lock_outline, color: kSmartQGreen),
+                      borderDecoration: _fieldBorder(),
+                      obscureText: showPass,
+                      suffix: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            showPass = !showPass;
+                          });
+                        },
+                        child: Icon(showPass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                       ),
-                    ],
-                  ),
-                  child:  TextButton(
-                    onPressed: () {
-                      submitData();
-                    },
-                    child:  const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Sign In",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.purple,
-                          ),
+                      validator: (val) {
+                        if (val == null || val.isEmpty) {
+                          return "This field cannot be empty";
+                        }
+                        return null;
+                      },
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _launchURL,
+                        child: const Text("Forgot Password?", style: TextStyle(color: kSmartQGreen)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kSmartQGreen,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                         ),
-                      ],
+                        onPressed: submitData,
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("Sign In", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text("or continue with", style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _socialComingSoon("Google"),
+                      icon: const Icon(Icons.g_mobiledata, size: 24),
+                      label: const Text("Google"),
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _socialComingSoon("Apple"),
+                      icon: const Icon(Icons.apple, size: 20),
+                      label: const Text("Apple"),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: kSmartQGreenLight,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(
-                  height: 10,
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_user_outlined, color: kSmartQGreen),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text("Secure & Protected", style: TextStyle(fontWeight: FontWeight.bold, color: kSmartQGreen)),
+                          Text("Your data is encrypted and always protected.", style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                _signup(context),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              _signup(context),
+            ],
           ),
         ),
       ),
     );
   }
 
-  _header(context) {
-    return const Column(
+  Widget _header(BuildContext context) {
+    return Row(
       children: [
-        Text(
-          "Welcome Back",
-          style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: const BoxDecoration(color: kSmartQGreen, shape: BoxShape.circle),
+          alignment: Alignment.center,
+          child: const Text("S",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
         ),
-        Text("Enter your credential to login"),
+        const SizedBox(width: 8),
+        const Text("SmartQ",
+            style: TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold, fontSize: 22)),
       ],
     );
   }
 
-  _inputField(context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          decoration: InputDecoration(
-              hintText: "Username",
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none),
-              fillColor: Colors.purple.withOpacity(0.1),
-              filled: true,
-              prefixIcon: const Icon(Icons.person)),
-        ),
-        const SizedBox(height: 10),
-        TextField(
-          decoration: InputDecoration(
-            hintText: "Password",
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide.none),
-            fillColor: Colors.purple.withOpacity(0.1),
-            filled: true,
-            prefixIcon: const Icon(Icons.password),
-          ),
-          obscureText: true,
-        ),
-        const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            shape: const StadiumBorder(),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            backgroundColor: Colors.purple,
-          ),
-          child: const Text(
-            "Login",
-            style: TextStyle(fontSize: 20),
-          ),
-        )
-      ],
-    );
-  }
-
-  _forgotPassword(context) {
-    return TextButton(
-      onPressed: () {},
-      child: const Text(
-        "Forgot password?",
-        style: TextStyle(color: Colors.purple),
-      ),
-    );
-  }
-
-  _signup(context) {
-    return  RichText(
-      textAlign : TextAlign.center,
+  Widget _signup(BuildContext context) {
+    return RichText(
+      textAlign: TextAlign.center,
       text: TextSpan(
         children: [
-          TextSpan(
-              text: "Don't Have an Account?",
-              style: TextStyle(
-                  color: Colors.black
-              )
-          ),
-          const TextSpan(
-            text: " ",
-          ),
+          const TextSpan(text: "Don't have an account? ", style: TextStyle(color: Colors.black)),
           TextSpan(
             recognizer: TapGestureRecognizer()
               ..onTap = () {
-
                 Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context){
-                      return SignupPage();
-                    })
+                  MaterialPageRoute(builder: (context) {
+                    return SignupPage();
+                  }),
                 );
               },
             text: "Sign Up",
-            style: TextStyle(color: Colors.purple),
+            style: const TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold),
           ),
         ],
       ),
-
-    );
-
-    Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text("Don't Have an Account?"),
-        GestureDetector(
-          onTap: () {
-            Navigator.of(context).pushReplacement(MaterialPageRoute(
-              builder: (context) => const SignupPage(),
-            ));
-          },
-          child: const Text(
-            " Sign Up",
-            style: TextStyle(color: Colors.purple),
-          ),
-        )
-      ],
     );
   }
 }
-
