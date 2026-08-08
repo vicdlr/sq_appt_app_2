@@ -5,7 +5,9 @@ import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 import 'package:sq_notification/utils/utils.dart';
+import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
+import 'package:sq_notification/view/home/contact_us.dart';
 import 'package:sq_notification/view/home/service_provider_mode.dart';
 import 'package:sq_notification/view/home/widget/search_dropdown.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -395,6 +397,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
 
                     SizedBox(
+                      height: 10,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: kSmartQGreenLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.support_agent_outlined, color: kSmartQGreen),
+                        title: const Text("Need Help?",
+                            style: TextStyle(fontWeight: FontWeight.bold, color: kSmartQGreen)),
+                        subtitle: const Text("Visit our Help Center or contact support"),
+                        trailing: const Icon(Icons.open_in_new, color: kSmartQGreen),
+                        onTap: () {
+                          Navigator.of(context)
+                              .push(MaterialPageRoute(builder: (context) {
+                            return const ContactUsScreen();
+                          }));
+                        },
+                      ),
+                    ),
+                    const SizedBox(
                       height: 10,
                     ),
                   ],
