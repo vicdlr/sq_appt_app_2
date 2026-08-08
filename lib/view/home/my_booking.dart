@@ -1,395 +1,209 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sq_notification/provider/home_provider.dart';
+
+import '../../Model/BookingModel.dart';
+import '../../api/api.dart';
+import '../../api/configurl.dart';
+import '../../provider/home_provider.dart';
+import 'get_ticket.dart';
 
 class MyBooking extends StatefulWidget {
-  const MyBooking({super.key});
+  // When true, only shows bookings with an active CareConnect-managed queue (the "My Queues"
+  // bottom-nav tab) instead of the full appointment history.
+  final bool filterActiveQueuesOnly;
+
+  const MyBooking({super.key, this.filterActiveQueuesOnly = false});
 
   @override
   State<MyBooking> createState() => _MyBookingState();
 }
 
+enum _BookingStatusKind { pending, confirmed, declined, completed }
+
+_BookingStatusKind _statusKind(String status) {
+  final s = status.toLowerCase();
+  if (s.contains("cancel") || s.contains("declin") || s.contains("reject")) {
+    return _BookingStatusKind.declined;
+  }
+  if (s.contains("confirm") || s.contains("checked")) return _BookingStatusKind.confirmed;
+  if (s.contains("complet") || s.contains("served")) return _BookingStatusKind.completed;
+  return _BookingStatusKind.pending;
+}
+
+Color _statusColor(_BookingStatusKind kind, BuildContext context) {
+  switch (kind) {
+    case _BookingStatusKind.declined:
+      return Colors.red;
+    case _BookingStatusKind.confirmed:
+      return Colors.green;
+    case _BookingStatusKind.completed:
+      return Colors.grey;
+    case _BookingStatusKind.pending:
+      return Colors.orange;
+  }
+}
+
 class _MyBookingState extends State<MyBooking> {
+  final Set<int> _mintingQueueAccessForBookingId = {};
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       Provider.of<HomeProvider>(context, listen: false).getAllBooking(context);
     });
   }
 
+  Future<void> _viewQueue(BookingModel booking) async {
+    setState(() {
+      _mintingQueueAccessForBookingId.add(booking.id);
+    });
+
+    final result =
+        await DioApi.post(path: ConfigUrl.queueAccessUrl(booking.id.toString()), data: {});
+
+    setState(() {
+      _mintingQueueAccessForBookingId.remove(booking.id);
+    });
+
+    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
+    if (result.response != null && careConnectUrl != null) {
+      if (mounted) {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+          return WebViewPage(url: careConnectUrl);
+        }));
+      }
+    } else {
+      Fluttertoast.showToast(msg: "Couldn't open the queue right now. Please try again.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final homeData = Provider.of<HomeProvider>(context);
 
+    final bookings = widget.filterActiveQueuesOnly
+        ? homeData.bookingList
+            .where((b) =>
+                b.handledBy == "CARECONNECT" && _statusKind(b.status) == _BookingStatusKind.confirmed)
+            .toList()
+        : homeData.bookingList;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Bookings"),
+        title: Text(widget.filterActiveQueuesOnly ? "My Queues" : "My Appointments"),
       ),
       body: homeData.isLoadingBooking
-          ? Center(child: CircularProgressIndicator())
-          : homeData.bookingList.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : bookings.isEmpty
               ? Center(
                   child: Text(
-                  "No booking available",
+                  widget.filterActiveQueuesOnly
+                      ? "No active queues right now"
+                      : "No booking available",
                   style: Theme.of(context).textTheme.titleMedium,
                 ))
               : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: homeData.bookingList.length,
+                  padding: const EdgeInsets.all(8),
+                  itemCount: bookings.length,
                   itemBuilder: (context, index) {
-                    final bookingData = homeData.bookingList[index];
+                    final booking = bookings[index];
+                    final kind = _statusKind(booking.status);
+                    final color = _statusColor(kind, context);
+                    final isMinting = _mintingQueueAccessForBookingId.contains(booking.id);
+
                     String? formattedDataTime;
-                    String? assignedTime;
-                    if (bookingData.startTime != null &&
-                        bookingData.endTime != null) {
+                    if (booking.startTime != null && booking.endTime != null) {
                       try {
-                        DateTime startTime =
-                            DateTime.parse(bookingData.startTime).toLocal();
-                        DateTime endTime =
-                            DateTime.parse(bookingData.endTime).toLocal();
+                        DateTime startTime = DateTime.parse(booking.startTime).toLocal();
+                        DateTime endTime = DateTime.parse(booking.endTime).toLocal();
                         formattedDataTime =
-                            DateFormat('d MMMM hh:mm a').format(startTime) +
-                                " to " +
-                                DateFormat('hh:mm a').format(endTime);
+                            "${DateFormat('d MMMM hh:mm a').format(startTime)} to ${DateFormat('hh:mm a').format(endTime)}";
                       } catch (e) {
-                        // Handle parsing errors here
-                        print("Error parsing date: $e");
-                        // You may want to assign default values or show an error message to the user
+                        // leave formattedDataTime null on parse failure
                       }
                     }
 
-                    if (bookingData.apptTime != null) {
-                      try {
-                        DateTime startTimeAssigned =
-                            DateTime.parse(bookingData.apptTime).toLocal();
-
-                        assignedTime = DateFormat('d MMMM hh:mm a')
-                            .format(startTimeAssigned);
-                      } catch (e) {
-                        // Handle parsing errors here
-                        print("Error parsing date: $e");
-                        // You may want to assign default values or show an error message to the user
-                      }
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Card(
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: color, width: 1.5),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Card(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Flexible(
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          margin: EdgeInsets.all(10),
-                                          height: 50,
-                                          width: 50,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade300,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: bookingData.imageUrl.isNotEmpty
-                                              ? ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                  child: Image.network(
-                                                    bookingData.imageUrl,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                )
-                                              : Icon(
-                                                  Icons.person,
-                                                  size: 41,
-                                                ),
-                                        ),
-                                        Flexible(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                right: 8.0),
-                                            child: Text(
-                                              bookingData.userName,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    booking.organisation.isNotEmpty
+                                        ? booking.organisation
+                                        : booking.unit,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  IconButton(
-                                    onPressed: () {
-                                      homeData.deleteBooking(
-                                          context, bookingData.id.toString());
-                                    },
-                                    icon: Icon(Icons.delete),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Card(
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    bottom: 8, left: 8, right: 8),
-                                child: Column(
-                                  children: [
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text("Status"),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.circle,
-                                              color: bookingData.status
-                                                          .toLowerCase() ==
-                                                      "confirmed"
-                                                  ? Colors.green
-                                                  : Colors.red,
-                                              size: 10,
-                                            ),
-                                            SizedBox(
-                                              width: 5,
-                                            ),
-                                            Text(
-                                              bookingData.status,
-                                              style: TextStyle(
-                                                  color: bookingData.status
-                                                              .toLowerCase() ==
-                                                          "confirmed"
-                                                      ? Colors.green
-                                                      : Colors.red,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                    formattedDataTime != null
-                                        ? const SizedBox(
-                                            height: 10,
-                                          )
-                                        : SizedBox(),
-                                    formattedDataTime != null
-                                        ? Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text("Date & Time"),
-                                              Flexible(
-                                                  child: Text(
-                                                      formattedDataTime ?? ""))
-                                            ],
-                                          )
-                                        : SizedBox(),
-                                    assignedTime != null
-                                        ? const SizedBox(
-                                            height: 10,
-                                          )
-                                        : SizedBox(),
-                                    assignedTime != null
-                                        ? buildRow("Appointment time",
-                                            assignedTime ?? "")
-                                        // Row(
-                                        //         mainAxisAlignment:
-                                        //             MainAxisAlignment.spaceBetween,
-                                        //         children: [
-                                        //           Text("Appointment time"),
-                                        //           Flexible(child : Text(assignedTime ?? ""))
-                                        //           // Text(assignedTime ?? "")
-                                        //         ],
-                                        //       )
-                                        : SizedBox(),
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    buildRow(
-                                        "Industry", bookingData.industry ?? ""),
-                                    // Row(
-                                    //   mainAxisAlignment:
-                                    //       MainAxisAlignment.spaceBetween,
-                                    //   children: [
-                                    //     Text("Industry"),
-                                    //     Text(bookingData.industry)
-                                    //   ],
-                                    // ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    buildRow("Company",
-                                        bookingData.organisation ?? ""),
-                                    // Row(
-                                    //   mainAxisAlignment:
-                                    //       MainAxisAlignment.spaceBetween,
-                                    //   children: [
-                                    //     Text("Company"),
-                                    //     Text(bookingData.organisation)
-                                    //   ],
-                                    // ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    buildRow("Department",
-                                        bookingData.department ?? ""),
-                                    // Row(
-                                    //   mainAxisAlignment:
-                                    //       MainAxisAlignment.spaceBetween,
-                                    //   children: [
-                                    //     const Text("Department"),
-                                    //     Text(bookingData.department)
-                                    //   ],
-                                    // ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    buildRow("Group", bookingData.groups ?? ""),
-                                    // Row(
-                                    //   mainAxisAlignment:
-                                    //       MainAxisAlignment.spaceBetween,
-                                    //   children: [
-                                    //     const Text("Group"),
-                                    //     Text(bookingData.groups)
-                                    //   ],
-                                    // ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    buildRow("Unit", bookingData.unit ?? ""),
-                                    // Row(
-                                    //   mainAxisAlignment:
-                                    //       MainAxisAlignment.spaceBetween,
-                                    //   children: [
-                                    //     const Text("Unit"),
-                                    //     Text(bookingData.unit)
-                                    //   ],
-                                    // ),
-                                    (bookingData.companyName != null &&
-                                            bookingData.companyName
-                                                .toString()
-                                                .isNotEmpty)
-                                        ? const SizedBox(
-                                            height: 10,
-                                          )
-                                        : SizedBox(),
-                                    (bookingData.companyName != null &&
-                                            bookingData.companyName
-                                                .toString()
-                                                .isNotEmpty)
-                                        ? buildRow("Company name",
-                                            bookingData.companyName ?? "")
-                                        // Row(
-                                        //         mainAxisAlignment:
-                                        //             MainAxisAlignment.spaceBetween,
-                                        //         children: [
-                                        //           Text("Company name"),
-                                        //           Text(bookingData.companyName ?? "")
-                                        //         ],
-                                        //       )
-                                        : SizedBox(),
-                                    (bookingData.deliveryPersonName != null &&
-                                            bookingData.deliveryPersonName
-                                                .toString()
-                                                .isNotEmpty)
-                                        ? const SizedBox(
-                                            height: 10,
-                                          )
-                                        : SizedBox(),
-                                    (bookingData.deliveryPersonName != null &&
-                                            bookingData.deliveryPersonName
-                                                .toString()
-                                                .isNotEmpty)
-                                        ? buildRow(
-                                            "Deliver person name",
-                                            bookingData.deliveryPersonName ??
-                                                "")
-
-                                        // Row(
-                                        //         mainAxisAlignment:
-                                        //             MainAxisAlignment.spaceBetween,
-                                        //         children: [
-                                        //           Text("Deliver person name"),
-                                        //           Text(bookingData.deliveryPersonName ??
-                                        //               "")
-                                        //         ],
-                                        //       )
-                                        : SizedBox(),
-                                    (bookingData.remarks != null &&
-                                            bookingData.remarks
-                                                .toString()
-                                                .isNotEmpty)
-                                        ? const SizedBox(
-                                            height: 10,
-                                          )
-                                        : SizedBox(),
-                                    (bookingData.remarks != null &&
-                                            bookingData.remarks
-                                                .toString()
-                                                .isNotEmpty)
-                                        ? buildRow(
-                                            "Remarks", bookingData.remarks)
-
-                                        // Row(
-                                        //         mainAxisAlignment:
-                                        //             MainAxisAlignment.spaceBetween,
-                                        //         children: [
-                                        //           Text("Remarks"),
-                                        //           Text(bookingData.remarks ?? "")
-                                        //         ],
-                                        //       )
-                                        : SizedBox(),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    (bookingData.servicetype != null &&
-                                            bookingData.servicetype
-                                                .toString()
-                                                .isNotEmpty)
-                                        ? buildRow("Booking type",
-                                            bookingData.servicetype)
-                                        // Row(
-                                        //         mainAxisAlignment:
-                                        //             MainAxisAlignment.spaceBetween,
-                                        //         children: [
-                                        //           Text("Booking type"),
-                                        //           Text(bookingData.servicetype ?? "")
-                                        //         ],
-                                        //       )
-                                        : SizedBox(),
-                                  ],
                                 ),
-                              ),
-                            )
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: color.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    booking.status,
+                                    style: TextStyle(
+                                        color: color, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (formattedDataTime != null) ...[
+                              const SizedBox(height: 6),
+                              Text(formattedDataTime,
+                                  style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    Provider.of<HomeProvider>(context, listen: false)
+                                        .deleteBooking(context, booking.id.toString());
+                                  },
+                                  icon: const Icon(Icons.delete_outline),
+                                ),
+                                const Spacer(),
+                                if (kind == _BookingStatusKind.confirmed &&
+                                    booking.handledBy == "CARECONNECT")
+                                  ElevatedButton(
+                                    onPressed:
+                                        isMinting ? null : () => _viewQueue(booking),
+                                    child: isMinting
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2),
+                                          )
+                                        : const Text("View Queue"),
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
                     );
                   }),
-    );
-  }
-
-  Widget buildRow(String title, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title),
-        Flexible(child: Text(value))
-        // Text(assignedTime ?? "")
-      ],
     );
   }
 }
