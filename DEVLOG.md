@@ -102,6 +102,63 @@ check during testing. **Not reverted yet** — reverting now would re-block on-d
   `lib/view/home/request_new_booking.dart`, `lib/view/home/settings.dart`, `pubspec.yaml`, plus new
   untracked `assets/` and `lib/constant/app_colors.dart`).
 
+**7. Committed, pushed, and iOS handoff doc added (later same day).** All three repos'
+uncommitted work from §4–6 above is now committed and pushed:
+- `sq_appt_app_2`: two commits on `feature/redesign-2026` (`9f21ee2` for the redesign work,
+  `b05cbfe` kept **separate** for the temporary `build.gradle` version bump so it's trivially
+  revertable/cherry-pick-out-able later). Pushed as a new remote branch.
+- `node_app_server`: `edf5b25` for the `/service-options` fix. Pushed as a new remote branch.
+- Docs workspace (`D:\Claude\sq_appt_app`, `mobile-redesign`): committed and pushed the
+  `DEVLOG.md`/`pending_work.md` updates, all 7 mockup JPEGs (so they travel to other checkouts),
+  and a new `IOS_HANDOFF.md` summarizing repo/branch locations, what's done, and iOS-specific
+  notes (signing already resolved per 2026-08-07; `MARKETING_VERSION` 2.0.1 is already well past
+  the server's `minimum_version_ios: "1.0.3"`, so — unlike Android — no force-update workaround
+  is needed for iOS testing).
+
+**8. Badge QR still not showing anywhere — root-caused to the same deploy gap, then fixed the
+Home dashboard's own bug on top of it.** User reported the QR wasn't displaying. Confirmed via
+`curl` + `git log origin/main` that `GET /badge-token` genuinely doesn't exist on production
+(the auth middleware's blanket 403 for unauthenticated requests made this hard to tell from a
+plain 404 at first). Separately, found and fixed a real bug while investigating: the Home
+dashboard's badge preview card (`_BadgeFeatureCard` in `home_dashboard.dart`) only ever read
+`SharedPref.getBadgeToken()` passively — it never fetched anything itself, relying entirely on
+the user having visited the dedicated full-screen Badge view (`home_page.dart`) at least once to
+populate that cache. Converted it to a `StatefulWidget` that fetches and caches the token
+independently on `initState` (same show-cache-then-refresh pattern as `home_page.dart`), so the
+preview will show a live QR on first load once the backend is actually deployed. Verified on
+device: code path is correct, still shows the placeholder icon only because the fetch still 403s
+against production — purely a deploy-gap issue now, not a code bug. Committed and pushed
+(`3885189`).
+
+**9. Deploy approved, but paused after finding a real merge conflict — session suspended here.**
+User confirmed both deploy prerequisites: the `sql/2026-08-08_redesign_columns.sql` migration
+(`booking.handled_by`, `mdevice.is_service_provider`) has already been run against production,
+and `BADGE_TOKEN_KEY` / `NAS_CC_SERVICE_KEY` / `CARECONNECT_BASE_URL` are already set in Render's
+environment. This mattered because `applyCareConnectOutcome`/`routeBookingToHandler` write
+`handled_by` unconditionally on *every* routed booking (not just new-feature codepaths) — deploying
+without the column would have broken booking status updates for every user, not just the new
+features.
+
+While preparing the actual merge, found that `node_app_server`'s `main` has **5 commits since the
+branches diverged** (`3bf1bc0`) that don't exist on `feature/redesign-2026` — `added customerid in
+/create-booking`, `servoption API endpoint created`, `response format changed`, `added Unit...`,
+and `test`. Confusingly, `feature/redesign-2026` has commits with the **same messages** already in
+its own history (applied independently, different hashes) — the same underlying features were
+built twice, once directly on `main` at some point outside this effort and once on the feature
+branch. A trial merge (`git merge feature/redesign-2026` into a disposable branch off `main`,
+never pushed) confirmed a real conflict, isolated entirely to the `/service-options` route:
+`main`'s independent version is still `app.get(...)` reading `req.query` — the *pre*-simplified-flow
+shape — while the feature branch has the current `app.post(...)`/`req.body` version the redesigned
+Flutter client actually calls. Keeping `main`'s side here would silently break the Data Capture
+flow's HTTP method entirely, not just the department filter bug from §5.
+
+Was mid-way through resolving this conflict (feature branch's route/body/filter logic, plus
+preserving `main`'s independent addition of global `unhandledRejection`/`uncaughtException`/pool
+`error` crash-prevention handlers that sit right after this route and don't otherwise conflict)
+when the user asked to suspend. **Cleanly aborted** — `git merge --abort`, deleted the disposable
+trial branch, confirmed `git status` clean on `feature/redesign-2026`. Nothing was merged,
+committed, or pushed to `main`; production is unchanged and still running its pre-redesign code.
+
 ---
 
 ### 2026-08-07 — Publish-setup verification (both platforms confirmed), notification/booking fixes started, badge-security redesign scoped
