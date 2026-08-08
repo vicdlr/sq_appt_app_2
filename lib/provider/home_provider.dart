@@ -12,8 +12,6 @@ import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 
-import '../Model/DepartmentModel.dart';
-import '../Model/GroupModel.dart';
 import '../Model/ServiceOptionModel.dart';
 import '../Model/UnitModel.dart';
 import '../view/home/bottom_nav_bar.dart';
@@ -21,8 +19,6 @@ import '../view/home/bottom_nav_bar.dart';
 class HomeProvider extends ChangeNotifier {
   String selectedIndusty = "";
   String selectedCompanies = "";
-  String selectedDepartment = "";
-  String selectedGroup = "";
   String selectedUnit = "";
   String serviceType = "Service type";
 
@@ -34,12 +30,6 @@ class HomeProvider extends ChangeNotifier {
 
   List<String> companiesList = [];
   List<OrganizationModel> companiesDataList = [];
-
-  List<String> departmentList = [];
-  List<DepartmentModel> departmentDataList = [];
-
-  List<String> groupList = [];
-  List<GroupModel> groupDataList = [];
 
   List<String> unitList = [];
   List<UnitModel> unitDataList = [];
@@ -70,8 +60,6 @@ class HomeProvider extends ChangeNotifier {
     print("value $value");
     selectedIndusty = value;
     selectedCompanies = "";
-    selectedDepartment = "";
-    selectedGroup = "";
     selectedUnit = "";
     serviceType = "Service type";
     notifyListeners();
@@ -100,74 +88,21 @@ class HomeProvider extends ChangeNotifier {
   void setCompaniesList(String value) {
     print("value $value");
     selectedCompanies = value;
-    selectedDepartment = "";
-    selectedGroup = "";
-    selectedUnit = "";
-    serviceType = "Service type";
-    getDepartmentList();
-    notifyListeners();
-  }
-
-  Future<void> getDepartmentList() async {
-    final result = await DioApi.get(
-        path:
-            "/departments?city=${SharedPref.getUserData().city}&industry=$selectedIndusty&company=$selectedCompanies");
-
-    if (result.response?.statusCode != null) {
-      departmentDataList =
-          (result.response?.data["departments"] as List<dynamic>)
-              .map((data) => DepartmentModel.fromJson(data))
-              .toList();
-      departmentList =
-          departmentDataList.map((data) => data.department).toList();
-      notifyListeners();
-    } else {}
-  }
-
-  void setDepartmentList(String value) {
-    print("value $value");
-    selectedDepartment = value;
-    selectedGroup = "";
-    selectedUnit = "";
-    serviceType = "Service type";
-    notifyListeners();
-    getGroupList();
-  }
-
-  Future<void> getGroupList() async {
-    final result = await DioApi.get(
-      path: "/groupfiles?city=${SharedPref.getUserData().city}"
-          "&company=$selectedCompanies&industry=$selectedIndusty"
-          "&department=$selectedDepartment",
-    );
-
-    if (result.response?.statusCode != null) {
-      groupDataList = (result.response?.data["filteredData"] as List<dynamic>)
-          .map((data) => GroupModel.fromJson(data))
-          .toList();
-      groupList = groupDataList
-          .map(
-            (data) => data.groupname,
-          )
-          .toList();
-      notifyListeners();
-    } else {}
-  }
-
-  void setGroupList(String value) {
-    print("value $value");
-    selectedGroup = value;
     selectedUnit = "";
     serviceType = "Service type";
     notifyListeners();
     getUnitList();
   }
 
+  // "Choose Service Provider" in the simplified 3-step booking flow (Industry -> Organisation ->
+  // Service Provider) -- this is the same underlying `unit` concept as before, Department/Group
+  // were an intermediate drill-down that's no longer part of the flow. /units already treats
+  // department/groupname as optional filters server-side, so omitting them here just returns
+  // every unit under the selected industry/organisation instead of a narrower subset.
   Future<void> getUnitList() async {
     final result = await DioApi.get(
         path: "/units?city=${SharedPref.getUserData().city}"
-            "&company=$selectedCompanies&industry=$selectedIndusty"
-            "&department=$selectedDepartment&groupname=$selectedGroup");
+            "&company=$selectedCompanies&industry=$selectedIndusty");
 
     if (result.response?.statusCode != null) {
       unitDataList = (result.response?.data["filteredData"] as List<dynamic>)
@@ -208,8 +143,6 @@ class HomeProvider extends ChangeNotifier {
       'user_name': SharedPref.getUserData().username,
       'industry': selectedIndusty,
       'organisation': selectedCompanies,
-      'department': selectedDepartment,
-      'groups': selectedGroup,
       'customerid': SharedPref.getUserData().customerId,
       if (file != null)
         'image': [
@@ -254,8 +187,6 @@ class HomeProvider extends ChangeNotifier {
   setIndustriesEmpty() {
     selectedIndusty = "";
     selectedCompanies = "";
-    selectedDepartment = "";
-    selectedGroup = "";
     selectedUnit = "";
     serviceType = "Service type";
     notifyListeners();
@@ -346,8 +277,6 @@ class HomeProvider extends ChangeNotifier {
 
     final result = await DioApi.post(path: "/service-options", data: {
       "industry": selectedIndusty,
-      "department": selectedDepartment,
-      "groupname": selectedGroup,
       "city": SharedPref.getUserData().city,
       "company": selectedCompanies,
       "servicetype": serviceType,
