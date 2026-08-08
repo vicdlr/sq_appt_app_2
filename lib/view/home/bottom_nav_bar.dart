@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sq_notification/view/home/home_dashboard.dart';
-import 'package:sq_notification/view/home/home_page.dart';
 import 'package:sq_notification/view/home/my_booking.dart';
 import 'package:sq_notification/view/home/request_new_booking.dart';
 import 'package:sq_notification/view/home/settings.dart';
@@ -18,7 +17,6 @@ class _BottomNavBarState extends State<BottomNavBar> {
     const HomeDashboard(),
     MyBooking(filterActiveQueuesOnly: true),
     RequestNewBooking(),
-    HomePage(),
     const SettingsScreen(),
   ];
 
@@ -47,11 +45,6 @@ class _BottomNavBarState extends State<BottomNavBar> {
             selectedIcon: Icon(Icons.calendar_today),
             icon: Icon(Icons.calendar_today_outlined),
             label: 'Services',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.qr_code),
-            icon: Icon(Icons.qr_code_outlined),
-            label: 'My Badge',
           ),
           NavigationDestination(
             selectedIcon: Icon(Icons.more_horiz),

@@ -123,28 +123,6 @@ class ContactUsScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          Text("Send us a message",
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(color: kSmartQGreen, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          const Text("This opens your email app with our support address pre-filled."),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 50,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kSmartQGreen,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () => _openMailto("Message from SmartQ App"),
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text("Send a Message"),
-            ),
-          ),
         ],
       ),
     );

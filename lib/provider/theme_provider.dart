@@ -5,6 +5,7 @@ import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:country_state_city/country_state_city.dart' as data;
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
+import 'package:sq_notification/constant/app_colors.dart';
 
 class ThemeProvider extends ChangeNotifier {
   late ThemeData _themeData;
@@ -119,12 +120,28 @@ ThemeData lightMode(double fSize) => ThemeData(
       ),
       colorScheme: ColorScheme.light(
         background: Colors.white70,
-        primary: Colors.black,
+        primary: kSmartQGreen,
+        onPrimary: Colors.white,
+        primaryContainer: kSmartQGreenLight,
+        onPrimaryContainer: kSmartQGreen,
         secondary: Colors.white,
         secondaryContainer: Colors.grey[200],
+        tertiaryContainer: kSmartQGreenLight,
+        onTertiaryContainer: kSmartQGreen,
       ),
       sliderTheme: const SliderThemeData(
         inactiveTrackColor: Colors.black26,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        indicatorColor: kSmartQGreenLight,
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+              color: states.contains(WidgetState.selected) ? kSmartQGreen : Colors.grey,
+            )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+              fontSize: 12,
+              color: states.contains(WidgetState.selected) ? kSmartQGreen : Colors.grey,
+              fontWeight: states.contains(WidgetState.selected) ? FontWeight.bold : FontWeight.normal,
+            )),
       ),
     );
 
@@ -168,8 +185,24 @@ ThemeData darkMode(double fSize) => ThemeData(
       ),
       colorScheme: ColorScheme.dark(
         background: Colors.black,
-        primary: Colors.white,
+        primary: kSmartQGreen,
+        onPrimary: Colors.white,
+        primaryContainer: const Color(0xFF14401F),
+        onPrimaryContainer: kSmartQGreenLight,
         secondary: Colors.white38,
         secondaryContainer: Colors.grey[500],
+        tertiaryContainer: const Color(0xFF14401F),
+        onTertiaryContainer: kSmartQGreenLight,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        indicatorColor: const Color(0xFF14401F),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+              color: states.contains(WidgetState.selected) ? kSmartQGreenLight : Colors.white38,
+            )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+              fontSize: 12,
+              color: states.contains(WidgetState.selected) ? kSmartQGreenLight : Colors.white38,
+              fontWeight: states.contains(WidgetState.selected) ? FontWeight.bold : FontWeight.normal,
+            )),
       ),
     );

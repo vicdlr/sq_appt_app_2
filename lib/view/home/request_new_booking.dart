@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
+import 'package:sq_notification/constant/app_colors.dart';
 import 'package:sq_notification/provider/home_provider.dart';
 import 'package:sq_notification/view/home/add_booking.dart';
 import 'package:sq_notification/view/home/form_page.dart';
@@ -53,6 +54,18 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
     }
   }
 
+  // Most organisations only have a single service provider, so the "Service Provider" step
+  // would just be a one-item list to tap through -- skip straight to the booking page in that
+  // case, only falling back to showing the step when there's an actual choice to make.
+  Future<void> _selectOrganisation(BuildContext context, HomeProvider provider, String company) async {
+    await provider.setCompaniesList(company);
+    if (!context.mounted) return;
+    if (provider.unitList.length == 1) {
+      provider.setUnitList(provider.unitList.first);
+      _continue(context, provider);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final homeProvider = Provider.of<HomeProvider>(context, listen: true);
@@ -73,19 +86,19 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
               child: step == 0
                   ? _IndustryStep(homeProvider: homeProvider)
                   : step == 1
-                      ? _OrganisationStep(homeProvider: homeProvider)
-                      : _ProviderStep(homeProvider: homeProvider),
+                      ? _OrganisationStep(
+                          homeProvider: homeProvider,
+                          onSelectOrganisation: (company) =>
+                              _selectOrganisation(context, homeProvider, company),
+                        )
+                      : _ProviderStep(
+                          homeProvider: homeProvider,
+                          onSelectProvider: (unit) {
+                            homeProvider.setUnitList(unit);
+                            _continue(context, homeProvider);
+                          },
+                        ),
             ),
-            if (step == 2 && homeProvider.selectedUnit.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _continue(context, homeProvider),
-                  child: const Text("Continue"),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -95,23 +108,49 @@ class _RequestNewBookingState extends State<RequestNewBooking> {
 
 class _StepIndicator extends StatelessWidget {
   final int step;
+  static const List<String> _labels = ["Industry", "Organisation", "Service Provider"];
 
   const _StepIndicator({required this.step});
 
-  Widget _dot(BuildContext context, int index, String label) {
+  Widget _line(bool active) {
+    return Expanded(
+      child: Container(
+        height: 2,
+        color: active ? kSmartQGreen : Colors.grey.shade300,
+      ),
+    );
+  }
+
+  // Each unit is its own circle flanked by a left/right half-connector, so adjacent units' halves
+  // join into one continuous line running through the circles' vertical center -- putting the
+  // connector in a second, separate Row (below or between columns) can't align with the circle's
+  // center once labels of varying width are involved, this keeps the line and the circles in the
+  // same Row so they're trivially aligned.
+  Widget _unit(BuildContext context, int index) {
     final active = index <= step;
     return Expanded(
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: active
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.secondary,
-            child: Text("${index + 1}", style: const TextStyle(color: Colors.white)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              index == 0 ? const Spacer() : _line(step >= index),
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: active ? kSmartQGreen : Colors.grey.shade300,
+                child: Text("${index + 1}", style: const TextStyle(color: Colors.white)),
+              ),
+              index == _labels.length - 1 ? const Spacer() : _line(step > index),
+            ],
           ),
           const SizedBox(height: 4),
-          Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+          Text(_labels[index],
+              style: TextStyle(
+                fontSize: 12,
+                color: active ? kSmartQGreen : Colors.grey,
+                fontWeight: index == step ? FontWeight.bold : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center),
         ],
       ),
     );
@@ -120,11 +159,7 @@ class _StepIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: [
-        _dot(context, 0, "Industry"),
-        _dot(context, 1, "Organisation"),
-        _dot(context, 2, "Service Provider"),
-      ],
+      children: List.generate(_labels.length, (index) => _unit(context, index)),
     );
   }
 }
@@ -139,37 +174,76 @@ class _IndustryStep extends StatelessWidget {
     if (homeProvider.industryList.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    return GridView.count(
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.3,
-      children: homeProvider.industryList.map((industry) {
-        return Card(
-          child: InkWell(
-            onTap: () => homeProvider.setSelectedList(industry),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(_iconForIndustry(industry), size: 32),
-                  const SizedBox(height: 8),
-                  Text(industry, textAlign: TextAlign.center),
-                ],
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SizedBox(
+        height: 110,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: homeProvider.industryList.length,
+          separatorBuilder: (context, index) => const SizedBox(width: 12),
+          itemBuilder: (context, index) {
+            final industry = homeProvider.industryList[index];
+            final selected = homeProvider.selectedIndusty == industry;
+            return SizedBox(
+              width: 92,
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: selected
+                      ? const BorderSide(color: kSmartQGreen, width: 2)
+                      : BorderSide.none,
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => homeProvider.setSelectedList(industry),
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(_iconForIndustry(industry),
+                                size: 28, color: selected ? kSmartQGreen : null),
+                            const SizedBox(height: 8),
+                            Text(
+                              industry,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: selected ? kSmartQGreen : null,
+                                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (selected)
+                        const Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Icon(Icons.check_circle, color: kSmartQGreen, size: 16),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        );
-      }).toList(),
+            );
+          },
+        ),
+      ),
     );
   }
 }
 
 class _OrganisationStep extends StatefulWidget {
   final HomeProvider homeProvider;
+  final Future<void> Function(String) onSelectOrganisation;
 
-  const _OrganisationStep({required this.homeProvider});
+  const _OrganisationStep({required this.homeProvider, required this.onSelectOrganisation});
 
   @override
   State<_OrganisationStep> createState() => _OrganisationStepState();
@@ -177,6 +251,7 @@ class _OrganisationStep extends StatefulWidget {
 
 class _OrganisationStepState extends State<_OrganisationStep> {
   String _query = "";
+  bool _resolving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -207,19 +282,35 @@ class _OrganisationStepState extends State<_OrganisationStep> {
         Expanded(
           child: homeProvider.companiesList.isEmpty
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final company = filtered[index];
-                    return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.apartment_outlined),
-                        title: Text(company),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => homeProvider.setCompaniesList(company),
-                      ),
-                    );
-                  },
+              : Stack(
+                  children: [
+                    ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final company = filtered[index];
+                        return Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.apartment_outlined),
+                            title: Text(company),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: _resolving
+                                ? null
+                                : () async {
+                                    setState(() => _resolving = true);
+                                    await widget.onSelectOrganisation(company);
+                                    // If the org has more than one provider, this State is
+                                    // still around (now showing the Service Provider step's
+                                    // list) so the spinner needs clearing. If it had exactly
+                                    // one, we've already navigated away and this is a no-op.
+                                    if (mounted) setState(() => _resolving = false);
+                                  },
+                          ),
+                        );
+                      },
+                    ),
+                    if (_resolving)
+                      const Center(child: CircularProgressIndicator()),
+                  ],
                 ),
         ),
       ],
@@ -229,8 +320,9 @@ class _OrganisationStepState extends State<_OrganisationStep> {
 
 class _ProviderStep extends StatelessWidget {
   final HomeProvider homeProvider;
+  final ValueChanged<String> onSelectProvider;
 
-  const _ProviderStep({required this.homeProvider});
+  const _ProviderStep({required this.homeProvider, required this.onSelectProvider});
 
   @override
   Widget build(BuildContext context) {
@@ -242,6 +334,8 @@ class _ProviderStep extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, size: 18),
           label: Text("Organisation: ${homeProvider.selectedCompanies}"),
         ),
+        // Tapping a provider immediately continues -- no separate selected/tick state or
+        // Continue button, choosing a provider here IS the action.
         Expanded(
           child: homeProvider.unitList.isEmpty
               ? const Center(child: Text("No service providers found"))
@@ -249,16 +343,12 @@ class _ProviderStep extends StatelessWidget {
                   itemCount: homeProvider.unitList.length,
                   itemBuilder: (context, index) {
                     final unit = homeProvider.unitList[index];
-                    final selected = homeProvider.selectedUnit == unit;
                     return Card(
-                      color: selected
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : null,
                       child: ListTile(
                         leading: const Icon(Icons.storefront_outlined),
                         title: Text(unit),
-                        trailing: selected ? const Icon(Icons.check_circle) : null,
-                        onTap: () => homeProvider.setUnitList(unit),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => onSelectProvider(unit),
                       ),
                     );
                   },

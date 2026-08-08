@@ -3,14 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../SharedPrefrence/SharedPrefrence.dart';
 import '../../provider/home_provider.dart';
-import '../../utils/utils.dart';
-import '../auth/SignUp.dart';
 import 'get_ticket.dart';
 import 'my_booking.dart';
 import 'notification.dart';
 import 'request_new_booking.dart';
 import 'service_provider_mode.dart';
-import 'settings.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -81,7 +78,7 @@ class AppDrawer extends StatelessWidget {
                 }));
               },
             ),
-            const Divider(),
+            if (userData.isServiceProvider) const Divider(),
             if (userData.isServiceProvider)
               _DrawerItem(
                 icon: Icons.storefront_outlined,
@@ -95,33 +92,6 @@ class AppDrawer extends StatelessWidget {
                   }));
                 },
               ),
-            _DrawerItem(
-              icon: Icons.settings_outlined,
-              title: "Settings",
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (context) {
-                  return const SettingsScreen();
-                }));
-              },
-            ),
-            _DrawerItem(
-              icon: Icons.logout,
-              title: "Log Out",
-              onTap: () async {
-                final bool isLogout = await Utils.logoutDialog(context) ?? false;
-                if (isLogout) {
-                  SharedPref.deleteData();
-                  if (context.mounted) {
-                    Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) {
-                      return const SignupPage();
-                    }), (route) => false);
-                  }
-                }
-              },
-            ),
           ],
         ),
       ),

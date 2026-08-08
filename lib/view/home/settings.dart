@@ -1,23 +1,22 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
+import 'package:sq_notification/constant/app_colors.dart';
 import 'package:sq_notification/utils/utils.dart';
-import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
 import 'package:sq_notification/view/home/contact_us.dart';
 import 'package:sq_notification/view/home/service_provider_mode.dart';
-import 'package:sq_notification/view/home/widget/search_dropdown.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../provider/theme_provider.dart';
 import 'WebView.dart';
 
-//'https://sq-notification.onrender.com/privacy-policy'
-
 const List<String> _supportedLanguages = ["English"];
+const Color kDestructiveRed = Color(0xFFD32F2F);
+const Color kDestructiveRedLight = Color(0xFFFDEAEA);
+const Color kAccountActionsOrange = Color(0xFFC9772E);
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,8 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _language = SharedPref.getLanguage();
 
   Future<void> deleteAccount() async {
-    final result = await DioApi.delete(
-        path: ConfigUrl.deleteUserUrl(SharedPref.getUserData().id));
+    final result =
+        await DioApi.delete(path: ConfigUrl.deleteUserUrl(SharedPref.getUserData().id));
 
     if (result.response == null) {
       result.handleError(context);
@@ -45,409 +44,441 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       Provider.of<ThemeProvider>(context, listen: false).getRegionData();
     });
   }
 
+  Future<void> _showPicker({
+    required String title,
+    required List<String> options,
+    required String currentValue,
+    required ValueChanged<String> onSelected,
+  }) async {
+    await showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              ...options.map((option) => ListTile(
+                    title: Text(option),
+                    trailing: option == currentValue
+                        ? const Icon(Icons.check, color: kSmartQGreen)
+                        : null,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onSelected(option);
+                    },
+                  )),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showNotificationPreferences() async {
+    await showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setSheetState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Notification Preferences",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("Push Notifications"),
+                    subtitle: const Text("Booking updates and queue alerts"),
+                    value: _notificationsEnabled,
+                    onChanged: (value) {
+                      setSheetState(() {});
+                      setState(() {
+                        _notificationsEnabled = value;
+                      });
+                      SharedPref.setNotificationsEnabled(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  void _confirmDeleteAccount() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Delete Account"),
+          content: const Text(
+              "Are you sure you want to delete your account? This action is irreversible."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("No"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await deleteAccount();
+                SharedPref.deleteData();
+                if (mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) {
+                    return const SignupPage();
+                  }), (route) => false);
+                }
+              },
+              child: const Text("Yes", style: TextStyle(color: kDestructiveRed)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _logout() async {
+    final bool isLogout = await Utils.logoutDialog(context) ?? false;
+    if (isLogout) {
+      SharedPref.deleteData();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) {
+          return const SignupPage();
+        }), (route) => false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
+    final userData = SharedPref.getUserData();
+
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text("Settings"),
       ),
-      body: Column(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    ListTile(
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      )),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "Dark Mode",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      trailing: Switch(
-                        value: themeProvider.isDarkTheme,
-                        onChanged: (bool value) {
-                          themeProvider.toggleTheme();
-                        },
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    ListTile(
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                      ),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "Font Size",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      trailing: SizedBox(
-                        width: 120,
-                        child: Slider(
-                          divisions: 35,
-                          inactiveColor:
-                              Theme.of(context).sliderTheme.inactiveTrackColor,
-                          min: 14,
-                          max: 35,
-                          value: themeProvider.fSize,
-                          onChanged: (double value) {
-                            themeProvider.setFontSize(value);
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    ListTile(
-                        contentPadding: EdgeInsets.symmetric(horizontal: 2),
-                        onTap: () async {},
-                        shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(
-                          Radius.circular(10),
-                        )),
-                        tileColor: Theme.of(context).colorScheme.secondary,
-                        title: CustomDropDown(
-                          changedValue: (val) {
-                            themeProvider
-                                .setSelectedCity({"city": val}).then((value) {
-                              setState(() {});
-                            });
-                          },
-                          // controller: TextEditingController(),
-                          selectedValue: "",
-                          dropDownList: themeProvider.cityDropDown,
-                          hintText: (SharedPref.getUserData().city != null &&
-                                  SharedPref.getUserData().city.isNotEmpty)
-                              ? SharedPref.getUserData().city
-                              : 'City',
-                        )
-                        ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    ListTile(
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      )),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "Notifications",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      trailing: Switch(
-                        value: _notificationsEnabled,
-                        onChanged: (bool value) {
-                          setState(() {
-                            _notificationsEnabled = value;
-                          });
-                          SharedPref.setNotificationsEnabled(value);
-                        },
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    ListTile(
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      )),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "Language",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      trailing: DropdownButton<String>(
-                        value: _language,
-                        underline: const SizedBox.shrink(),
-                        items: _supportedLanguages
-                            .map((lang) =>
-                                DropdownMenuItem(value: lang, child: Text(lang)))
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() {
-                            _language = value;
-                          });
-                          SharedPref.setLanguage(value);
-                        },
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    if (SharedPref.getUserData().isServiceProvider)
-                      ListTile(
-                        onTap: () {
-                          Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (context) {
-                            return const ServiceProviderMode();
-                          }));
-                        },
-                        shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(
-                          Radius.circular(10),
-                        )),
-                        tileColor: Theme.of(context).colorScheme.secondary,
-                        title: Text(
-                          "Service Provider Mode",
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                      ),
-                    if (SharedPref.getUserData().isServiceProvider)
-                      const SizedBox(
-                        height: 10,
-                      ),
-                    ListTile(
-                      onTap: () {
-                        Navigator.of(context)
-                            .push(MaterialPageRoute(builder: (context) {
-                          return WebView(
-                            url:
-                                'https://node-app-server.onrender.com/privacy.html',
-                            title: 'Privacy Policy',
-                          );
-                        }));
-                      },
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      )),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "Privacy Policy",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    ListTile(
-                      onTap: () {
-                        Navigator.of(context)
-                            .push(MaterialPageRoute(builder: (context) {
-                          return WebView(
-                            url:
-                                'https://node-app-server.onrender.com/about.html',
-                            title: 'About Us',
-                          );
-                        }));
-                      },
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      )),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "About Us",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    ListTile(
-                      onTap: () {
-                        Navigator.of(context)
-                            .push(MaterialPageRoute(builder: (context) {
-                          return WebView(
-                            url:
-                                'https://node-app-server.onrender.com/terms.html',
-                            title: 'Terms & Conditions',
-                          );
-                        }));
-                      },
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      )),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "Terms of Use",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    /*ListTile(
-                onTap: () {
-                  Dialogs.confirmDelete(context, "Do you really want to delete your account ?", () async{
-                    try{
-
-
-                      deleteUser();
-                    }catch(e){
-                      print("something went wrong e ++${e}") ;
-                    }
-                    deleteAccount();
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) {
-                        return SignupPage();
-                      }), (route) => false);}, "Yes", "NO");
-
-                },
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(10),
-                    ),),
-                tileColor: Theme.of(context).colorScheme.secondary,
-                title: Text("Delete Account",style: Theme.of(context).textTheme.labelMedium,),
+          Text("Customize your SmartQ experience",
+              style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: "APPEARANCE",
+            children: [
+              _SettingsRow(
+                icon: Icons.dark_mode_outlined,
+                title: "Dark Mode",
+                subtitle: "Use a darker theme for low light",
+                trailing: Switch(
+                  value: themeProvider.isDarkTheme,
+                  onChanged: (bool value) => themeProvider.toggleTheme(),
+                ),
               ),
-              SizedBox(
-                height: 10,
-              ),*/
-                    ListTile(
-                      onTap: () async {
-                        // firebaseAuth.signOut();
-
-                        final bool isLogout =
-                            await Utils.logoutDialog(context) ?? false;
-                        if (isLogout) {
-                          SharedPref.deleteData();
-                          Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(builder: (context) {
-                            return const SignupPage();
-                          }), (route) => false);
-                        }
-                      },
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      )),
-                      tileColor: Theme.of(context).colorScheme.secondary,
-                      title: Text(
-                        "Logout",
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
+              _SettingsRow(
+                icon: Icons.text_fields,
+                title: "Font Size",
+                subtitle: "Adjust text size for better readability",
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("A", style: TextStyle(fontSize: 12)),
                     SizedBox(
-                      height: 10,
-                    ),
-
-                    // Delete Account Button
-                    ElevatedButton(
-                      onPressed: () {
-                        // Show a confirmation dialog before deleting the account
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text("Delete Account"),
-                                content: Text(
-                                    "Are you sure you want to delete your account? This action is irreversible."),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context)
-                                          .pop(); // Close dialog
-                                    },
-                                    child: Text("No"),
-                                  ),
-                                  TextButton(
-                                    onPressed: () async {
-                                      Navigator.of(context)
-                                          .pop(); // Close dialog
-                                      deleteAccount(); // Call the deleteAccount method
-                                      // Optionally, log out and navigate to signup page
-                                      SharedPref.deleteData();
-                                      Navigator.of(context).pushAndRemoveUntil(
-                                          MaterialPageRoute(builder: (context) {
-                                        return const SignupPage();
-                                      }), (route) => false);
-                                    },
-                                    child: Text("Yes"),
-                                  ),
-                                ],
-                              );
-                            });
-                      },
-                      child: Text("Delete Account"),
-                      style: ElevatedButton.styleFrom(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 15, horizontal: 50),
-                        backgroundColor:
-                            Colors.red, // Red color for delete action
+                      width: 90,
+                      child: Slider(
+                        divisions: 35,
+                        min: 14,
+                        max: 35,
+                        value: themeProvider.fSize,
+                        onChanged: (double value) => themeProvider.setFontSize(value),
                       ),
                     ),
-
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: kSmartQGreenLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.support_agent_outlined, color: kSmartQGreen),
-                        title: const Text("Need Help?",
-                            style: TextStyle(fontWeight: FontWeight.bold, color: kSmartQGreen)),
-                        subtitle: const Text("Visit our Help Center or contact support"),
-                        trailing: const Icon(Icons.open_in_new, color: kSmartQGreen),
-                        onTap: () {
-                          Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (context) {
-                            return const ContactUsScreen();
-                          }));
-                        },
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
+                    const Text("A", style: TextStyle(fontSize: 18)),
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: "PREFERENCES",
+            children: [
+              _SettingsRow(
+                icon: Icons.location_on_outlined,
+                title: "Location / Region",
+                subtitle: "Set your location for local services",
+                trailingText: userData.city.isNotEmpty ? userData.city : "Not set",
+                onTap: () => _showPicker(
+                  title: "Select your city",
+                  options: themeProvider.cityDropDown,
+                  currentValue: userData.city,
+                  onSelected: (city) {
+                    themeProvider.setSelectedCity({"city": city}).then((_) => setState(() {}));
+                  },
+                ),
+              ),
+              _SettingsRow(
+                icon: Icons.notifications_outlined,
+                title: "Notifications",
+                subtitle: "Manage your notification preferences",
+                onTap: _showNotificationPreferences,
+              ),
+              _SettingsRow(
+                icon: Icons.language_outlined,
+                title: "Language",
+                subtitle: "Choose your preferred language",
+                trailingText: _language,
+                onTap: () => _showPicker(
+                  title: "Select language",
+                  options: _supportedLanguages,
+                  currentValue: _language,
+                  onSelected: (lang) {
+                    setState(() {
+                      _language = lang;
+                    });
+                    SharedPref.setLanguage(lang);
+                  },
+                ),
+              ),
+              if (userData.isServiceProvider)
+                _SettingsRow(
+                  icon: Icons.storefront_outlined,
+                  title: "Service Provider Mode",
+                  subtitle: "Manage your queues as a service provider",
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                      return const ServiceProviderMode();
+                    }));
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: "ACCOUNT & PRIVACY",
+            children: [
+              _SettingsRow(
+                icon: Icons.lock_outline,
+                title: "Privacy Policy",
+                subtitle: "How we collect, use, and protect your data",
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                    return WebView(
+                      url: 'https://node-app-server.onrender.com/privacy.html',
+                      title: 'Privacy Policy',
+                    );
+                  }));
+                },
+              ),
+              _SettingsRow(
+                icon: Icons.description_outlined,
+                title: "Terms of Use",
+                subtitle: "Terms and conditions for using SmartQ",
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                    return WebView(
+                      url: 'https://node-app-server.onrender.com/terms.html',
+                      title: 'Terms & Conditions',
+                    );
+                  }));
+                },
+              ),
+              _SettingsRow(
+                icon: Icons.info_outline,
+                title: "About Us",
+                subtitle: "Learn more about SmartQ Systems",
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                    return WebView(
+                      url: 'https://node-app-server.onrender.com/about.html',
+                      title: 'About Us',
+                    );
+                  }));
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: "ACCOUNT ACTIONS",
+            titleColor: kAccountActionsOrange,
+            children: [
+              _SettingsRow(
+                icon: Icons.logout,
+                iconColor: kAccountActionsOrange,
+                iconBg: const Color(0xFFFBEADD),
+                title: "Logout",
+                subtitle: "Sign out from your SmartQ account",
+                onTap: _logout,
+              ),
+              _SettingsRow(
+                icon: Icons.delete_outline,
+                iconColor: kDestructiveRed,
+                iconBg: kDestructiveRedLight,
+                title: "Delete Account",
+                titleColor: kDestructiveRed,
+                subtitle: "Permanently delete your account and data",
+                destructive: true,
+                onTap: _confirmDeleteAccount,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: kSmartQGreenLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.support_agent_outlined, color: kSmartQGreen),
+              title: const Text("Need Help?",
+                  style: TextStyle(fontWeight: FontWeight.bold, color: kSmartQGreen)),
+              subtitle: const Text("Visit our Help Center or contact support"),
+              trailing: const Icon(Icons.open_in_new, color: kSmartQGreen),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                  return const ContactUsScreen();
+                }));
+              },
             ),
           ),
+          const SizedBox(height: 16),
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done &&
-                  snapshot.hasData) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Center(
-                    child: Text(
-                      'Version: ${snapshot.data!.version}',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
+              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                return Center(
+                  child: Text(
+                    'Version: ${snapshot.data!.version}',
+                    style: Theme.of(context).textTheme.labelSmall,
                   ),
                 );
-              } else {
-                return SizedBox.shrink();
               }
+              return const SizedBox.shrink();
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final Color titleColor;
+  final List<Widget> children;
+
+  const _SettingsSection({
+    required this.title,
+    this.titleColor = kSmartQGreen,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text(
+              title,
+              style: TextStyle(
+                  color: titleColor, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5),
+            ),
+          ),
+          for (int i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i < children.length - 1) const Divider(height: 1, indent: 56),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final Color? titleColor;
+  final String subtitle;
+  final String? trailingText;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool destructive;
+
+  const _SettingsRow({
+    required this.icon,
+    this.iconColor = kSmartQGreen,
+    this.iconBg = kSmartQGreenLight,
+    required this.title,
+    this.titleColor,
+    required this.subtitle,
+    this.trailingText,
+    this.trailing,
+    this.onTap,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: destructive ? kDestructiveRedLight : null,
+      child: ListTile(
+        onTap: onTap,
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        title: Text(title,
+            style: TextStyle(fontWeight: FontWeight.w600, color: titleColor)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        trailing: trailing ??
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (trailingText != null) ...[
+                  Text(trailingText!, style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(width: 4),
+                ],
+                if (onTap != null)
+                  Icon(Icons.chevron_right, color: destructive ? kDestructiveRed : Colors.grey),
+              ],
+            ),
       ),
     );
   }

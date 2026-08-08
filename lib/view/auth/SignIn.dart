@@ -8,11 +8,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../Model/UserDataModel.dart';
 import '../../SharedPrefrence/SharedPrefrence.dart';
+import '../../constant/app_colors.dart';
 import '../../widget/CustomTextFormField.dart';
 import '../home/bottom_nav_bar.dart';
 
-const Color kSmartQGreen = Color(0xFF1B7A3D);
-const Color kSmartQGreenLight = Color(0xFFEAF6EE);
+export '../../constant/app_colors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -254,14 +254,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _header(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(color: kSmartQGreen, shape: BoxShape.circle),
-          alignment: Alignment.center,
-          child: const Text("S",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
-        ),
+        Image.asset("assets/images/smartq_logo.png", width: 40, height: 40),
         const SizedBox(width: 8),
         const Text("SmartQ",
             style: TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold, fontSize: 22)),

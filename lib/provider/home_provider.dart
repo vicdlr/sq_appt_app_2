@@ -85,13 +85,13 @@ class HomeProvider extends ChangeNotifier {
     } else {}
   }
 
-  void setCompaniesList(String value) {
+  Future<void> setCompaniesList(String value) async {
     print("value $value");
     selectedCompanies = value;
     selectedUnit = "";
     serviceType = "Service type";
     notifyListeners();
-    getUnitList();
+    await getUnitList();
   }
 
   // "Choose Service Provider" in the simplified 3-step booking flow (Industry -> Organisation ->
@@ -281,6 +281,11 @@ class HomeProvider extends ChangeNotifier {
       "company": selectedCompanies,
       "servicetype": serviceType,
       "unit": selectedUnit,
+      // Server requires these keys to be present even though the simplified booking flow no
+      // longer has a department/group drill-down step -- empty string matches its own
+      // department = '' / groupname = '' fallback filter.
+      "department": "",
+      "groupname": "",
     });
 
     if (result.response != null) {
