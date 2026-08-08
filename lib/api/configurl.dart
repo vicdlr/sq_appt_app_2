@@ -27,4 +27,6 @@ abstract class ConfigUrl {
   // already have their own separate ccadmin login, no token bridge needed here (unlike the
   // patient queue-access flow above).
   static String careConnectAdminBaseUrl = "https://ccadmin.smartqsys.com";
+
+  static String deleteUserUrl(String userId) => "/users/$userId";
 }

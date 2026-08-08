@@ -10,6 +10,8 @@ class SharedPref {
   static const authToken = "authToken";
   static const fcmToken = "fcmToken";
   static const badgeToken = "badgeToken";
+  static const notificationsEnabled = "notificationsEnabled";
+  static const language = "language";
 
   static late SharedPreferences _prefs;
   static const String _userKey = 'user';
@@ -69,6 +71,22 @@ class SharedPref {
 
   static setBadgeToken(String t){
     _prefs.setString(badgeToken, t);
+  }
+
+  static bool getNotificationsEnabled(){
+    return _prefs.getBool(notificationsEnabled) ?? true;
+  }
+
+  static setNotificationsEnabled(bool value){
+    _prefs.setBool(notificationsEnabled, value);
+  }
+
+  static String getLanguage(){
+    return _prefs.getString(language) ?? "English";
+  }
+
+  static setLanguage(String value){
+    _prefs.setString(language, value);
   }
 
   static deleteData(){

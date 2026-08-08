@@ -1,10 +1,12 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
+import 'package:sq_notification/api/api.dart';
+import 'package:sq_notification/api/configurl.dart';
 import 'package:sq_notification/utils/utils.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
+import 'package:sq_notification/view/home/service_provider_mode.dart';
 import 'package:sq_notification/view/home/widget/search_dropdown.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -12,6 +14,8 @@ import '../../provider/theme_provider.dart';
 import 'WebView.dart';
 
 //'https://sq-notification.onrender.com/privacy-policy'
+
+const List<String> _supportedLanguages = ["English"];
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,21 +25,19 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  void deleteAccount() async {
-    var headers = {'x-access-token': SharedPref.getAuthToken()};
-    var dio = Dio();
-    var response = await dio.request(
-      'https://node-app-server.onrender.com/users/${SharedPref.getUserData().id}',
-      options: Options(
-        method: 'DELETE',
-        headers: headers,
-      ),
-    );
+  // Local preferences only for now -- no backend behavior is gated by these yet (e.g. push
+  // sending doesn't check notificationsEnabled, no localization framework reads language). Kept
+  // shallow deliberately until an actual feature needs them; visible and persisted so the UI is
+  // truthful about what's been chosen.
+  bool _notificationsEnabled = SharedPref.getNotificationsEnabled();
+  String _language = SharedPref.getLanguage();
 
-    if (response.statusCode == 200) {
-      print("user delete successfully === ${response.data}");
-    } else {
-      print(response.statusMessage);
+  Future<void> deleteAccount() async {
+    final result = await DioApi.delete(
+        path: ConfigUrl.deleteUserUrl(SharedPref.getUserData().id));
+
+    if (result.response == null) {
+      result.handleError(context);
     }
   }
 
@@ -139,6 +141,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(
                       height: 10,
                     ),
+                    ListTile(
+                      shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(
+                        Radius.circular(10),
+                      )),
+                      tileColor: Theme.of(context).colorScheme.secondary,
+                      title: Text(
+                        "Notifications",
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                      trailing: Switch(
+                        value: _notificationsEnabled,
+                        onChanged: (bool value) {
+                          setState(() {
+                            _notificationsEnabled = value;
+                          });
+                          SharedPref.setNotificationsEnabled(value);
+                        },
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    ListTile(
+                      shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(
+                        Radius.circular(10),
+                      )),
+                      tileColor: Theme.of(context).colorScheme.secondary,
+                      title: Text(
+                        "Language",
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                      trailing: DropdownButton<String>(
+                        value: _language,
+                        underline: const SizedBox.shrink(),
+                        items: _supportedLanguages
+                            .map((lang) =>
+                                DropdownMenuItem(value: lang, child: Text(lang)))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() {
+                            _language = value;
+                          });
+                          SharedPref.setLanguage(value);
+                        },
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    if (SharedPref.getUserData().isServiceProvider)
+                      ListTile(
+                        onTap: () {
+                          Navigator.of(context)
+                              .push(MaterialPageRoute(builder: (context) {
+                            return const ServiceProviderMode();
+                          }));
+                        },
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                          Radius.circular(10),
+                        )),
+                        tileColor: Theme.of(context).colorScheme.secondary,
+                        title: Text(
+                          "Service Provider Mode",
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                      ),
+                    if (SharedPref.getUserData().isServiceProvider)
+                      const SizedBox(
+                        height: 10,
+                      ),
                     ListTile(
                       onTap: () {
                         Navigator.of(context)
