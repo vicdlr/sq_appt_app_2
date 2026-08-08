@@ -20,4 +20,5 @@ abstract class ConfigUrl {
   static String getCityurl = "/get-cities";
   static String updateProfile = "/profile";
   static String notificationUrl = "/notifications/user";
+  static String getBadgeTokenUrl = "/badge-token";
 }

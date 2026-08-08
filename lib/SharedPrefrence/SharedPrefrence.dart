@@ -9,6 +9,7 @@ class SharedPref {
   static const userData = "userData";
   static const authToken = "authToken";
   static const fcmToken = "fcmToken";
+  static const badgeToken = "badgeToken";
 
   static late SharedPreferences _prefs;
   static const String _userKey = 'user';
@@ -60,6 +61,14 @@ class SharedPref {
 
   static setFcmToken(String t){
     _prefs.setString(fcmToken, t);
+  }
+
+  static String? getBadgeToken(){
+    return _prefs.getString(badgeToken);
+  }
+
+  static setBadgeToken(String t){
+    _prefs.setString(badgeToken, t);
   }
 
   static deleteData(){

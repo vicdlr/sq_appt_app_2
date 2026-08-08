@@ -27,6 +27,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   NotificationServices notification = NotificationServices();
   String fcmToken = "";
+  String? badgeToken;
 
   void updateData(String token) async {
     var data = {
@@ -77,11 +78,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Renders instantly from cache (works offline), then refreshes silently in the background --
+  // the badge is meant to keep working even if the phone has no signal at the moment it's shown.
+  Future<void> fetchAndCacheBadgeToken() async {
+    setState(() {
+      badgeToken = SharedPref.getBadgeToken();
+    });
+
+    final result = await DioApi.get(path: ConfigUrl.getBadgeTokenUrl);
+    if (result.response != null) {
+      final String? freshToken = result.response?.data["data"]?["badgeToken"];
+      if (freshToken != null && freshToken.isNotEmpty) {
+        SharedPref.setBadgeToken(freshToken);
+        setState(() {
+          badgeToken = freshToken;
+        });
+      }
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     updateFcmToken();
+    fetchAndCacheBadgeToken();
   }
 
   @override
@@ -157,12 +178,16 @@ class _HomePageState extends State<HomePage> {
               border: Border.all(),
               borderRadius: BorderRadius.circular(20)),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: fcmToken.isEmpty
-              ? const CircularProgressIndicator()
+          child: badgeToken == null || badgeToken!.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Text(
+                    "Connect to the internet once to activate your badge",
+                    textAlign: TextAlign.center,
+                  ),
+                )
               : QrImageView(
-                  //data: "${firebaseAuth.currentUser?.uid}  $fcmToken",
-                  data:
-                      "${SharedPref.getUserData().customerId}${fcmToken}sqs${SharedPref.getAuthToken()}",
+                  data: badgeToken!,
                   version: QrVersions.auto,
                   size: 200.0,
                 ),
