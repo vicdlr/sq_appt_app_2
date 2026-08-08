@@ -7,6 +7,7 @@ class UserData {
     required this.city,
     required this.region,
     required this.customerId,
+    this.isServiceProvider = false,
   });
 
    String id;
@@ -16,6 +17,7 @@ class UserData {
    String city;
    String region;
    String customerId;
+   bool isServiceProvider;
 
   factory UserData.fromJson(Map<String, dynamic> json){
     return UserData(
@@ -26,6 +28,7 @@ class UserData {
       city: json["city"].toString() ?? "",
       region: json["region"].toString() ?? "",
       customerId: json["customerId"].toString() ?? "",
+      isServiceProvider: json["is_service_provider"] == true,
     );
   }
 
@@ -37,6 +40,7 @@ class UserData {
     "city": city,
     "region": region,
     "customerId": customerId,
+    "is_service_provider": isServiceProvider,
   };
 
   @override
