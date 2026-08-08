@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:sq_notification/provider/home_provider.dart';
-import 'package:sq_notification/view/home/get_ticket.dart';
+import 'package:sq_notification/view/home/home_dashboard.dart';
 import 'package:sq_notification/view/home/home_page.dart';
 import 'package:sq_notification/view/home/my_booking.dart';
 import 'package:sq_notification/view/home/request_new_booking.dart';
-
-import 'package:flutter/material.dart';
+import 'package:sq_notification/view/home/settings.dart';
 
 class BottomNavBar extends StatefulWidget {
   const BottomNavBar({super.key});
@@ -18,15 +15,15 @@ class BottomNavBar extends StatefulWidget {
 class _BottomNavBarState extends State<BottomNavBar> {
   int currentPageIndex = 0;
   List pages = [
-    HomePage(),
-    GetTicket(),
-    MyBooking(),
+    const HomeDashboard(),
+    MyBooking(filterActiveQueuesOnly: true),
     RequestNewBooking(),
+    HomePage(),
+    const SettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Scaffold(
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
@@ -39,19 +36,27 @@ class _BottomNavBarState extends State<BottomNavBar> {
           NavigationDestination(
             selectedIcon: Icon(Icons.home),
             icon: Icon(Icons.home_outlined),
-            label: '',
+            label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.qr_code_scanner),
-            label: '',
+            selectedIcon: Icon(Icons.groups),
+            icon: Icon(Icons.groups_outlined),
+            label: 'My Queues',
           ),
           NavigationDestination(
-            icon: Icon(Icons.event_note),
-            label: '',
+            selectedIcon: Icon(Icons.calendar_today),
+            icon: Icon(Icons.calendar_today_outlined),
+            label: 'Services',
           ),
           NavigationDestination(
-            icon: Icon(Icons.factory),
-            label: '',
+            selectedIcon: Icon(Icons.qr_code),
+            icon: Icon(Icons.qr_code_outlined),
+            label: 'My Badge',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.more_horiz),
+            icon: Icon(Icons.more_horiz_outlined),
+            label: 'More',
           ),
         ],
       ),
