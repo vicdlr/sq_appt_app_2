@@ -20,6 +20,7 @@ class BookingModel {
     required this.deliveryPersonName,
     required this.remarks,
     required this.servicetype,
+    this.handledBy,
   });
 
   final int id;
@@ -42,6 +43,9 @@ class BookingModel {
   final dynamic deliveryPersonName;
   final dynamic remarks;
   final dynamic servicetype;
+  // 'CARECONNECT' | 'SAM' | null -- null until node_app_server's async routing completes after
+  // booking creation. Only 'CARECONNECT' bookings have a live queue to view.
+  final String? handledBy;
 
   factory BookingModel.fromJson(Map<String, dynamic> json){
     return BookingModel(
@@ -65,6 +69,7 @@ class BookingModel {
       deliveryPersonName: json["delivery_person_name"],
       remarks: json["remarks"],
       servicetype: json["servicetype"],
+      handledBy: json["handled_by"],
     );
   }
 
@@ -89,6 +94,7 @@ class BookingModel {
     "delivery_person_name": deliveryPersonName,
     "remarks": remarks,
     "servicetype": servicetype,
+    "handled_by": handledBy,
   };
 
   @override
