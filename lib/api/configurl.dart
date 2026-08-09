@@ -21,7 +21,9 @@ abstract class ConfigUrl {
   static String updateProfile = "/profile";
   static String notificationUrl = "/notifications/user";
   static String getBadgeTokenUrl = "/badge-token";
-  static String queueAccessUrl(String bookingId) => "/bookings/$bookingId/queue-access";
+  static String queueAccessUrl(String bookingId) =>
+      "/bookings/$bookingId/queue-access";
+  static String manageBookingsLinkUrl = "/careconnect/manage-bookings-link";
 
   // CareConnect's ccadmin pages, opened directly in a WebView for Service Provider Mode -- staff
   // already have their own separate ccadmin login, no token bridge needed here (unlike the

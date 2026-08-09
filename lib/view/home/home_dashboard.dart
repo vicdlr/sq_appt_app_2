@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -69,7 +70,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
     if (isLogout) {
       SharedPref.deleteData();
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) {
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) {
           return const SignupPage();
         }), (route) => false);
       }
@@ -95,7 +97,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text("SmartQ",
-                      style: TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold, fontSize: 18)),
+                      style: TextStyle(
+                          color: kSmartQGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18)),
                   Text("Smarter Queues. Better Experience.",
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -136,7 +141,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
             ],
             onSelected: (value) {
               if (value == 'settings') {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) {
                   return const SettingsScreen();
                 }));
               } else if (value == 'logout') {
@@ -149,8 +155,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
       ),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
-        onRefresh: () =>
-            Provider.of<HomeProvider>(context, listen: false).getAllBooking(context),
+        onRefresh: () => Provider.of<HomeProvider>(context, listen: false)
+            .getAllBooking(context),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -179,7 +185,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
             const SizedBox(height: 20),
             _BadgeFeatureCard(),
             const SizedBox(height: 16),
-            userData.isServiceProvider ? _ServiceProviderPanel() : _RegisterServiceCard(),
+            userData.isServiceProvider
+                ? _ServiceProviderPanel()
+                : _ManageBookingsCard(),
           ],
         ),
       ),
@@ -208,20 +216,29 @@ class _ActiveQueueCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text("My Active Queues",
-                  style: TextStyle(fontWeight: FontWeight.bold, color: kSmartQGreen)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: kSmartQGreen)),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (context) {
                     return MyBooking();
                   }));
                 },
-                child: const Text("View all", style: TextStyle(color: kSmartQGreen)),
+                child: const Text("View all",
+                    style: TextStyle(color: kSmartQGreen)),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(booking.organisation.isNotEmpty ? booking.organisation : booking.unit,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+              booking.organisation.isNotEmpty
+                  ? booking.organisation
+                  : booking.unit,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 2),
           Text(booking.status, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 12),
@@ -233,7 +250,8 @@ class _ActiveQueueCard extends StatelessWidget {
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) {
                   return MyBooking();
                 }));
               },
@@ -257,22 +275,30 @@ class _QuickAction {
 
 class _QuickActionsGrid extends StatelessWidget {
   static final List<_QuickAction> _actions = [
-    _QuickAction(Icons.qr_code_scanner, "Get a Ticket", kSmartQGreen, (context) {
-      return () => Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+    _QuickAction(Icons.qr_code_scanner, "Get a Ticket", kSmartQGreen,
+        (context) {
+      return () =>
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
             return GetTicket();
           }));
     }),
-    _QuickAction(Icons.calendar_today_outlined, "Appointments", kServiceProviderBlue, (context) {
-      return () => Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+    _QuickAction(
+        Icons.calendar_today_outlined, "Appointments", kServiceProviderBlue,
+        (context) {
+      return () =>
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
             return MyBooking();
           }));
     }),
-    _QuickAction(Icons.groups_outlined, "My Queues", const Color(0xFF7B3FA0), (context) {
-      return () => Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+    _QuickAction(Icons.groups_outlined, "My Queues", const Color(0xFF7B3FA0),
+        (context) {
+      return () =>
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
             return MyBooking(filterActiveQueuesOnly: true);
           }));
     }),
-    _QuickAction(Icons.add_box_outlined, "New Booking", const Color(0xFFC9772E), (context) {
+    _QuickAction(Icons.add_box_outlined, "New Booking", const Color(0xFFC9772E),
+        (context) {
       return () {
         Provider.of<HomeProvider>(context, listen: false).setIndustriesEmpty();
         Navigator.of(context).push(MaterialPageRoute(builder: (context) {
@@ -301,7 +327,8 @@ class _QuickActionsGrid extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(color: action.color, shape: BoxShape.circle),
+                decoration:
+                    BoxDecoration(color: action.color, shape: BoxShape.circle),
                 child: Icon(action.icon, color: Colors.white, size: 22),
               ),
               const SizedBox(height: 6),
@@ -381,11 +408,14 @@ class _BadgeFeatureCardState extends State<_BadgeFeatureCard> {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.shield_outlined, color: Colors.white, size: 18),
+                      Icon(Icons.shield_outlined,
+                          color: Colors.white, size: 18),
                       SizedBox(width: 6),
                       Text("SmartQ Badge / Pass",
                           style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15)),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -397,11 +427,13 @@ class _BadgeFeatureCardState extends State<_BadgeFeatureCard> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.check_circle, color: Colors.white, size: 14),
+                            const Icon(Icons.check_circle,
+                                color: Colors.white, size: 14),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(use,
-                                  style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 11)),
                             ),
                           ],
                         ),
@@ -427,7 +459,10 @@ class _BadgeFeatureCardState extends State<_BadgeFeatureCard> {
                 const SizedBox(height: 6),
                 const Text("TAP TO\nENLARGE",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold)),
               ],
             ),
           ],
@@ -450,9 +485,11 @@ class _ServiceProviderPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text("For Service Providers",
-              style: TextStyle(fontWeight: FontWeight.bold, color: kServiceProviderBlue)),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: kServiceProviderBlue)),
           const SizedBox(height: 4),
-          const Text("Manage your queues, serving customers efficiently with SmartQ.",
+          const Text(
+              "Manage your queues, serving customers efficiently with SmartQ.",
               style: TextStyle(fontSize: 12)),
           const SizedBox(height: 12),
           SizedBox(
@@ -463,7 +500,8 @@ class _ServiceProviderPanel extends StatelessWidget {
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) {
                   return const ServiceProviderMode();
                 }));
               },
@@ -476,63 +514,89 @@ class _ServiceProviderPanel extends StatelessWidget {
   }
 }
 
-// Shown instead of _ServiceProviderPanel for a regular customer -- links out to CareConnect's
-// existing public clinic-registration form rather than building a second one natively, same
-// "one implementation, many doorways" reasoning as the rest of the CareConnect link-outs.
-class _RegisterServiceCard extends StatelessWidget {
+// Shown instead of _ServiceProviderPanel for a regular customer. Was previously a "Register a
+// Service" card linking out to CareConnect's public clinic-registration form -- removed from the
+// app entirely (2026-08-09, user request) so the app itself doesn't surface business/clinic
+// onboarding; that form still lives on ccregister.smartqsys.com, just not linked from here.
+// Replaced with a consumer-facing action instead: opens the patient's CareConnect bookings
+// (ccuser) via a token-minted SSO link (node_app_server's /careconnect/manage-bookings-link,
+// mirroring the queue-access bridge's mint/consume pattern), so there's no separate ccuser
+// login step from inside the app.
+class _ManageBookingsCard extends StatefulWidget {
+  @override
+  State<_ManageBookingsCard> createState() => _ManageBookingsCardState();
+}
+
+class _ManageBookingsCardState extends State<_ManageBookingsCard> {
+  bool _isLoading = false;
+
+  Future<void> _openManageBookings() async {
+    setState(() => _isLoading = true);
+
+    final result =
+        await DioApi.post(path: ConfigUrl.manageBookingsLinkUrl, data: {});
+
+    setState(() => _isLoading = false);
+
+    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
+    if (result.response != null && careConnectUrl != null) {
+      if (mounted) {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+          return WebViewPage(url: careConnectUrl);
+        }));
+      }
+    } else if (result.response?.statusCode == 404) {
+      Fluttertoast.showToast(msg: "You don't have any managed bookings yet.");
+    } else {
+      Fluttertoast.showToast(
+          msg: "Couldn't open Manage Bookings right now. Please try again.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: kServiceProviderBlueLight,
+        color: kSmartQGreenLight,
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.storefront_outlined, color: kServiceProviderBlue, size: 24),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text("Do you need to manage your Clients/Patients Queue?",
-                    style: TextStyle(fontWeight: FontWeight.bold, color: kServiceProviderBlue)),
+              Icon(Icons.event_note_outlined, color: kSmartQGreen, size: 24),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text("Manage Your Bookings",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: kSmartQGreen)),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text.rich(
-            TextSpan(
-              style: const TextStyle(fontSize: 12, color: Colors.black87),
-              children: [
-                const TextSpan(text: "Register your Service/Clinic to CareConnect"),
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.top,
-                  child: Text("TM", style: TextStyle(fontSize: 8, color: Colors.black87)),
-                ),
-                const TextSpan(text: " and manage your own queue with SmartQ."),
-              ],
-            ),
+          const Text(
+            "View and manage all your CareConnect bookings and queue status in one place.",
+            style: TextStyle(fontSize: 12, color: Colors.black87),
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: kServiceProviderBlue,
+                backgroundColor: kSmartQGreen,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-                  // ccregister.smartqsys.com is CareConnect's dedicated subdomain for this public
-                  // form (proxy.ts) -- ccuser/ccadmin explicitly don't serve it the same way.
-                  return const WebViewPage(
-                    url: "https://ccregister.smartqsys.com/register-clinic",
-                  );
-                }));
-              },
-              child: const Text("Register a Service"),
+              onPressed: _isLoading ? null : _openManageBookings,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text("Manage Bookings"),
             ),
           ),
         ],
