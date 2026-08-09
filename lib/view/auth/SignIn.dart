@@ -78,10 +78,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _socialComingSoon(String provider) {
-    Fluttertoast.showToast(msg: "$provider sign-in is coming soon");
-  }
-
   InputBorder _fieldBorder() => OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.grey.shade300),
@@ -188,37 +184,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text("or continue with", style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _socialComingSoon("Google"),
-                      icon: const Icon(Icons.g_mobiledata, size: 24),
-                      label: const Text("Google"),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _socialComingSoon("Apple"),
-                      icon: const Icon(Icons.apple, size: 20),
-                      label: const Text("Apple"),
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(14),

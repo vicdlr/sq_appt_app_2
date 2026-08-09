@@ -355,39 +355,6 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                       ),
                 const SizedBox(height: 20),
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text("or sign up with", style: Theme.of(context).textTheme.bodySmall),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () =>
-                            Fluttertoast.showToast(msg: "Google sign-up is coming soon"),
-                        icon: const Icon(Icons.g_mobiledata, size: 24),
-                        label: const Text("Google"),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () =>
-                            Fluttertoast.showToast(msg: "Apple sign-up is coming soon"),
-                        icon: const Icon(Icons.apple, size: 20),
-                        label: const Text("Apple"),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
