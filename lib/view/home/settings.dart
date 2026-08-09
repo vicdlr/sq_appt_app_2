@@ -173,10 +173,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // No explicit `leading` -- Flutter's automaticallyImplyLeading (default true) shows a
+        // back/close button only when this route can actually be popped. Settings is reached two
+        // ways: pushed as a standalone route (e.g. the Badge page's gear icon), where a close
+        // button makes sense, and embedded directly as bottom_nav_bar.dart's "More" tab body
+        // (index-swapped, not pushed), where there's nothing to pop -- an unconditional pop()
+        // here previously popped the bottom-nav screen itself off the stack, leaving a black
+        // screen behind it.
         title: const Text("Settings"),
       ),
       body: ListView(
