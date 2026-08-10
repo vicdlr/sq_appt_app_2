@@ -218,6 +218,16 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   bool _isLoading = true;
+  bool _rendererCrashed = false;
+  int _reloadKey = 0;
+
+  void _retry() {
+    setState(() {
+      _rendererCrashed = false;
+      _isLoading = true;
+      _reloadKey++;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -232,14 +242,46 @@ class _WebViewPageState extends State<WebViewPage> {
       ),
       body: Stack(
         children: [
-          InAppWebView(
-            initialUrlRequest: URLRequest(url: WebUri(widget.url)),
-            onLoadStart: (controller, url) => setState(() => _isLoading = true),
-            onLoadStop: (controller, url) => setState(() => _isLoading = false),
-            onReceivedError: (controller, request, error) =>
-                setState(() => _isLoading = false),
-          ),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          if (!_rendererCrashed)
+            InAppWebView(
+              key: ValueKey(_reloadKey),
+              initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+              initialSettings: InAppWebViewSettings(useOnRenderProcessGone: true),
+              onLoadStart: (controller, url) => setState(() => _isLoading = true),
+              onLoadStop: (controller, url) => setState(() => _isLoading = false),
+              onReceivedError: (controller, request, error) =>
+                  setState(() => _isLoading = false),
+              // The device's own system WebView can crash mid-load (seen on-device as a real
+              // "renderer process crash" -- distinct from onReceivedError, which never fires for
+              // this) -- without this, the loading spinner above would spin forever with no way
+              // out.
+              onRenderProcessGone: (controller, detail) {
+                setState(() {
+                  _isLoading = false;
+                  _rendererCrashed = true;
+                });
+              },
+            ),
+          if (_isLoading && !_rendererCrashed) const Center(child: CircularProgressIndicator()),
+          if (_rendererCrashed)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+                    const SizedBox(height: 12),
+                    const Text(
+                      "This page stopped responding. Please try again.",
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(onPressed: _retry, child: const Text("Retry")),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
