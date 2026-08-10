@@ -15,6 +15,7 @@ import 'app_drawer.dart';
 import 'get_ticket.dart';
 import 'home_page.dart';
 import 'my_booking.dart';
+import 'notification.dart';
 import 'request_new_booking.dart';
 import 'service_provider_mode.dart';
 import 'settings.dart';
@@ -290,11 +291,12 @@ class _QuickActionsGrid extends StatelessWidget {
             return MyBooking();
           }));
     }),
-    _QuickAction(Icons.groups_outlined, "My Queues", const Color(0xFF7B3FA0),
+    _QuickAction(
+        Icons.notifications_outlined, "Notifications", const Color(0xFF7B3FA0),
         (context) {
       return () =>
           Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-            return MyBooking(filterActiveQueuesOnly: true);
+            return const NotificationsScreen();
           }));
     }),
     _QuickAction(Icons.add_box_outlined, "New Booking", const Color(0xFFC9772E),

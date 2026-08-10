@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sq_notification/view/home/home_dashboard.dart';
-import 'package:sq_notification/view/home/my_booking.dart';
+import 'package:sq_notification/view/home/notification.dart';
 import 'package:sq_notification/view/home/request_new_booking.dart';
 import 'package:sq_notification/view/home/settings.dart';
 
@@ -15,7 +15,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
   int currentPageIndex = 0;
   List pages = [
     const HomeDashboard(),
-    MyBooking(filterActiveQueuesOnly: true),
+    const NotificationsScreen(),
     RequestNewBooking(),
     const SettingsScreen(),
   ];
@@ -37,9 +37,9 @@ class _BottomNavBarState extends State<BottomNavBar> {
             label: 'Home',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.groups),
-            icon: Icon(Icons.groups_outlined),
-            label: 'My Queues',
+            selectedIcon: Icon(Icons.notifications),
+            icon: Icon(Icons.notifications_outlined),
+            label: 'Notifications',
           ),
           NavigationDestination(
             selectedIcon: Icon(Icons.calendar_today),

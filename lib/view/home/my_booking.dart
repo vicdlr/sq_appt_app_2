@@ -10,11 +10,7 @@ import '../../provider/home_provider.dart';
 import 'get_ticket.dart';
 
 class MyBooking extends StatefulWidget {
-  // When true, only shows bookings with an active CareConnect-managed queue (the "My Queues"
-  // bottom-nav tab) instead of the full appointment history.
-  final bool filterActiveQueuesOnly;
-
-  const MyBooking({super.key, this.filterActiveQueuesOnly = false});
+  const MyBooking({super.key});
 
   @override
   State<MyBooking> createState() => _MyBookingState();
@@ -84,26 +80,19 @@ class _MyBookingState extends State<MyBooking> {
   Widget build(BuildContext context) {
     final homeData = Provider.of<HomeProvider>(context);
 
-    final bookings = widget.filterActiveQueuesOnly
-        ? homeData.bookingList
-            .where((b) =>
-                b.handledBy == "CARECONNECT" && _statusKind(b.status) == _BookingStatusKind.confirmed)
-            .toList()
-        : (List<BookingModel>.from(homeData.bookingList)
-          ..sort((a, b) => b.id.compareTo(a.id)));
+    final bookings = List<BookingModel>.from(homeData.bookingList)
+      ..sort((a, b) => b.id.compareTo(a.id));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.filterActiveQueuesOnly ? "My Queues" : "My Appointments"),
+        title: const Text("My Appointments"),
       ),
       body: homeData.isLoadingBooking
           ? const Center(child: CircularProgressIndicator())
           : bookings.isEmpty
               ? Center(
                   child: Text(
-                  widget.filterActiveQueuesOnly
-                      ? "No active queues right now"
-                      : "No booking available",
+                  "No booking available",
                   style: Theme.of(context).textTheme.titleMedium,
                 ))
               : ListView.builder(
