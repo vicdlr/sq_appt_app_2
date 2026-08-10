@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../SharedPrefrence/SharedPrefrence.dart';
 import '../auth/SignIn.dart';
 
 const String _supportEmail = "support@smartqsys.com";
@@ -15,10 +16,15 @@ class ContactUsScreen extends StatelessWidget {
   const ContactUsScreen({super.key});
 
   Future<void> _openMailto(String subject) async {
+    // mailto: can't control which of the device's own accounts the email client composes
+    // from, so the account email is stamped into the body instead -- otherwise support has no
+    // way to tell whose account a message came from.
+    final String accountEmail = SharedPref.getUserData().email.trim();
+    final String body = accountEmail.isNotEmpty ? "Account email: $accountEmail\n\n" : "";
     final Uri uri = Uri(
       scheme: 'mailto',
       path: _supportEmail,
-      query: 'subject=${Uri.encodeComponent(subject)}',
+      query: 'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);

@@ -62,7 +62,7 @@ class _GetTicketState extends State<GetTicket> {
     final url = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Enter code manually"),
+        title: const Text("Enter Link manually"),
         content: TextField(
           controller: textController,
           autofocus: true,
@@ -91,7 +91,11 @@ class _GetTicketState extends State<GetTicket> {
     return Column(
       children: [
         AppBar(
-          title: const Text('Scan a Get Ticket QR Code'),
+          title: const FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text('Scan a Get Ticket QR Code', maxLines: 1),
+          ),
           actions: [
             IconButton(
               icon: ValueListenableBuilder(
@@ -134,7 +138,7 @@ class _GetTicketState extends State<GetTicket> {
                           ),
                           onPressed: _showManualEntryDialog,
                           icon: const Icon(Icons.keyboard),
-                          label: const Text("Enter code manually"),
+                          label: const Text("Enter Link manually"),
                         ),
                       ),
                     ),
@@ -183,11 +187,16 @@ class _ScanFrameOverlay extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "Align the QR code within the frame",
-            style: TextStyle(
-              color: Colors.white,
-              backgroundColor: Colors.black54,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              "Align the QR code within the frame",
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                backgroundColor: Colors.black54,
+                fontSize: 14,
+              ),
             ),
           ),
           const Spacer(),

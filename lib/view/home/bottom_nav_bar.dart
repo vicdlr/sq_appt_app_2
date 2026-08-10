@@ -44,7 +44,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
           NavigationDestination(
             selectedIcon: Icon(Icons.calendar_today),
             icon: Icon(Icons.calendar_today_outlined),
-            label: 'Services',
+            label: 'Book',
           ),
           NavigationDestination(
             selectedIcon: Icon(Icons.more_horiz),
