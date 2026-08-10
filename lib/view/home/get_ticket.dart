@@ -206,24 +206,41 @@ class _ScanFrameOverlay extends StatelessWidget {
   }
 }
 
-class WebViewPage extends StatelessWidget {
+class WebViewPage extends StatefulWidget {
   final String url;
+  final String title;
 
-  const WebViewPage({super.key, required this.url});
+  const WebViewPage({super.key, required this.url, this.title = 'Ticket Details'});
+
+  @override
+  State<WebViewPage> createState() => _WebViewPageState();
+}
+
+class _WebViewPageState extends State<WebViewPage> {
+  bool _isLoading = true;
 
   @override
   Widget build(BuildContext context) {
-    log("url $url");
+    log("url ${widget.url}");
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ticket Details'),
+        title: Text(widget.title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: InAppWebView(
-        initialUrlRequest: URLRequest(url: WebUri(url)),
+      body: Stack(
+        children: [
+          InAppWebView(
+            initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+            onLoadStart: (controller, url) => setState(() => _isLoading = true),
+            onLoadStop: (controller, url) => setState(() => _isLoading = false),
+            onReceivedError: (controller, request, error) =>
+                setState(() => _isLoading = false),
+          ),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
+        ],
       ),
     );
   }

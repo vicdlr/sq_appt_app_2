@@ -89,7 +89,8 @@ class _MyBookingState extends State<MyBooking> {
             .where((b) =>
                 b.handledBy == "CARECONNECT" && _statusKind(b.status) == _BookingStatusKind.confirmed)
             .toList()
-        : homeData.bookingList;
+        : (List<BookingModel>.from(homeData.bookingList)
+          ..sort((a, b) => b.id.compareTo(a.id)));
 
     return Scaffold(
       appBar: AppBar(

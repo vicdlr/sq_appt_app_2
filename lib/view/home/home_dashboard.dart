@@ -542,7 +542,7 @@ class _ManageBookingsCardState extends State<_ManageBookingsCard> {
     if (result.response != null && careConnectUrl != null) {
       if (mounted) {
         Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-          return WebViewPage(url: careConnectUrl);
+          return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
         }));
       }
     } else if (result.response?.statusCode == 404) {
