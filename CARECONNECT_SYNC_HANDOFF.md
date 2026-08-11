@@ -79,33 +79,32 @@ call site.
 The actual send still goes through NAS's `POST /send-notification` (service-key auth, not a
 mobile-app user JWT) — `lib/notify.ts`'s `sendServiceNotification`, `NAS_BASE_URL` +
 `NAS_SERVICE_KEY` env vars on CareConnect's Render service. That route exists in `app.js` on
-`main`/`peer-notification` (confirmed both currently match except one unrelated commit — see
-below), guarded by `requireCareConnectServiceKey`-equivalent inline check against
-`process.env.CARECONNECT_SERVICE_KEY`. **Note the name mismatch is intentional but a real risk**:
-CareConnect's env var is called `NAS_SERVICE_KEY`, NAS's is called `CARECONNECT_SERVICE_KEY` —
-different names, but they must hold the *same secret value* across the two separate Render
-services. A silent mismatch there produces a 403 that `sendServiceNotification` only
-`console.error`s and swallows (best-effort by design — must never fail the booking itself), so
-it wouldn't surface as an obvious error anywhere a human would see it.
+`main`/`peer-notification`, guarded by an inline check against
+`process.env.CARECONNECT_SERVICE_KEY`. The env var name is intentionally different on each side
+(CareConnect: `NAS_SERVICE_KEY`, NAS: `CARECONNECT_SERVICE_KEY`) but they need to hold the *same
+secret value* — **verified directly in the Render dashboard 2026-08-11: they match**
+(`sq-careconnect`'s `NAS_SERVICE_KEY` and `node_app_server`'s `CARECONNECT_SERVICE_KEY` are both
+`d005fba0621b...4c0a1`). Ruled out as the cause of any remaining notification gap.
 
-### Still open — worth checking from the NAS side
+### Verified 2026-08-11 (ruled out)
 
-1. **Confirm `CARECONNECT_SERVICE_KEY` (node_app_server's Render env) actually equals
-   `NAS_SERVICE_KEY` (CareConnect's Render env).** Can't verify this from either repo's code —
-   it's a Render dashboard check.
-2. **Confirm `FIREBASE_*` env vars are valid on node_app_server's live Render deploy** — the
-   `/send-notification` service-caller route (`app.js`, ~line 1318 on `care_connect`/matching
-   line on `main`) calls `admin.messaging().send(...)` directly; if Firebase Admin isn't
-   correctly initialized in that environment, this would fail the same silent way.
-3. **Branch drift check**: Render's `node_app_server` service auto-deploys from
-   `peer-notification`, not `main` (confirmed in this repo's own `DEVLOG.md`, 2026-08-XX entry).
-   As of this writing, `main` is one commit ahead of `peer-notification`
-   (`0495a7a`, "Persist the 'Booking Received' push in the notifications table" — mobile-app-only,
-   unrelated to this specific bug) — not blocking, but this exact kind of drift (a fix landing on
-   one branch but not the deployed one) caused a real production bug before (see this repo's
-   `DEVLOG.md`, 2026-08-04 entry). Worth fast-forwarding `peer-notification` to `main` next time
-   either branch is touched, and worth re-running `git log peer-notification..main` before
-   assuming any NAS-side fix — this one or a future one — is actually live.
+1. ~~Confirm `CARECONNECT_SERVICE_KEY` equals `NAS_SERVICE_KEY`~~ — **confirmed matching**, see
+   above. Not the cause of any remaining issue.
+2. ~~Confirm `FIREBASE_*` env vars are set on node_app_server's live Render deploy~~ — **confirmed
+   present** (`FIREBASE_PRIVATE_KEY`, `FIREBASE_PRIVATE_KEY_ID`, etc. all set, not blank) via the
+   same Render dashboard check. Values weren't validated against a real Firebase project (just
+   confirmed non-empty), but nothing here points to a missing-config failure.
+3. ~~Branch drift between `main` and `peer-notification`~~ — **not an issue**: checked Render's
+   own deploy log for `node_app_server` directly (not just local git), and commit `0495a7a`
+   ("Persist the 'Booking Received' push in the notifications table") is already live, deployed
+   2026-08-10 8:20 PM. A local clone of `node_app_server` may still show `peer-notification`
+   behind `main` if it hasn't been fetched recently — trust Render's own Events log over a local
+   `git log` comparison for "is X actually deployed" questions. (The general branch-drift risk
+   this project has seen before is still worth keeping in mind for *future* changes — just isn't
+   what's biting this particular bug.)
+
+### Still open — most likely remaining suspects
+
 4. **The doctor/secretary must have actually used the SmartQ App with push permission granted,
    under the exact email CareConnect has on file as `policy.doctor.email`.** The fix can only
    find an fcmToken that exists — `findVerifiedMdeviceByEmail` requires a `mdevice` row with
