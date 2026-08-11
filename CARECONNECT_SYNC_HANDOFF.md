@@ -1,0 +1,133 @@
+# CareConnect Sync Handoff — for whoever (or whichever Claude session) is doing NAS work
+
+> Written 2026-08-11 from the `SQ_CareConnect` session, mirroring the direction
+> `MOBILE_SYNC_HANDOFF.md` (sitting in `D:\Claude\SQ_CareConnect\`) came from — that one was
+> written by a concurrent mobile/NAS session for CareConnect's benefit; this one goes the other
+> way. Two things: (1) a registration-form/schema change that touches NAS's Organisation
+> hierarchy, already fully shipped, no NAS-side code change needed but worth knowing the new
+> semantics; (2) a real, still-only-partially-confirmed notification bug where a fix landed on
+> CareConnect's side but the actual root cause may need NAS-side verification to fully close out.
+
+## 1. Registration field change: Organisation Name split from Service Provider Name
+
+**Commit `165ef01`, 2026-08-09, already merged to `master` and deployed. No action needed on
+NAS's side — this is background for anyone reading NAS provisioning calls and wondering why the
+string being passed as `company` changed meaning.**
+
+Registration (`ccregister`, `app/register-clinic/RegistrationForm.tsx`) used to have one "Clinic
+Name" field that doubled as both the NAS Organisation name and the individual service provider's
+own name. A hospital with multiple departments/doctors had no way to group them under one
+Organisation. Now there are two fields:
+
+- **Organisation Name** (new, required) — "Clinic / Organisation Name" for a `CLINIC`
+  applicant, "Hospital Name" for `HOSPITAL_DEPT`. Feeds NAS's Organisation hierarchy level.
+- **Service Provider Name** (the old `clinicName` field, kept as-is on the DB column to avoid a
+  rename across existing rows — read it as "Service Provider Name" everywhere it's displayed) —
+  the individual provider's own name, e.g. "Dr. Santos - Cardiology". This is what patients
+  search/book against in Explore, shown together with its auto-assigned SP number.
+
+On approval (`app/api/admin/applications/[id]/approve/route.ts` →
+`lib/nas-hierarchy.ts`'s `provisionNasHierarchy`), `ensureOrganisation()` is now called with
+`organisationName` instead of `clinicName`. Everything below Organisation in the hierarchy
+(Department/Group/Unit) is unchanged. So: **multiple `ServiceProviderApplication` rows can now
+resolve to the same NAS Organisation** (same `company` value in `/add-organisation`/
+`/organisations`), where previously every approval implicitly created its own distinct
+Organisation (since `clinicName` was almost always unique per applicant).
+
+`prisma/schema.prisma`'s `ServiceProviderApplication.organisationName` (new column, migration
+`20260809070701_add_organisation_name`, backfilled from `clinicName` for pre-existing rows —
+each pre-existing row already has its own de-facto single-SP Organisation in NAS, so the
+backfill matches what's actually provisioned there) has the full comment explaining this if you
+need more detail while reading the schema directly.
+
+CareConnect's own Explore flow, ccadmin's clinic picker, and ccadmin's settings page were all
+updated to show `organisationName` alongside the SP name — pure CareConnect-side display/query
+changes, nothing NAS needed to change to support this since NAS's Organisation/Department/Group/
+Unit hierarchy already supported multiple units per Organisation; CareConnect just wasn't
+grouping by it correctly before.
+
+## 2. Notification bug — CareConnect-side fix shipped, NAS-side verification still open
+
+**User report: "I didn't get notifications after booking." Two findings — one wasn't a bug, one
+was a real long-standing one, fixed in commit `5b00311` (2026-08-10). Not yet confirmed
+end-to-end against a real device/push.**
+
+### Not a bug
+The booking's Pending/Processing status was correct — the clinic was actually set to **Manual**
+confirmation in ccadmin Settings (the user believed it was Automatic). Under Manual, a booking
+legitimately sits pending until staff taps Confirm. No code change for this part.
+
+### Real bug, fixed on CareConnect's side
+`app/api/webhook/booking/route.ts`'s "New Appointment"/"New Appointment Request" push (fires on
+every booking, any confirm mode — this is CareConnect notifying the clinic's doctor/secretary,
+not the patient) used `policy.doctor.fcmToken` — **CareConnect's own local `User.fcmToken`
+column, which is never written for a doctor/staff account anywhere in CareConnect's codebase**
+(only ever populated for patients, via this same webhook's separate `mdevice` upsert).
+`sendServiceNotification`'s `if (!fcmToken) return false` guard (`lib/notify.ts`) silently
+no-op'd on every single booking, for every clinic, since this notification was added — no clinic
+has ever actually received it.
+
+Fixed by looking up the doctor's **live** fcmToken directly from NAS's shared `mdevice` table
+(`lib/shared-db.ts`'s `findVerifiedMdeviceByEmail`, a direct read via `SHARED_DATABASE_URL` —
+same Postgres instance NAS's own `POSTGRES_URL`/`connect.js` points at, not an API call to NAS),
+keyed on `policy.doctor.email` (CareConnect's own `User.email`, which registration now hints
+should be the doctor's **SmartQ App login email**). Same pattern
+`app/api/admin/clinic/bookings/route.ts` already used correctly for its own doctor
+notifications, so this wasn't a novel approach — just wasn't applied consistently to this one
+call site.
+
+The actual send still goes through NAS's `POST /send-notification` (service-key auth, not a
+mobile-app user JWT) — `lib/notify.ts`'s `sendServiceNotification`, `NAS_BASE_URL` +
+`NAS_SERVICE_KEY` env vars on CareConnect's Render service. That route exists in `app.js` on
+`main`/`peer-notification` (confirmed both currently match except one unrelated commit — see
+below), guarded by `requireCareConnectServiceKey`-equivalent inline check against
+`process.env.CARECONNECT_SERVICE_KEY`. **Note the name mismatch is intentional but a real risk**:
+CareConnect's env var is called `NAS_SERVICE_KEY`, NAS's is called `CARECONNECT_SERVICE_KEY` —
+different names, but they must hold the *same secret value* across the two separate Render
+services. A silent mismatch there produces a 403 that `sendServiceNotification` only
+`console.error`s and swallows (best-effort by design — must never fail the booking itself), so
+it wouldn't surface as an obvious error anywhere a human would see it.
+
+### Still open — worth checking from the NAS side
+
+1. **Confirm `CARECONNECT_SERVICE_KEY` (node_app_server's Render env) actually equals
+   `NAS_SERVICE_KEY` (CareConnect's Render env).** Can't verify this from either repo's code —
+   it's a Render dashboard check.
+2. **Confirm `FIREBASE_*` env vars are valid on node_app_server's live Render deploy** — the
+   `/send-notification` service-caller route (`app.js`, ~line 1318 on `care_connect`/matching
+   line on `main`) calls `admin.messaging().send(...)` directly; if Firebase Admin isn't
+   correctly initialized in that environment, this would fail the same silent way.
+3. **Branch drift check**: Render's `node_app_server` service auto-deploys from
+   `peer-notification`, not `main` (confirmed in this repo's own `DEVLOG.md`, 2026-08-XX entry).
+   As of this writing, `main` is one commit ahead of `peer-notification`
+   (`0495a7a`, "Persist the 'Booking Received' push in the notifications table" — mobile-app-only,
+   unrelated to this specific bug) — not blocking, but this exact kind of drift (a fix landing on
+   one branch but not the deployed one) caused a real production bug before (see this repo's
+   `DEVLOG.md`, 2026-08-04 entry). Worth fast-forwarding `peer-notification` to `main` next time
+   either branch is touched, and worth re-running `git log peer-notification..main` before
+   assuming any NAS-side fix — this one or a future one — is actually live.
+4. **The doctor/secretary must have actually used the SmartQ App with push permission granted,
+   under the exact email CareConnect has on file as `policy.doctor.email`.** The fix can only
+   find an fcmToken that exists — `findVerifiedMdeviceByEmail` requires a `mdevice` row with
+   `registered >= 2` (NAS's own "fully verified" gate) and a non-null `fcmtoken`. If a given
+   clinic's doctor manages everything through ccadmin in a browser and has never opened the
+   mobile app on that login email, there is nothing to find regardless of how correct the code
+   is — this would look identical to the original bug from the outside. Worth checking `mdevice`
+   directly for a specific doctor's email if a report of "still no notification" comes in after
+   this fix is confirmed deployed.
+5. **Not yet tested end-to-end against a real device** — CareConnect's own `pending_work.md`
+   flags this explicitly: book as a patient against a Manual-confirm clinic, confirm the doctor's
+   own device actually receives the "New Appointment Request" push. Structurally sound (mirrors
+   an already-working pattern exactly) but only verified by reading code so far.
+
+## 3. Where to look for more
+
+- `D:\Claude\SQ_CareConnect\DEVLOG.md` / `pending_work.md` — 2026-08-09 entry (Organisation
+  split) and 2026-08-10 entry (notification fix), full narrative.
+- `app/api/webhook/booking/route.ts`, `lib/notify.ts`, `lib/shared-db.ts` in `SQ_CareConnect` —
+  the actual CareConnect-side code for both changes.
+- `C:\Users\vic\AndroidStudioProjects\node_app_server`'s `app.js` — the `/send-notification`
+  service-key route and the generic mobile-app `/send-notification` (two separate route
+  registrations at different points in the file; the service-key one is registered first and
+  falls through via `next()` for any caller without a valid key, so the original mobile-app route
+  further down still works unchanged for real app users).
