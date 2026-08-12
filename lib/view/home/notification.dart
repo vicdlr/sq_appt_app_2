@@ -52,8 +52,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   // SizedBox(height: 8.v),
                   notificationList.notificationList.isEmpty
-                      ? Padding(
-                          padding: EdgeInsets.symmetric(vertical: 300),
+                      ? const Expanded(
                           child: Center(
                             child: Text(
                               "Notification is Not Available",

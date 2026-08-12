@@ -247,14 +247,6 @@ class HomeProvider extends ChangeNotifier {
           (result.response?.data["notifications"] as List<dynamic>)
               .map((data) => NotificationModel.fromJson(data))
               .toList();
-      DateTime now = DateTime.now();
-      int currentMonth = now.month;
-      int currentYear = now.year;
-
-      notificationList = notificationList.where((notification) {
-        return notification.sentTime?.month == currentMonth &&
-            notification.sentTime?.year == currentYear;
-      }).toList();
 
       notificationList.sort((a, b) {
         return b.sentTime!.compareTo(a.sentTime!);
