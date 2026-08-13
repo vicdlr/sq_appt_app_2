@@ -31,16 +31,17 @@ if (keystorePropertiesFile.exists()) {
 android {
     //namespace "com.example.sq_notification"
     namespace "com.smartqsys.sq_notification"
-    compileSdkVersion 34
+    compileSdkVersion 36
     ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 
     sourceSets {
@@ -52,10 +53,10 @@ android {
         applicationId "com.smartqsys.sq_notification"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         versionCode  48
         versionName "48.0.0"
-        targetSdkVersion 34
+        targetSdkVersion 36
 //        versionCode flutterVersionCode.toInteger()
 //        versionName flutterVersionName
     }
@@ -89,4 +90,5 @@ flutter {
 
 dependencies {
   //implementation 'com.google.android.material:material:<version>'
+  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 }
