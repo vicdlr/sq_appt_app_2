@@ -99,13 +99,17 @@ class _GetTicketState extends State<GetTicket> {
           actions: [
             IconButton(
               icon: ValueListenableBuilder(
-                valueListenable: controller.torchState,
+                valueListenable: controller,
                 builder: (context, state, child) {
-                  switch (state) {
+                  switch (state.torchState) {
                     case TorchState.off:
                       return const Icon(Icons.flash_off);
                     case TorchState.on:
                       return const Icon(Icons.flash_on);
+                    case TorchState.auto:
+                      return const Icon(Icons.flash_auto);
+                    case TorchState.unavailable:
+                      return const Icon(Icons.flash_off, color: Colors.grey);
                   }
                 },
               ),
