@@ -7,103 +7,34 @@
 
 ---
 
-## 2026-08-13
+## Open / needs attention (as of 2026-08-13)
 
-- Built and installed the app on the connected Oppo CPH1909 straight from this checkout
-  (`mobile-redesign`) without checking `.claude/projects/sq_appt_app.md` first — same mistake as
-  2026-08-09. User correctly flagged the installed app as "the old app." Confirmed via
-  `git log mobile-redesign..origin/feature/redesign-2026` that this branch is missing ~20 redesign
-  commits (Home dashboard, SignIn/SignUp, bottom nav, My Appointments, Data Capture, Badge,
-  Settings, etc.) that only exist on `origin/feature/redesign-2026` (tracked in the
-  `sq_appt_app_2` checkout, see project notes). Updated `KNOWLEDGE_BASE.md` and the project notes
-  file with this recurrence.
-- **Fixed and confirmed**: built+installed the real app from
-  `C:\Users\vic\AndroidStudioProjects\sq_appt_app_2` on branch `fix/android-15-compliance`
-  (currently checked out there — it's a superset of `feature/redesign-2026`'s tip `9ff4ceb` plus
-  two more commits: `b443ae8` notification overflow/month-filter fixes, `fc9a877` release-version
-  fix). Built as-is with its uncommitted API-36 compliance WIP (`android/*.gradle`,
-  `SignUp.dart`) since that's the real current state of the branch. Installed successfully on the
-  Oppo CPH1909, replacing the wrong build.
-  - **New gotcha hit + resolved**: this checkout's `pubspec.yaml` now requires Dart >=3.7.0
-    (`device_info_plus ^11.5.0`), which the machine's default `flutter` on PATH
-    (`C:\flutter_windows_3.24.3-stable`, Dart 3.5.3) can't satisfy — build fails with a version
-    -solving error. Must use the second SDK install, `C:\flutter_stable_2026` (Flutter
-    3.44.9/Dart 3.12.2, already referenced in the API-36 edge-to-edge notes above), for any
-    build/run of `sq_appt_app_2`. Worth adding to `DEV_GOTCHAS.md` if this trips up another
-    session.
+> Full narrative in `DEVLOG.md`'s 2026-08-13 entry (fixed the wrong-checkout mistake, finished the
+> API 36 toolchain bump, found+fixed a real 16KB page-size compliance gap via `mobile_scanner`
+> 6.0.11, submitted `sq_appt_app_2` `50 (48.0.2)` to Play Console Closed Testing, rewrote
+> `IOS_HANDOFF.md` and pre-fixed an iOS build-breaker), 2026-08-12 "(cont.)" entry (disk-space fix,
+> emulator setup, iOS push server-side fix, account-deletion page), 2026-08-11 entry (notifications
+> deep-dive), and 2026-08-10 entry (first physical-device pass). The API 36 bump, the 16KB
+> page-size fix, the Play Console Data Safety form, the Closed Testing submission itself, the
+> `notification.dart`/`home_provider.dart` fixes, and the Android version-bump-hack revert are all
+> **done** — see DEVLOG, not repeated here. What's left below is the still-open edge-to-edge audit
+> (blocked on a keyboard quirk), the Play Console review outcome, and genuinely-still-open items
+> carried over from earlier sessions.
 
-- **Closed testing submission (2026-08-13): completed the full pipeline, submitted for Google
-  review.** `sq_appt_app_2` on `fix/android-15-compliance`:
-  1. Committed the SDK-36 toolchain upgrade (Gradle 8.14.2, AGP 8.11.1, Kotlin 2.0.21, Java 17,
-     compileSdk/targetSdk 34->36, `device_info`->`device_info_plus`) — `06a0219`.
-  2. Bumped `versionCode` 48->49 (`48.0.1`) since 48 was already consumed by a stale, never-
-     submitted draft release in the Alpha track — separate commit.
-  3. Found the build failed Play Console's **16 KB memory page size** requirement (enforced since
-     Nov 1 2025): `libbarhopper_v3.so`/`libimage_processing_util_jni.so` (ML Kit/CameraX, via
-     `mobile_scanner`) were 4KB-aligned. Fixed by upgrading `mobile_scanner` 3.5.6->6.0.11 (the
-     version that added CameraX 16KB support), which also required bumping the Kotlin Gradle
-     plugin to 2.2.20 (`mobile_scanner` 6.0.11's own pin) and fixing a `TorchState` API break in
-     `get_ticket.dart` (`controller.torchState` -> `controller.value.torchState`, plus new
-     `.auto`/`.unavailable` enum cases) — commit `1d019eb`. Bumped `versionCode` 49->50 (`48.0.2`).
-     Verified via `llvm-readelf -l` on the extracted `arm64-v8a` `.so` files that all LOAD segments
-     are now 0x4000 (16KB) or 0x10000 (64KB) aligned. Verified the scanner still works on-device
-     (Oppo CPH1909) before submitting.
-  4. **Data Safety form was already correct** (Device or other IDs, name/email/phone/photos all
-     "Completed", no pending edits) — the "Data safety section removed"/"Invalid Data safety form"
-     policy flag on production (version 47) was stale, from before an earlier session's fix. Not
-     touched this session; expected to self-resolve once this release completes Google's review.
-  5. Clicked "Submit 2 changes for review," but that first click only ran Play Console's
-     pre-review "quick checks" — it did **not** actually send anything to Google (Publishing
-     overview reverted to "Changes not yet submitted for review" once checks finished, with the
-     Submit button still sitting there unclicked). Caught this on a follow-up check, clicked
-     Submit again, and this time got the actual "Send 2 changes for review?" confirmation dialog
-     (with the "reviews typically completed within 7 days" text) — confirmed, and Publishing
-     overview now correctly shows **"Changes in review"** / "Your changes are now in review" for
-     `50 (48.0.2)` + the Data Safety questionnaire. **Gotcha: the "Submit N changes for review"
-     button in Play Console can require two separate clicks — one to run quick checks, a second
-     (with its own confirm dialog) to actually submit — don't assume the first click finished the
-     job.** Still need to check back (Play Console's Publishing overview / Policy status) to
-     confirm it actually clears Google's review and the Data Safety flag resolves.
-  - Gotcha (added to `DEV_GOTCHAS.md`): this machine has two Flutter SDKs —
-    `C:\flutter_windows_3.24.3-stable` (default on PATH) and `C:\flutter_stable_2026` (Flutter
-    3.44.9/Dart 3.12.2, required by `sq_appt_app_2`'s current dependency versions). Always use the
-    latter for this project.
-  - Gotcha (not yet written up in DEV_GOTCHAS.md): stale Kotlin/Gradle daemons from a much older
-    project state (Gradle 7.5, Kotlin 1.8.22) were still running in the background and had to be
-    killed (`Stop-Process`) before a Kotlin-plugin-version bump would actually take effect —
-    `flutter clean` alone did not fix it.
-
-- **Rewrote `IOS_HANDOFF.md`** (2026-08-13) — the old 2026-08-08 version pointed at
-  `feature/redesign-2026`, which is now behind `fix/android-15-compliance` (the branch with all
-  the redesign work plus this session's Android-compliance/notification fixes). New version flags
-  two concrete iOS-side action items surfaced by this session's Android work: (1) `mobile_scanner`
-  6.0.11's iOS podspec needs `platform :ios, '15.5.0'`+ — **fixed same session**, see below; (2)
-  confirmed by reading the code that `notification.dart`'s `onTokenRefresh` listener still only
-  logs, never calls `POST /update-fcm-token` — the client-side half of the iOS push fix genuinely
-  isn't done, still open.
-- **Bumped iOS minimum deployment target to 15.5** (`ios/Podfile` + all
-  `IPHONEOS_DEPLOYMENT_TARGET` entries in `ios/Runner.xcodeproj/project.pbxproj`, commit
-  `93620f8`) to match what `mobile_scanner` 6.0.11's iOS podspec requires. Done blind from
-  Windows (no Xcode/CocoaPods here to verify) — **needs a fresh `pod install` on the Mac to
-  regenerate `Podfile.lock` and confirm the build actually succeeds.**
-
-## Open / needs attention (as of 2026-08-12)
-
-> Full narrative in `DEVLOG.md`'s 2026-08-12 "(cont.)" entry (disk-space fix, API 36 bump, emulator
-> setup, iOS push server-side fix, account-deletion page), 2026-08-11 entry (notifications
-> deep-dive), and 2026-08-10 entry (first physical-device pass). Disk space, the SDK 35→36 bump,
-> and the API 36 emulator are all **done** — see DEVLOG, not repeated here. What's left below is
-> the still-open edge-to-edge audit (blocked on a keyboard quirk) and a handful of uncommitted
-> changes.
-
-- **SUSPENDED 2026-08-12 mid-session, Android-15/16 (API 36) compliance push on `sq_appt_app_2`
-  (checked out separately at `C:\Users\vic\AndroidStudioProjects\sq_appt_app_2`, branch
-  `fix/android-15-compliance`, NOT the `D:\Claude\sq_appt_app` checkout tracked by this file).**
-  Google Play requires new apps/updates to target **API level 36 (Android 16)** by **2026-08-31**.
-  Remaining steps: fix edge-to-edge rendering (in progress, suspended here) → verify 16KB page-size
-  compliance + device regression (not started). `android/app/build.gradle`'s `targetSdkVersion`
-  bump 35→36 is done but **still uncommitted**.
-  - **In progress / suspended here**: edge-to-edge visual audit. Static code audit first (no
+- **RESOLVED 2026-08-14: Google Play Closed Testing review cleared and the release is published.**
+  `sq_appt_app_2` `50 (48.0.2)` passed review well within the typical window, Publishing overview
+  moved from "in review" to "ready to publish," and the "Publish 2 changes" step was clicked and
+  confirmed — Publishing overview now shows "Last published on August 14, 2026." Also confirmed on
+  Policy status: the stale "Data safety section removed" flag is **gone**. The two remaining
+  Policy status warnings (16 KB page size, target API 35+) are tied to the **live production**
+  version (47) specifically, not this closed-testing release — expected, not a new problem.
+- **NEW — iOS: `pod install` needs to actually run on macOS.** The `ios/Podfile` +
+  `IPHONEOS_DEPLOYMENT_TARGET` bump to 15.5 (for `mobile_scanner` 6.0.11's iOS podspec
+  requirement) was made blind from Windows, commit `93620f8` — no Xcode/CocoaPods available here
+  to verify it actually resolves. First real step of any iOS session: `pod install`, confirm it
+  succeeds and regenerates `Podfile.lock` cleanly.
+- **Still open, unresolved as of 2026-08-12, not touched since: edge-to-edge visual audit on
+  `sq_appt_app_2`, blocked on a keyboard quirk.** Static code audit first (no
     device needed): `MainActivity.kt` is a bare `FlutterActivity` with no overrides, no
     `SystemChrome`/`SystemUiOverlayStyle` usage anywhere in `lib/`, themes are stock Flutter
     defaults — nothing opts out of edge-to-edge, and Flutter 3.44.9 (the installed SDK) auto-enables
@@ -161,30 +92,13 @@
   it, since `/login` itself never touches `fcmtoken`. Until this lands, the DB token can still go
   stale again the same way.
 
-- **Play Console Data Safety form still needs the account-deletion URL pasted in.** Code side is
-  done (`node_app_server` commit `10c4089`, live at
-  `https://node-app-server.onrender.com/delete-account.html` — see DEVLOG). The Play Console
-  Data Safety declaration itself still needs to be edited to point at that URL; not a code task,
-  needs to be done directly in Play Console.
-
 - **Android push notifications — root-caused, fix exists, just needs merging.** Pushes arrive but
   get silently muted by the OS because the app never pre-creates the `booking_updates` notification
   channel (confirmed via `adb`/logcat: falls back to `fcm_fallback_notification_channel`, which
   ColorOS mutes). The fix is already written: `sq_appt_app_2` branch
   `fix/notification-channel-and-tap-handling`, commit `4edf223` ("Pre-create booking_updates
   notification channel; sort My Bookings descending") — **not yet merged into
-  `feature/redesign-2026`.** Check the sort-order overlap noted below before merging.
-
-- **Uncommitted: `sq_appt_app_2/lib/view/home/notification.dart`** — fixed a real `RenderFlex
-  overflowed by 27 pixels` bug in the empty-notifications state (hardcoded `vertical: 300` padding
-  with no `Expanded`/scroll, broke on the Oppo's shorter screen). Wrapped in `Expanded` + `Center`,
-  dropped the fixed padding. Needs a rebuild+commit; not yet re-confirmed on-device since the fix
-  landed (the `flutter run` session was stopped mid-session for other testing).
-
-- **Uncommitted: `sq_appt_app_2/lib/provider/home_provider.dart`** — removed
-  `getNotificationList`'s silent current-month-only filter (was hiding any notification from an
-  earlier month with no indication, looked like "all notifications lost"). Needs a rebuild+commit;
-  not yet re-verified on-device that older notifications now actually show up.
+  `fix/android-15-compliance`.** Check the sort-order overlap noted below before merging.
 
 - **Cleanup: throwaway diagnostic scripts left in `node_app_server/`** —
   `_test_push_vicdlr.js`, `_check_platform.js`, `_get_auth_token.js`, `_inspect_key.js`,
@@ -196,11 +110,6 @@
   `.auth_token` are fixed-length Postgres `CHAR` columns — values come back space-padded.
   `auth_token` in particular must be `.trim()`'d before `jwt.verify()` or it fails with "Invalid
   Token" even when freshly issued and otherwise valid.
-
-- **Play Store Internal Testing setup — not completed, deferred for the notifications
-  investigation.** Original ask this session (Android equivalent of TestFlight); got as far as
-  confirming the signing setup (`keystore.jks`, upload key match) from a prior session but never
-  built/uploaded an AAB. Resume once the redesign branch is otherwise stable.
 
 - **Uncommitted: `node_app_server/app.js`'s `reconcileOrphanedBookings()` — do not deploy as-is
   without a decision first.** Hardens against a real bug found this session: `/create-booking`'s
@@ -255,11 +164,6 @@
   - Both are now correctly set on Render for `sq-careconnect` (confirmed) and `node_app_server`
     (confirmed). CareConnect's *local* `.env` also has both now (added this session for testing).
 
-- **Revert `sq_appt_app_2`'s `android/app/build.gradle` temporary version bump** (`versionCode
-  22`/`versionName "21.1.0"` → real `21`/`"21.0.1"`) before any real release build. Still left in
-  place deliberately — reverting would re-trigger the force-update dialog and block on-device
-  testing. Committed separately as `b05cbfe` specifically so it's easy to find and revert.
-
 - **`node_app_server`'s `/service-options` query still does `LIMIT 1` with no `ORDER BY`** — if a
   unit ever has multiple `servoption` rows differing only by department (now unfiltered), which
   one wins is non-deterministic. Not observed as an actual problem; worth an `ORDER BY` or data
@@ -277,7 +181,9 @@
   - Settings' bottom-sheet pickers (Location/Region, Notifications, Language) and dark mode/font
     size regression check.
 
-- **iOS testing (general, beyond push)** — see `IOS_HANDOFF.md` in this same repo. Not started yet.
+- **iOS testing (general, beyond push)** — see `IOS_HANDOFF.md` in this same repo (rewritten
+  2026-08-13, points at `fix/android-15-compliance`). Not started yet; first step is confirming
+  `pod install` succeeds after the deployment-target bump (see the NEW item above).
 
 - **`chore/archive-stale-keystores`** (older unmerged branch in `sq_appt_app_2`) — low urgency,
   gitignored files only, can merge/clean up whenever.

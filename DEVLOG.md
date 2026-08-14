@@ -2,6 +2,387 @@
 
 ---
 
+### 2026-08-13 — Finished the API 36/16KB compliance push, submitted `sq_appt_app_2` to Google Play Closed Testing, and refreshed the iOS handoff
+
+**Context:** Continuation of 2026-08-12's suspended API 36 compliance push, but picked up cold in a
+new session — which immediately repeated the 2026-08-09 mistake of building/installing from the
+docs-only `D:\Claude\sq_appt_app` checkout instead of the real `sq_appt_app_2` code. Corrected
+after the user flagged it, then carried the compliance push all the way through to an actual
+Google Play submission, plus a pass on iOS handoff prep.
+
+**1. Repeated, then fixed, the docs-workspace-vs-real-checkout mistake.** Built and installed the
+app on the Oppo `CPH1909` straight from `mobile-redesign` without checking
+`.claude/projects/sq_appt_app.md` first — despite that file already documenting this exact
+mistake from 2026-08-09. User correctly identified the installed app as "the old app." Confirmed
+via `git log mobile-redesign..origin/feature/redesign-2026` that `mobile-redesign` is missing
+~20 redesign commits. Rebuilt from the real checkout (`C:\Users\vic\AndroidStudioProjects\
+sq_appt_app_2`, branch `fix/android-15-compliance` — a superset of `feature/redesign-2026`'s tip
+plus `b443ae8` notification fixes and `fc9a877`'s version-code fix) and confirmed correct.
+Strengthened both `KNOWLEDGE_BASE.md` and the project notes file to flag the recurrence.
+
+**2. Committed the API 36 toolchain bump and finished the compliance push.** `06a0219`: Gradle
+7.5→8.14.2, AGP 7.4.2→8.11.1, Kotlin 1.8.22→2.0.21 (later 2.2.20, see #3), Java 8→17,
+compileSdk/targetSdk 34→36, `device_info`→`device_info_plus` migration — all tested via a
+successful on-device build/install before committing. `versionCode` bumped 48→49 (`48.0.1`)
+separately, since 48 was already consumed by a stale, never-submitted draft release sitting in
+Play Console's Closed Testing - Alpha track.
+
+**3. Found and fixed a real 16KB memory page-size compliance gap.** Play Console flagged the
+build against Google's 16KB memory page-size requirement (enforced since Nov 1 2025, found via
+Policy status, not caught by any local tooling). Extracted the `arm64-v8a` `.so` files from the
+built AAB and checked LOAD segment alignment directly with the Android NDK's `llvm-readelf` —
+`libbarhopper_v3.so` and `libimage_processing_util_jni.so` (Google ML Kit/CameraX, bundled via the
+`mobile_scanner` plugin used for the Get Ticket QR scanner) were 4KB-aligned, not 16KB. Root cause:
+`mobile_scanner` was pinned to `3.5.6`, three major versions behind; `6.0.11` is the version that
+updated CameraX for 16KB support. Upgrading to `6.0.11` cascaded into: a Kotlin Gradle plugin bump
+to `2.2.20` (the version `mobile_scanner` 6.0.11 itself pins) — which also required killing stale
+Gradle 7.5/Kotlin 1.8.22 daemon processes left running from before this session's toolchain
+upgrades, since `flutter clean` alone didn't invalidate them; and a `TorchState` API break in
+`get_ticket.dart` (`controller.torchState` → `controller.value.torchState` via `ValueNotifier`,
+plus new `.auto`/`.unavailable` enum cases the exhaustive `switch` needed to handle). Re-verified
+16KB alignment via `llvm-readelf` after the fix (all LOAD segments now 0x4000/16KB or larger) and
+confirmed the scanner still works on the physical Oppo before committing (`1d019eb`, `versionCode`
+49→50/`48.0.2`).
+
+**4. Submitted `50 (48.0.2)` to Google Play Closed Testing - Alpha, and hit a real Play Console UX
+trap along the way.** Data Safety form turned out to already be fully and correctly declared
+(Device or other IDs, name/email/phone/photos all "Completed") — the "Data safety section
+removed" policy flag against production (version 47) was stale, from before an earlier session's
+fix, and not something this session needed to touch. Clicking "Submit N changes for review" the
+first time only ran Play Console's asynchronous pre-review "quick checks" — Publishing overview
+silently reverted to "not yet submitted" once those finished, with the same Submit button still
+sitting there unclicked. Caught this on a deliberate follow-up check rather than assuming success;
+the second click produced the real "Send N changes for review?" confirmation dialog, and
+Publishing overview then correctly showed "Changes in review." **Google's review was still
+pending as of session end — not yet confirmed whether it clears, or whether the stale Data Safety
+flag actually resolves once it does.**
+
+**5. Rewrote `IOS_HANDOFF.md` and fixed one iOS build-breaker in advance.** The 2026-08-08 version
+pointed at `feature/redesign-2026`, now behind `fix/android-15-compliance`. New version documents
+that `node_app_server`'s `main` and `peer-notification` are confirmed in sync and deployed
+(closing out the old "not deployed yet" caveat on `/service-options`), and that the iOS-side FCM
+token-refresh wiring genuinely still isn't done — read `notification.dart` directly and confirmed
+`onTokenRefresh`'s listener only logs, never calls `POST /update-fcm-token`. Also proactively fixed
+`mobile_scanner` 6.0.11's iOS fallout: its podspec requires `platform :ios, '15.5.0'`, but
+`ios/Podfile` was still at `13.0` and the Xcode project's `IPHONEOS_DEPLOYMENT_TARGET` was a mix of
+`12.0`/`15.0` — bumped both to `15.5` (`93620f8`), done blind from Windows since no
+Xcode/CocoaPods is available here; needs a fresh `pod install` on macOS to actually verify.
+
+**6. Pushed both repos to origin.** `sq_appt_app_2`'s `fix/android-15-compliance` (new branch on
+the remote, all of #1–#5's commits) and this docs checkout's `mobile-redesign` (`IOS_HANDOFF.md` +
+`pending_work.md` only — left `DEVLOG.md`'s then-uncommitted state, some auto-regenerated plugin
+registrant files, and several untracked screenshots alone rather than sweep them into an unrelated
+commit).
+
+**Session ended here.** Next steps: confirm the Play Console review outcome; pick up iOS testing
+per the refreshed handoff doc (`pod install` first, then the FCM token-refresh wiring); resume the
+still-unfinished edge-to-edge visual audit from 2026-08-12 whenever a device/emulator session is
+available again.
+
+---
+
+### 2026-08-12 — Started Android 15 / API 35 compliance push on `sq_appt_app_2`; blocked mid-session by `C:` drive filling up
+
+**Context:** Separate `Node_tests` session (not this repo's usual working directory) started prepping `sq_appt_app_2` (checked out independently at `C:\Users\vic\AndroidStudioProjects\sq_appt_app_2`, branch `fix/android-15-compliance` — distinct from this `D:\Claude\sq_appt_app` checkout's `mobile-redesign` branch) for Google Play's requirement that new apps/updates target **API level 36 (Android 16)** by **2026-08-31** (confirmed via Play Console docs — existing apps not being updated only need 35 as a floor, but updates need 36). Task sequence: install current Flutter stable + Android SDK Platform 35/36, trial-build against the old `targetSdkVersion` 34 first, then bump to 36, fix edge-to-edge rendering, verify 16KB page-size compliance, device regression pass.
+
+**1. Installed a fresh Flutter stable SDK to `C:\flutter_stable_2026` and Android SDK Platform 35 — both completed successfully.**
+
+**2. Trial build against API 34 repeatedly failed — root cause turned out to be disk space, not the SDK bump.** After several build attempts (`build_trial.log` through `build_trial10.log`), `flutter build apk --debug` failed with Gradle's `java.io.IOException: There is not enough space on the disk` (during `l8DexDesugarLibDebug`/`compileDebugKotlin`), then a Dart VM `Out of memory` crash on retry. `df -h` confirmed `C:` at 327MB free out of 475GB. **Gotcha: the background task runner's completion summary claimed "exit code 0" for this run — the actual log clearly shows `BUILD FAILED`. Don't trust the summary line; always check the log.**
+
+**3. Disk survey found several easy wins plus one structural issue:**
+- `C:\flutter_windows_3.24.3-stable.zip` (985M) — old installer archive, safe to delete.
+- `C:\fluttera_old` (3.2G) and `C:\flutter` (2.7G) — likely superseded by the new `C:\flutter_stable_2026` (confirmed as the active SDK via the build log's `flutter.bat` path), but not yet verified unused before the session got redirected.
+- `C:\Users\vic\.gradle\caches` (12G) — will keep regrowing and refilling `C:` even after a one-time cleanup unless `GRADLE_USER_HOME` is relocated.
+- `D:` has 708G free. User's explicit direction: move large dev files (Flutter SDK, Gradle cache, and/or the project checkout itself) to `D:` rather than keep working on an almost-full `C:`.
+
+**4. Also noted while investigating**: `D:\Claude\sq_appt_app` (this checkout) and `C:\Users\vic\AndroidStudioProjects\sq_appt_app_2` are two separate, both-legitimate checkouts on different branches (`mobile-redesign` vs. `fix/android-15-compliance`) — not duplicates.
+
+**Session interrupted here** before the disk cleanup / `D:` relocation was carried out. Full detail and next steps in `pending_work.md`'s "BLOCKING: `C:` drive nearly full" item.
+
+---
+
+### 2026-08-12 (cont.) — Resolved the disk-space block and bumped `sq_appt_app_2` to API 36; hit an unresolved emulator keyboard quirk mid edge-to-edge audit; iOS push root-caused and fixed server-side; added the Play Console account-deletion page
+
+**Context:** Continuation of the same day's `Node_tests` session, resuming the Android 15/16 compliance push after the disk-space block above, then a separate detour into finishing the iOS push investigation from 2026-08-11 and a fresh Play Console compliance ask (account-deletion page).
+
+**1. Disk-space block resolved durably, not just cleaned up once.** Root cause both times was `C:` filling up (Gradle/emulator both need multi-GB headroom). Deleted confirmed-unreferenced `C:\flutter` (2.7G) and `C:\fluttera_old` (3.2G) old SDKs (verified unused via PATH, both projects' `local.properties`, `.idea` library XML, and VS Code settings first). Relocated the ~12.9G Gradle cache from `C:\Users\vic\.gradle\caches` to `D:\AndroidDev\gradle_home\caches` via `robocopy /E /MOVE` — **must run robocopy from PowerShell, not Git Bash** (Git Bash's MSYS path-conversion mangles `/E` into a bogus `E:/` path and the copy silently no-ops) — and **stop any running Gradle/Kotlin daemons first** or robocopy can't move locked files. Set `GRADLE_USER_HOME`/`ANDROID_AVD_HOME` persistently via Windows User environment variables (new processes only — an already-running shell doesn't pick them up retroactively). `C:` free space went 327MB → 18G; `D:` has 692G free after the move.
+
+**2. Bumped `sq_appt_app_2/android/app/build.gradle`'s `targetSdkVersion` 35 → 36** (`compileSdkVersion` was already 36) and rebuilt clean — `app-debug.apk` now targets 36. **Still uncommitted.**
+
+**3. Installed an API 36 Google Play emulator (`API36_EdgeToEdge` AVD, pixel_6 profile) under `D:\AndroidDev\avd`** — needed because the only physical device available (Oppo/OnePlus `CPH1909`) runs Android 8.1 (API 27), far too old to exercise edge-to-edge (only enforced on API 35+), and the pre-existing `SmartQ_Test` AVD only had system images through API 34. Installed the API 36 build on both the new emulator and the physical Oppo.
+
+**4. Started the edge-to-edge visual audit; static code audit done, live pass blocked by an emulator keyboard quirk, not yet resolved.** Static audit: `MainActivity.kt` is a bare `FlutterActivity` with no overrides, no `SystemChrome`/`SystemUiOverlayStyle` usage in `lib/`, stock Flutter themes — nothing opts out, and Flutter 3.44.9 auto-enables edge-to-edge for API 35+. 10 of 15 `Scaffold` screens have no `SafeArea` (flagged in `pending_work.md`) and are the likely trouble spots once verified visually. Live pass got sidetracked before reaching any of them: text fields on the fresh AVD showed only a narrow floating assist strip instead of the full QWERTY keyboard, for both password and non-password fields alike (ruling out a field-type-specific app bug). Tried disabling Google Autofill (no change) and clearing Gboard's state via `pm clear` (surfaced a first-run stylus-tutorial sheet that itself blocks the keyboard, but that's a side effect of the clear, not proof of the original cause). **Root cause not confirmed** — two untested theories (Gboard first-run onboarding queue vs. a `pixel_6` AVD input-config quirk). Session suspended with the tutorial sheet still on-screen, undismissed.
+
+**5. iOS push notifications — root-caused and fixed server-side.** Root cause was a stale `mdevice.fcmtoken`, not an APNs/config problem — all five send paths from 2026-08-11's investigation were "succeeding" against a token already stale in the DB. Confirmed by pulling the live token straight off the device and resending — arrived immediately. `node_app_server` commit `92c480d` added `POST /update-fcm-token` (lightweight authenticated endpoint to push a refreshed token) and made `/send-notification` detect `messaging/invalid-registration-token` / `-not-registered` / `invalid-argument` and auto-clear the dead token instead of silently "succeeding." **Flutter-side wiring is still not done** — the app needs to call `/update-fcm-token` from `onTokenRefresh` and defensively on every launch/foreground, since `/login` never touches `fcmtoken`; until that lands the DB token can go stale the same way again.
+
+**6. Added a public account-deletion disclosure page for Google Play's Data Safety declaration.** Play requires a publicly-reachable URL (not an in-app-only flow) describing account-deletion steps and what data is deleted vs. retained. `node_app_server` commit `10c4089` added `public/delete-account.html`, live at `https://node-app-server.onrender.com/delete-account.html`. The existing in-app flow (Settings → Delete Account → `DELETE /users/:userId`) only removes the `mdevice` row — booking/notification rows are retained and disassociated, not deleted — the page documents that distinction accurately rather than overclaiming.
+
+**7. Commits/deploy status confirmed via `git fetch`:** `node_app_server` `main` and `peer-notification` are both at `10c4089` on the remote (`origin/peer-notification` already fast-forwarded — the FCM-refresh fix and the account-deletion page are both live on Render). `sq_appt_app_2`'s `targetSdkVersion` 35→36 bump remains uncommitted, alongside the pre-existing uncommitted `notification.dart`/`home_provider.dart` fixes from 2026-08-11.
+
+---
+
+### 2026-08-11 — Deep-dive on "notifications not arriving" for both patients and service providers; root-caused Android, iOS still open
+
+**Context:** Started as a detour from Play Store Internal Testing setup ("Xflight equivalent for Android") — user reported neither push nor email notifications reliably arriving for either patients or service providers. Investigated live using the physical Oppo/OnePlus `CPH1909` (Android, connected via `adb`/USB) and a real iPhone, both freshly registered (`vicdlr@gmail.com` / Android, `vic@smartqsys.com` / iOS) against production (`node_app_server` on Render, Firebase project `sqnotification`).
+
+**1. Email notifications: confirmed working.** Fresh registration produced both the verification email and, after tapping the link, the Welcome email — `Sendemail`/`sendTemplatedEmail` in `node_app_server/app.js` both fired correctly. Not investigated further; no evidence of a real email problem.
+
+**2. Android push — root-caused: OS-level suppression due to a missing notification channel, not a code/server bug.**
+- Wrote a one-off script (`node_app_server/_test_push_vicdlr.js`) using the Admin SDK directly against the real DB (`mdevice` table) to bypass the app entirely — confirmed FCM credentials, project (`sqnotification`), and both test accounts' stored `fcmtoken` values are all valid; every server-side send attempt returned success.
+- `adb shell dumpsys notification --noredact` showed the pushes *were* being posted to the device, but two things were wrong: (a) they land on Firebase's `fcm_fallback_notification_channel`, not the app's intended `booking_updates` channel, and (b) `post_frequency` showed `muted=3/3` — every notification from this app is being suppressed by the OS.
+- Root cause confirmed via live `flutter run` logcat: `W/FirebaseMessaging: Notification Channel requested (booking_updates) has not been created by the app` + `Missing Default Notification Channel metadata in AndroidManifest`. The Flutter app (`sq_appt_app_2`, `lib/notification/notification.dart`) only ever creates a channel reactively inside the foreground `onMessage` handler — never pre-creates `booking_updates` at startup — so any background/killed-app delivery has nothing valid to post to, and ColorOS mutes the fallback.
+- **The fix already exists and is unmerged**: branch `fix/notification-channel-and-tap-handling` in `sq_appt_app_2`, commit `4edf223` ("Pre-create booking_updates notification channel; sort My Bookings descending"). Not yet merged into `feature/redesign-2026`. Ruled out a SIM/connectivity theory along the way — confirmed via `adb shell dumpsys connectivity` that the test device had a fully validated WiFi connection throughout (push notifications don't need a SIM at all).
+
+**3. iOS push — NOT root-caused; needs Mac/Xcode access this environment doesn't have.**
+- Spent significant time just finding the right Firebase Console project: `sqnotification` is confirmed correct (both `google-services.json` and `GoogleService-Info.plist` declare it, and every successful Admin SDK send returned a `projects/sqnotification/messages/...` ID). Two decoy projects exist and are **not** relevant — `sqapp-2513c`/`sqapp1`, holding a stale Android app registered under the never-renamed placeholder package `com.example.sq_notification`. Access to `sqnotification` itself wasn't available under `vicsq10809@gmail.com`, `vic@smartqsys.com`, or a third "Work" account — eventually found under `vicdlr@gmail.com` (account index `/u/2`).
+- Under `sqnotification` → Cloud Messaging, found **two** Apple apps registered: a stray `com.sq.sqNotification` and the real `SQ Appt App` (`com.smartqsys.sqapptapp`). The real app has both Development and Production APNs Authentication Keys uploaded (Key ID `FCD8LKZ546`, Team ID `FN232J5K2B` — matches the Apple Developer team from `CLAUDE_BRIEFING.md`). **APNs credentials are not the problem.**
+- Tried five independent send paths to the same iPhone token: direct Admin SDK send, a minimal payload with no custom `android`/`apns` blocks (replicating the exact pre-`dd39738` payload shape, before `node_app_server` ever added channel/sound customization), `/send-notification` (service-key auth), `/send-to-peer-notification` (user-JWT auth), and Firebase Console's own "Send test message" tool. All reported success server-side; **none confirmed arriving on the device** except one early, never-reconfirmed claim about the Console tool. Notification permission is confirmed granted on the phone; it's a real device, not a simulator.
+- **Open**: needs someone with the physical iPhone + a Mac with Xcode to check the device's console log (Window → Devices and Simulators) while a push is sent, to see whether iOS is rejecting it (e.g. `BadDeviceToken`) or the app-side registration itself is stale. Also worth checking whether the app currently installed on that iPhone predates the Aug 7 certificate/provisioning-profile fix noted in `CLAUDE_BRIEFING.md`.
+
+**4. Found and fixed an unrelated real bug along the way**: `sq_appt_app_2/lib/view/home/notification.dart`'s empty-notifications state used a hardcoded `EdgeInsets.symmetric(vertical: 300)` inside a non-scrolling `Column` with no `Expanded` — caused a genuine `RenderFlex overflowed by 27 pixels` on the Oppo's screen height (visible as the debug yellow/black banner; would silently clip in a release build instead). Fixed by wrapping the empty state in `Expanded` + `Center` and dropping the fixed padding. **Uncommitted**, alongside the pre-existing uncommitted `home_provider.dart` month-filter fix noted in the 2026-08-10 entry — both still need a rebuild+commit.
+
+**5. Misc findings/gotchas worth remembering:**
+- `mdevice.email`, `.date_registered`, and `.auth_token` are fixed-length `CHAR` columns in Postgres — values come back space-padded. `auth_token` in particular **must be `.trim()`'d** before `jwt.verify()` or it fails with "Invalid Token" even for a freshly-issued, otherwise-valid token. Cost real time before being caught.
+- `node_app_server`'s local `.env` is missing `CARECONNECT_SERVICE_KEY` (only set on Render) — `SQ_CareConnect`'s local `.env` has the matching `NAS_SERVICE_KEY` value instead, usable as a substitute for local testing of `/send-notification`.
+- Confirmed the `reconcileOrphanedBookings()` change flagged in the 2026-08-10 entry is still sitting uncommitted in this local `node_app_server` checkout, untouched this session — still needs the `handled_by IS NULL` row-count decision before it's safe to commit/deploy.
+- Left several throwaway diagnostic scripts in `node_app_server/` (`_test_push_vicdlr.js`, `_check_platform.js`, `_get_auth_token.js`, `_inspect_key*.js`, `_test_*.js`) — untracked, safe to delete, not yet cleaned up.
+
+**Session suspended here** at the user's request, mid-investigation on the iOS push issue.
+
+---
+
+### 2026-08-10 — First physical-device testing pass: found and fixed the ccadmin/ccuser routing bug, a WebView renderer-crash bug, plus a round of UI fixes from live feedback
+
+**Context:** resumed from 2026-08-09's one open item — visual on-device confirmation of the new
+"Manage Bookings" WebView, which the emulator couldn't reliably confirm. A USB-connected physical
+Android device (Oppo/OnePlus `CPH1909`) became available this session, so testing moved off the
+emulator entirely. Worked from `sq_appt_app_2`'s `feature/redesign-2026`, rebuilding via
+`flutter run -d <device-id>` after each change (no stdin access to the running process from this
+environment, so every fix meant a fresh rebuild+reinstall rather than a hot reload).
+
+**1. Root-caused a real bug in the Manage Bookings bridge — bigger than it first looked.** First
+on-device tap showed the mint endpoint returning a `careConnectUrl` on `ccadmin.smartqsys.com`
+instead of `ccuser.smartqsys.com`. Traced it to `node_app_server`'s Render env var
+`CARECONNECT_BASE_URL` being set to `ccadmin.smartqsys.com`. Since CareConnect's `proxy.ts` bounces
+any non-`/admin/clinic` path on `ccadmin` back to the clinic-staff login, and **both**
+`queue-access-token/consume` and `session-token/consume` redirect to a relative `/bookings` path
+on whatever host they were called on, this silently broke the pre-existing "View Queue" button too,
+not just the new Manage Bookings card — a regression nobody had caught because prior verification
+only checked that consume set a real `cc_session` cookie and issued a redirect, never that the
+redirect's host actually resolved to a reachable page. User corrected the env var on Render
+(`https://ccuser.smartqsys.com`); confirmed working on-device afterward.
+
+**2. Wrote `D:\Claude\SQ_CareConnect\MOBILE_SYNC_HANDOFF.md`** so the separate Claude session
+working in `SQ_CareConnect` (which had already noticed the `MobileSessionToken`
+model/migration/route appearing mid-session, per its own `pending_work.md`) had the full picture
+without re-deriving it. That session read it, independently confirmed the same root cause from its
+side of the code, and logged/committed the finding in its own `pending_work.md` (`3c76b32`) —
+real cross-session coordination via a shared handoff doc, not just a one-way note.
+
+**3. Confirmed CareConnect's embedded-WebView nav-hiding is intentional, not a bug.** Initial
+on-device report was "ccuser doesn't show its own bottom nav inside Manage Bookings." Traced to
+`patient-bottom-nav.tsx`'s `if (embedded) return null` (driven by `?embedded=1`, persisted in
+`sessionStorage` per `lib/use-embedded.ts`) — deliberate design from a prior CareConnect session so
+the WebView reads as part of the native app rather than a second app-within-an-app. User confirmed
+that's exactly the intent ("should behave like part of the mobile app"); no CareConnect-side change
+needed.
+
+**4. Found and fixed a real WebView renderer-crash bug.** After the ccuser fix, Manage Bookings
+still hung on a spinner past 60s. Device logs showed a genuine Android system-WebView renderer
+crash (`aw_browser_terminator.cc: Renderer process crash detected`), preceded by repeated
+`NoClassDefFoundError: Landroid/app/UiModeManager$ContrastChangeListener` during WebView init —
+this device's system WebView build hitting a real compatibility issue, not a network/backend
+problem. `onReceivedError` never fires for a renderer crash, so the (also newly-added, see #6)
+loading spinner just spun forever with no recovery path. Added `onRenderProcessGone` handling
+(`useOnRenderProcessGone: true`) with a "Retry" button. Underlying device-side cause not fixed —
+worth checking that the phone's Android System WebView is fully updated via Play Store.
+
+**5. Investigated intermittent multi-second-to-20+-second latency** on both `node_app_server` and
+`ccuser.smartqsys.com` — same routes measured anywhere from <1s to ~21s across repeated curl tests,
+with no clean pattern by route complexity (even the plain root page was sometimes slow). Ruled out
+Render free-tier cold-start (`node_app_server` is confirmed on the Starter plan, which doesn't
+sleep). Most likely explanation is rolling-restart churn from this session's own env-var change and
+the several pushes across repos, each of which triggers a Render redeploy — not confirmed via
+Render's own dashboard/logs (no access from here). **Not root-caused; worth a real look at Render's
+metrics/deploy history if it recurs outside of an active work session.**
+
+**6. UI fixes from live on-device feedback, all in `sq_appt_app_2`**, four commits
+(`c477f20`, `d5004eb`, `27eceae`, `9ff4ceb`), pushed to `feature/redesign-2026`:
+- Get Ticket QR scan screen: AppBar title was truncating on this device's screen width (now
+  shrinks via `FittedBox`); the "Align the QR code within the frame" hint had no explicit
+  size/constraints and rendered oversized; its manual-entry action renamed "Enter code manually" →
+  "Enter Link manually" (it takes a URL, not a code).
+- Contact Us: `mailto:` now stamps the signed-in account's email into the body — `mailto:` can't
+  control which of the device's own accounts actually composes the message, so support had no way
+  to identify the sender otherwise.
+- `WebViewPage` (shared by Get Ticket and Manage Bookings): was showing a blank white screen while
+  its page loaded (sometimes for several real seconds, see #5) — added a loading-spinner overlay;
+  also had a hardcoded "Ticket Details" title even when opened from Manage Bookings — added a
+  `title` parameter, Manage Bookings now passes "Manage Bookings".
+- My Appointments now sorts by booking `id` descending (most recent first) instead of raw API
+  order — `booking_date` is null for some booking types (e.g. Data Capture), so `id` is the
+  reliable recency signal. Note: an old still-unmerged branch in the other checkout
+  (`fix/notification-channel-and-tap-handling`, see `pending_work.md`) also touched My Bookings
+  sort order — worth checking for conflict/redundancy before merging that branch.
+- Bottom nav: "Services" → "Book" (icon kept), then separately "My Queues" → "Notifications"
+  (bell icon) — both the bottom-nav tab and Home's matching quick-action card now open the
+  existing `NotificationsScreen` instead of the CareConnect-filtered booking list. Removed
+  `MyBooking`'s now-dead `filterActiveQueuesOnly` param and its two conditional branches since no
+  caller passed `true` anymore. Notifications screen header retitled "Notification" →
+  "Notifications". (Notification list was already sorting descending by `sentTime` in
+  `home_provider.dart` — no change needed there.)
+
+**7. Found and fixed why bookings produced no in-app notification.** Two separate, independent
+bugs, both real:
+- `home_provider.dart`'s `getNotificationList` silently filtered the fetched list down to the
+  current calendar month only (`sentTime?.month == currentMonth && ...year == currentYear`), with
+  no UI indication that's what was happening — anything from an earlier month just vanished,
+  which is what made it look like notifications had been lost entirely. Removed the filter.
+- `node_app_server`'s `/create-booking` sent its "Booking Received" push via a raw
+  `admin.messaging().send()` call that never wrote a row to the `notifications` table — every
+  other notification-sending route in that file (`/send-notification`, `/send-to-peer-notification`,
+  the CareConnect-driven one) does this after sending; `/create-booking` alone skipped it, so a
+  fresh booking could still buzz the phone but would never show up in-app. Fixed to match the
+  established pattern. Committed (`0495a7a`), pushed to both `main` and `peer-notification`
+  (Render's actual deploy branch), confirmed redeployed.
+
+**8. Root-caused a stuck-at-"Pending" booking despite the clinic's `confirmMode` being `AUTO`.**
+Confirmed via ccadmin that CareConnect itself had correctly auto-confirmed *and* auto-checked-in
+the booking (`confirmMode=AUTO` + the policy's `noCheckin` both engaged) — so the bug was purely on
+NAS's side. `node_app_server`'s `/create-booking` fires `routeBookingToHandler` without awaiting it
+(deliberately, so the mobile app doesn't wait on CareConnect's round trip), which means a Render
+restart landing mid-flight — and this session triggered several, between the `CARECONNECT_BASE_URL`
+fix and the item-7 push above — can silently kill that call before it ever writes
+`handled_by`/`status` back onto NAS's own `booking` row, with no error logged anywhere. Wrote a
+`reconcileOrphanedBookings()` sweep (re-runs `routeBookingToHandler` for any booking with
+`handled_by IS NULL`, at startup and every 10 minutes after) to harden against this — **implemented
+but deliberately not committed/deployed yet**: `booking` has no `created_at` column, so the
+reconciliation query can't scope itself to "recently orphaned" and would instead reprocess *every*
+historically-orphaned row (unknown count, not checked) the moment it first runs, which could
+re-send confirmation pushes for old bookings or error on stale unit references. Left as an
+uncommitted local change in `node_app_server/app.js` pending a decision on scoping it safely (or
+confirming via Database Workbench that the old-row count is actually zero/small). User opted to
+just retest with a fresh booking instead, now that no further `node_app_server` deploys are
+pending — not yet confirmed as of this writing.
+
+**9. Test-device notes:** the physical Android device (`CPH1909`) has no SIM installed — confirmed
+this doesn't block testing (WiFi is enough for both API calls and FCM push, neither needs
+cellular). iOS testing remains blocked on connecting to a Mac, unchanged from `IOS_HANDOFF.md`.
+
+**10. Commits**: `sq_appt_app_2` (`feature/redesign-2026`) — `c477f20`, `d5004eb`, `27eceae`,
+`9ff4ceb` (UI fixes, item 6) — all pushed. `node_app_server` (`main` + `peer-notification`) —
+`0495a7a` (notification persistence, item 7) — pushed and deployed. **Uncommitted as of this
+writing:** `sq_appt_app_2/lib/provider/home_provider.dart` (item 7's month-filter removal) and
+`node_app_server/app.js` (item 8's reconciliation sweep). No `SQ_CareConnect` code changes this
+session (`CARECONNECT_BASE_URL` was a Render dashboard env var change, not a commit).
+
+---
+
+### 2026-08-09 — Root-caused why redesign never went live; badge QR fixed; Badge/Data-Capture/Date-Time pages redesigned; new "Manage Bookings" feature built across 3 repos
+
+**Context:** continuation of 2026-08-08's suspended session, restarting from "emulator needs a
+restart" (the literal first ask this session). What followed was a much longer investigation than
+expected: the redesign work everyone believed was "committed and pushed" turned out to not
+actually be live anywhere, for two compounding reasons neither previous session had caught.
+
+**1. Found this repo (`D:\Claude\sq_appt_app`) is docs-only — the real Flutter code lives at
+`C:\Users\vic\AndroidStudioProjects\sq_appt_app_2`.** Built and ran the app from here first,
+spent real effort confused why the UI looked like the pre-redesign version, before realizing this
+checkout's `mobile-redesign` branch only ever received doc/briefing commits. Documented this
+permanently: new `D:\Claude\.claude\projects\sq_appt_app.md`, updated `KNOWLEDGE_BASE.md`'s
+project table, and added a general "docs workspace ≠ code checkout" entry to `DEV_GOTCHAS.md` so
+this doesn't repeat on another project. Switched to the real checkout
+(`sq_appt_app_2`, `feature/redesign-2026`) for everything below.
+
+**2. Root-caused why the badge QR (and Data-Capture instructions) still didn't work after
+yesterday's "everything is committed and pushed."** Two real, separate causes, both on
+`node_app_server`:
+- **Render's `node_app_server` service auto-deploys from branch `peer-notification`, not
+  `main`.** All of yesterday's redesign work was pushed to `main`/`feature/redesign-2026`, which
+  this service was never watching. `peer-notification` had been stuck at commit `5718f11`
+  (Aug 4) the whole time — a "manual deploy" yesterday found nothing new because there genuinely
+  was nothing new on the branch it deploys from. Fast-forwarded `peer-notification` to `main` and
+  pushed; confirmed live via `about.html`'s `Last-Modified` header changing and its byte size
+  matching the restyled version.
+- **`BADGE_TOKEN_KEY` was never actually set in Render**, despite `pending_work.md` stating it
+  was. Generated a new 256-bit key and added it. Badge QR confirmed rendering live on the Home
+  dashboard immediately after.
+
+**3. Found and fixed a real naming-mismatch bug blocking the CareConnect queue-access bridge.**
+CareConnect's `lib/nas-service-auth.ts` reads `process.env.NAS_CC_SERVICE_KEY` to verify incoming
+`x-nas-service-key` requests from NAS, but Render's `sq-careconnect` service had this var named
+`NAS_SERVICE_KEY` (missing `_CC`) — so `verifyNasServiceSecret` always failed with "not
+configured," silently breaking the whole bridge. Renamed it on Render (kept the same value) and
+copied that value into `node_app_server`'s `NAS_CC_SERVICE_KEY` (also missing before today).
+
+**Real regression from this fix, caught and corrected:** `NAS_SERVICE_KEY` (the name I renamed
+away) turned out to *also* be needed under its original name for a completely different,
+already-working path — `lib/notify.ts`'s outgoing calls to NAS's `/send-notification` and
+`/admin/mdevice/:id/service-provider-flag` (a separate key pair: `x-service-key` header, matched
+against NAS's `CARECONNECT_SERVICE_KEY`, unrelated to the `x-nas-service-key` pair above). Renaming
+instead of adding likely broke that path silently (best-effort/soft-fail, so nothing crashed, but
+push notifications and the service-provider-flag unlock would have quietly stopped working). User
+re-added `NAS_SERVICE_KEY` on Render with its original value to restore both paths. **Two
+similarly-named but functionally distinct secrets (`NAS_SERVICE_KEY` vs. `NAS_CC_SERVICE_KEY`) —
+worth remembering as an easy trap.** Also added `NAS_CC_SERVICE_KEY` to CareConnect's *local*
+`.env` (was missing there too, under either name) so local testing works.
+
+**4. Removed non-functional Google/Apple sign-in buttons** from SignIn/SignUp — both only ever
+showed "coming soon" toasts, not wired to real OAuth.
+
+**5. Fixed a real navigation bug: "More" tab → black screen.** `SettingsScreen` is reached two
+ways — pushed as a standalone route (Badge page's gear icon) and embedded directly as
+`bottom_nav_bar.dart`'s "More" tab body (index-swapped, not pushed). Its AppBar's close button
+unconditionally called `Navigator.pop()`, which on the "More" tab path popped the bottom-nav
+screen itself off the stack. Removed the explicit `leading`, letting Flutter's
+`automaticallyImplyLeading` show a back button only when there's actually something to pop back
+to.
+
+**6. Redesigned three more screens against their reference mockups**, all verified live on-device:
+- Full-screen Badge view (`home_page.dart`) — branded header, scanner-style corner brackets
+  around the QR, Secure & Private card, footer. Corrected the mockup's copy (it was actually the
+  Get Ticket scan-flow text, mismatched for a screen that displays the user's own badge). Also
+  added a real back arrow — there was none at all before.
+- Data Capture step (`form_page.dart`) and Date/Time Entry step (`add_booking.dart`) of the
+  booking flow — both were plain unstyled forms, rebuilt to match "Enhanced Data Capture page.png"
+  / "Date and Time Entry Page.png". Verified against real seeded data (NKTI → In-coming for Data
+  Capture; NKTI → chair 1 and SLMC Pharmacy for Date/Time Entry).
+
+**7. Built a new "Manage Bookings" feature, replacing "Register a Service" on Home.** User
+decision: remove the native "Register a Service" card entirely (app-store-compliance
+motivated — the app itself no longer surfaces business/clinic-onboarding content; the public
+`ccregister.smartqsys.com` form still exists, just isn't linked from the app). Replaced with
+"Manage Bookings," a general-purpose sibling of the existing `PatientQueueAccessToken`
+queue-access bridge (keyed by device instead of one booking):
+- `node_app_server`: new `POST /careconnect/manage-bookings-link` (JWT-protected, mirrors
+  `/bookings/:bookingId/queue-access`'s mint pattern).
+- `SQ_CareConnect`: new `MobileSessionToken` Prisma model + `POST /api/mobile/session-token`
+  (mint, looks up `User` by `externalMdeviceId`) + `GET .../consume` (burns the token, creates a
+  real `cc_session`, redirects to `/bookings?embedded=1`).
+- `sq_appt_app_2`: Home card calls the mint endpoint and opens the result in the existing
+  `WebViewPage`.
+
+  Verified fully end-to-end via curl against production: mint → consume sets a real, working
+  `cc_session` cookie and redirects correctly; replaying a consumed token correctly falls through
+  to `/login?error=invalid_token` instead of granting access again. **On-device WebView visual
+  confirmation not completed** — this emulator's WebView was Chrome 83 (~2020), which threw real
+  JS syntax errors on CareConnect's modern Next.js bundle (`"Uncaught SyntaxError: Unexpected
+  token '='"`); updated it to Chrome 139 via Play Store, after which the page still rendered blank
+  with no JS errors this time, and the emulator itself became flaky (Chrome onboarding looping,
+  unresponsive taps) — likely strained by the large system-component update, same pattern as the
+  ANR that opened this session. User will verify visually on a physical device instead.
+
+**8. All work committed and pushed:**
+- `sq_appt_app_2` (`feature/redesign-2026`): four commits — `56a1fce` (remove Google/Apple
+  buttons), `6337c43` (Badge redesign + Settings nav fix), `8071868` (Data Capture/Date-Time
+  redesign), `beb8143` (Manage Bookings feature).
+- `node_app_server` (`main`, fast-forwarded into `peer-notification` too since that's what Render
+  actually deploys): `18619eb` (manage-bookings-link route), plus the `main`→`peer-notification`
+  fast-forward itself (`f7a19ed`, yesterday's merge, finally actually deployed).
+- `SQ_CareConnect` (`master`): `7f150a0` (mobile-SSO bridge).
+
+---
+
 ### 2026-08-08 — Full mockup-driven redesign built across all three repos; badge security fixed; live device-testing round found and fixed real bugs
 
 **Context:** continuation of 2026-08-07's suspended session. The five enhancement items from that
