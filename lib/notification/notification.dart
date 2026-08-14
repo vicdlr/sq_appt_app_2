@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
+import 'package:sq_notification/api/api.dart';
+import 'package:sq_notification/api/configurl.dart';
+
 
 
 class NotificationServices {
@@ -177,12 +181,29 @@ class NotificationServices {
   }
 
   void isTokenRefresh() async {
-    messaging.onTokenRefresh.listen((event) {
-      event.toString();
+    messaging.onTokenRefresh.listen((newToken) {
       if (kDebugMode) {
-        print('refresh');
+        print('fcm token refreshed: $newToken');
       }
+      updateFcmTokenOnServer(newToken);
     });
+  }
+
+  // /login never touches fcmtoken, so this is what keeps the server-side token fresh once it rotates.
+  Future<void> updateFcmTokenOnServer(String token) async {
+    final result = await DioApi.post(
+      path: ConfigUrl.updateFcmTokenUrl,
+      data: {"fcm_token": token},
+    );
+
+    if (result.response != null) {
+      SharedPref.setFcmToken(token);
+      if (kDebugMode) {
+        print('fcm token updated on server');
+      }
+    } else if (kDebugMode) {
+      print('failed to update fcm token on server: ${result.dioError}');
+    }
   }
 
   //handle tap on notification when app is in background or terminated

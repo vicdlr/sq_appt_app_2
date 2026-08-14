@@ -49,6 +49,7 @@ class _HomePageState extends State<HomePage> {
     notification.forgroundMessage();
     notification.firebaseInit(context);
     notification.setupInteractMessage(context);
+    notification.isTokenRefresh();
     final String token = await notification.getDeviceToken();
 
     print("token +++ $token");
