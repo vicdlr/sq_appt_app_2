@@ -468,8 +468,13 @@ class _SettingsRow extends StatelessWidget {
           child: Icon(icon, color: iconColor, size: 20),
         ),
         title: Text(title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(fontWeight: FontWeight.w600, color: titleColor)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        subtitle: Text(subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12)),
         trailing: trailing ??
             Row(
               mainAxisSize: MainAxisSize.min,
