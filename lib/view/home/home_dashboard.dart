@@ -97,7 +97,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Pinned regardless of the device's Dynamic Type setting -- this is the app's
+                  // wordmark/branding in an already width-constrained toolbar, not reading
+                  // content, so it shouldn't compete with the action icons for space.
                   const Text("SmartQ",
+                      textScaler: TextScaler.noScaling,
                       style: TextStyle(
                           color: kSmartQGreen,
                           fontWeight: FontWeight.bold,
@@ -105,6 +109,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   Text("Smarter Queues. Better Experience.",
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
+                      textScaler: TextScaler.noScaling,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -413,11 +418,15 @@ class _BadgeFeatureCardState extends State<_BadgeFeatureCard> {
                       Icon(Icons.shield_outlined,
                           color: Colors.white, size: 18),
                       SizedBox(width: 6),
-                      Text("SmartQ Badge / Pass",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15)),
+                      Expanded(
+                        child: Text("SmartQ Badge / Pass",
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15)),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
