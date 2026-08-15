@@ -28,6 +28,24 @@
   Policy status: the stale "Data safety section removed" flag is **gone**. The two remaining
   Policy status warnings (16 KB page size, target API 35+) are tied to the **live production**
   version (47) specifically, not this closed-testing release — expected, not a new problem.
+- **RESOLVED 2026-08-15: built and used a standalone tester-notification emailer, since Google
+  Play doesn't email closed testers about new releases on its own.** User asked why the 16 Alpha
+  testers hadn't heard about `48.0.2` — checked Play Console directly (Testers tab, 16 real emails
+  confirmed on the track's email list) and confirmed this is expected Play behavior, not a bug:
+  unlike TestFlight, Play Console has no "notify testers" feature at all. Built
+  `node_app_server/notify-testers/` (commit `d1b02b8`, pushed) — a reusable
+  `node send.js --platform android|ios --version X --notes "a|b|c"` script using the same
+  Zeptomail SMTP account (`notifications@smartqsys.com`) `app.js`'s existing email functions send
+  from, now pulled into `node_app_server/.env` (gitignored) instead of a fourth hardcoded copy of
+  the credentials. `testers-android.json` seeded with the real 16 emails; `testers-ios.json` is an
+  empty placeholder since no TestFlight build exists yet. Used it for real: sent the `48.0.2`
+  announcement to all 16 testers. First run hit a transient DNS timeout
+  (`queryA ETIMEOUT smtp.Zeptomail.com`) on 12 of 16 sends — added retry-with-backoff (3 attempts)
+  and a `--only <emails>` flag for resending to just the failures, then resent successfully to all
+  12 (one needed the retry logic for real, succeeded on attempt 3). All 16 confirmed sent.
+  **Standalone for now — user's stated plan is to fold this into `SQ_APP_Manager` once it has a UI
+  for this; see the tool's own README for current limitations** (hand-maintained tester lists, no
+  send history, one-at-a-time sending).
 - **NEW — iOS: `pod install` needs to actually run on macOS.** The `ios/Podfile` +
   `IPHONEOS_DEPLOYMENT_TARGET` bump to 15.5 (for `mobile_scanner` 6.0.11's iOS podspec
   requirement) was made blind from Windows, commit `93620f8` — no Xcode/CocoaPods available here
