@@ -7,46 +7,21 @@
 
 ---
 
-## Open / needs attention (as of 2026-08-13)
+## Open / needs attention (as of 2026-08-15)
 
-> Full narrative in `DEVLOG.md`'s 2026-08-13 entry (fixed the wrong-checkout mistake, finished the
-> API 36 toolchain bump, found+fixed a real 16KB page-size compliance gap via `mobile_scanner`
-> 6.0.11, submitted `sq_appt_app_2` `50 (48.0.2)` to Play Console Closed Testing, rewrote
-> `IOS_HANDOFF.md` and pre-fixed an iOS build-breaker), 2026-08-12 "(cont.)" entry (disk-space fix,
+> Full narrative in `DEVLOG.md`'s 2026-08-15 entry (confirmed Closed Testing `50 (48.0.2)` is
+> live/published, root-caused why testers weren't notified, built+used the `notify-testers`
+> emailer), 2026-08-13 entry (wrong-checkout mistake, API 36 toolchain bump, 16KB page-size fix,
+> Closed Testing submission, iOS handoff refresh), 2026-08-12 "(cont.)" entry (disk-space fix,
 > emulator setup, iOS push server-side fix, account-deletion page), 2026-08-11 entry (notifications
-> deep-dive), and 2026-08-10 entry (first physical-device pass). The API 36 bump, the 16KB
-> page-size fix, the Play Console Data Safety form, the Closed Testing submission itself, the
-> `notification.dart`/`home_provider.dart` fixes, and the Android version-bump-hack revert are all
-> **done** — see DEVLOG, not repeated here. What's left below is the still-open edge-to-edge audit
-> (blocked on a keyboard quirk), the Play Console review outcome, and genuinely-still-open items
-> carried over from earlier sessions.
+> deep-dive), and 2026-08-10 entry (first physical-device pass). The API 36 bump, 16KB page-size
+> fix, Play Console Data Safety form, Closed Testing submission + publish, the tester-notification
+> gap, `notification.dart`/`home_provider.dart` fixes, and the Android version-bump-hack revert are
+> all **done** — see DEVLOG, not repeated here. What's left below is the still-open edge-to-edge
+> audit (blocked on a keyboard quirk) and genuinely-still-open items carried over from earlier
+> sessions.
 
-- **RESOLVED 2026-08-14: Google Play Closed Testing review cleared and the release is published.**
-  `sq_appt_app_2` `50 (48.0.2)` passed review well within the typical window, Publishing overview
-  moved from "in review" to "ready to publish," and the "Publish 2 changes" step was clicked and
-  confirmed — Publishing overview now shows "Last published on August 14, 2026." Also confirmed on
-  Policy status: the stale "Data safety section removed" flag is **gone**. The two remaining
-  Policy status warnings (16 KB page size, target API 35+) are tied to the **live production**
-  version (47) specifically, not this closed-testing release — expected, not a new problem.
-- **RESOLVED 2026-08-15: built and used a standalone tester-notification emailer, since Google
-  Play doesn't email closed testers about new releases on its own.** User asked why the 16 Alpha
-  testers hadn't heard about `48.0.2` — checked Play Console directly (Testers tab, 16 real emails
-  confirmed on the track's email list) and confirmed this is expected Play behavior, not a bug:
-  unlike TestFlight, Play Console has no "notify testers" feature at all. Built
-  `node_app_server/notify-testers/` (commit `d1b02b8`, pushed) — a reusable
-  `node send.js --platform android|ios --version X --notes "a|b|c"` script using the same
-  Zeptomail SMTP account (`notifications@smartqsys.com`) `app.js`'s existing email functions send
-  from, now pulled into `node_app_server/.env` (gitignored) instead of a fourth hardcoded copy of
-  the credentials. `testers-android.json` seeded with the real 16 emails; `testers-ios.json` is an
-  empty placeholder since no TestFlight build exists yet. Used it for real: sent the `48.0.2`
-  announcement to all 16 testers. First run hit a transient DNS timeout
-  (`queryA ETIMEOUT smtp.Zeptomail.com`) on 12 of 16 sends — added retry-with-backoff (3 attempts)
-  and a `--only <emails>` flag for resending to just the failures, then resent successfully to all
-  12 (one needed the retry logic for real, succeeded on attempt 3). All 16 confirmed sent.
-  **Standalone for now — user's stated plan is to fold this into `SQ_APP_Manager` once it has a UI
-  for this; see the tool's own README for current limitations** (hand-maintained tester lists, no
-  send history, one-at-a-time sending).
-- **NEW — iOS: `pod install` needs to actually run on macOS.** The `ios/Podfile` +
+- **iOS: `pod install` needs to actually run on macOS.** The `ios/Podfile` +
   `IPHONEOS_DEPLOYMENT_TARGET` bump to 15.5 (for `mobile_scanner` 6.0.11's iOS podspec
   requirement) was made blind from Windows, commit `93620f8` — no Xcode/CocoaPods available here
   to verify it actually resolves. First real step of any iOS session: `pod install`, confirm it

@@ -2,6 +2,53 @@
 
 ---
 
+### 2026-08-15 — Closed Testing release confirmed live; built a standalone tester-notification emailer
+
+**Context:** Follow-up to 2026-08-13's Closed Testing submission. Confirmed the release actually
+went live, then built real tooling in response to a real gap the user hit trying to tell testers
+about it.
+
+**1. Confirmed `50 (48.0.2)` cleared Google Play review and is published.** Checked Play
+Console's Publishing overview directly: moved from "Changes in review" to "Changes ready to
+publish," clicked and confirmed "Publish changes" (the "This can't be undone" dialog), and
+verified "Last published on August 14, 2026" afterward. Also confirmed on Policy status: the
+stale "Data safety section removed" flag from earlier sessions is gone. The two remaining Policy
+status warnings (16KB page size, target API 35+) are tied to the still-outdated **live
+production** version (47), not this closed-testing release — expected, not a regression.
+
+**2. User asked why closed testers hadn't been notified about the new release — root-caused to a
+real Play Console gap, not a bug.** Checked the Closed Testing - Alpha track's Testers tab
+directly: 16 real testers are correctly configured via an email list, release is genuinely
+"Available to selected testers." The actual answer: **Google Play Console has no feature to
+notify closed-testing testers about a new release at all** — unlike TestFlight, which does this
+automatically. Testers only find out via the Play Store app's own update-checking (auto-update,
+or manually checking "Manage apps & device"), so there's no way around messaging them directly.
+
+**3. Built `node_app_server/notify-testers/`, a reusable standalone emailer for this.** Sends via
+the same Zeptomail SMTP account (`notifications@smartqsys.com`) that `app.js`'s
+`Sendemail`/`SendResetEmail`/`sendTemplatedEmail` already use — pulled the credentials into
+`node_app_server/.env` (gitignored) instead of adding a fourth hardcoded copy. One script handles
+both platforms: `node notify-testers/send.js --platform android|ios --version X --notes "a|b|c"`,
+with `--dry-run` to preview and `--only <emails>` to resend to specific addresses. Retrieved the
+real 16 tester emails from Play Console's Testers tab (`testers-android.json`); `testers-ios.json`
+is an empty placeholder since no TestFlight build exists yet. Committed and pushed (`d1b02b8`).
+Standalone for now — the user's stated plan is to fold it into `SQ_APP_Manager` once that grows a
+UI for this; the tool's own README documents current limitations (hand-maintained tester lists,
+no send history, one-at-a-time sending).
+
+**4. Used it for real, and the retry logic it gained wasn't theoretical.** First send to all 16
+testers hit a transient DNS timeout (`queryA ETIMEOUT smtp.Zeptomail.com`) on 12 of 16 — added
+retry-with-backoff (3 attempts) to the script on the spot, then resent to just the 12 failures via
+the new `--only` flag. One of the 12 needed the retry logic for real, succeeding on attempt 3, the
+other 11 sent clean. **All 16 testers confirmed sent the `48.0.2` announcement.**
+
+**Session ended here**, switching to `SQ_APP_Manager`. Still open going into next time: the
+edge-to-edge visual audit (blocked on an unresolved emulator keyboard quirk since 2026-08-12),
+verifying `pod install` on macOS after the iOS deployment-target bump, and the iOS FCM
+token-refresh client wiring — see `pending_work.md` for the full carried-forward list.
+
+---
+
 ### 2026-08-13 — Finished the API 36/16KB compliance push, submitted `sq_appt_app_2` to Google Play Closed Testing, and refreshed the iOS handoff
 
 **Context:** Continuation of 2026-08-12's suspended API 36 compliance push, but picked up cold in a
