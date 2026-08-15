@@ -288,13 +288,25 @@ class _QuickActionsGrid extends StatelessWidget {
             return GetTicket();
           }));
     }),
+    // Routes to CareConnect's Manage Bookings WebView (same SSO-minted link as the
+    // "Manage Your Bookings" card below), not the app's own MyBooking() list -- confirmed
+    // 2026-08-15 that node_app_server's own booking pool and CareConnect's are separate, and
+    // CareConnect is taking over booking management from the app, so this is the single
+    // source of truth for a user's appointments going forward.
     _QuickAction(
         Icons.calendar_today_outlined, "Appointments", kServiceProviderBlue,
         (context) {
-      return () =>
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-            return MyBooking();
-          }));
+      return () async {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+        await _openManageBookings(context, onLoaded: () {
+          if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+        });
+      };
     }),
     _QuickAction(
         Icons.notifications_outlined, "Notifications", const Color(0xFF7B3FA0),
@@ -533,6 +545,32 @@ class _ServiceProviderPanel extends StatelessWidget {
 // (ccuser) via a token-minted SSO link (node_app_server's /careconnect/manage-bookings-link,
 // mirroring the queue-access bridge's mint/consume pattern), so there's no separate ccuser
 // login step from inside the app.
+// Shared by the "Appointments" Quick Action and _ManageBookingsCard -- both open the same
+// CareConnect SSO-minted booking view (node_app_server's /careconnect/manage-bookings-link).
+// `onLoaded` fires once the network call resolves, before navigation/toast, so callers with
+// their own loading UI (a button spinner, a blocking dialog) can dismiss it at the right time.
+Future<void> _openManageBookings(BuildContext context,
+    {VoidCallback? onLoaded}) async {
+  final result =
+      await DioApi.post(path: ConfigUrl.manageBookingsLinkUrl, data: {});
+
+  onLoaded?.call();
+
+  final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
+  if (result.response != null && careConnectUrl != null) {
+    if (context.mounted) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+        return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
+      }));
+    }
+  } else if (result.response?.statusCode == 404) {
+    Fluttertoast.showToast(msg: "You don't have any managed bookings yet.");
+  } else {
+    Fluttertoast.showToast(
+        msg: "Couldn't open Manage Bookings right now. Please try again.");
+  }
+}
+
 class _ManageBookingsCard extends StatefulWidget {
   @override
   State<_ManageBookingsCard> createState() => _ManageBookingsCardState();
@@ -541,27 +579,11 @@ class _ManageBookingsCard extends StatefulWidget {
 class _ManageBookingsCardState extends State<_ManageBookingsCard> {
   bool _isLoading = false;
 
-  Future<void> _openManageBookings() async {
+  Future<void> _handleTap() async {
     setState(() => _isLoading = true);
-
-    final result =
-        await DioApi.post(path: ConfigUrl.manageBookingsLinkUrl, data: {});
-
-    setState(() => _isLoading = false);
-
-    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
-    if (result.response != null && careConnectUrl != null) {
-      if (mounted) {
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-          return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
-        }));
-      }
-    } else if (result.response?.statusCode == 404) {
-      Fluttertoast.showToast(msg: "You don't have any managed bookings yet.");
-    } else {
-      Fluttertoast.showToast(
-          msg: "Couldn't open Manage Bookings right now. Please try again.");
-    }
+    await _openManageBookings(context, onLoaded: () {
+      if (mounted) setState(() => _isLoading = false);
+    });
   }
 
   @override
@@ -599,7 +621,7 @@ class _ManageBookingsCardState extends State<_ManageBookingsCard> {
                 backgroundColor: kSmartQGreen,
                 foregroundColor: Colors.white,
               ),
-              onPressed: _isLoading ? null : _openManageBookings,
+              onPressed: _isLoading ? null : _handleTap,
               child: _isLoading
                   ? const SizedBox(
                       height: 18,
