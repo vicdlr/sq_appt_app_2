@@ -546,9 +546,12 @@ class _ServiceProviderPanel extends StatelessWidget {
 // mirroring the queue-access bridge's mint/consume pattern), so there's no separate ccuser
 // login step from inside the app.
 // Shared by the "Appointments" Quick Action and _ManageBookingsCard -- both open the same
-// CareConnect SSO-minted booking view (node_app_server's /careconnect/manage-bookings-link).
-// `onLoaded` fires once the network call resolves, before navigation/toast, so callers with
-// their own loading UI (a button spinner, a blocking dialog) can dismiss it at the right time.
+// CareConnect SSO-minted view (node_app_server's /careconnect/manage-bookings-link). CareConnect
+// now auto-provisions an account on a device's first call (2026-08-15) instead of 404ing when
+// there's no CareConnect account yet, so this always lands on CareConnect (its /bookings list,
+// empty for a brand-new account) rather than needing a "no bookings yet" special case here.
+// `onLoaded` fires once the network call resolves, before navigation/toast, so callers with their
+// own loading UI (a button spinner, a blocking dialog) can dismiss it at the right time.
 Future<void> _openManageBookings(BuildContext context,
     {VoidCallback? onLoaded}) async {
   final result =
@@ -563,8 +566,6 @@ Future<void> _openManageBookings(BuildContext context,
         return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
       }));
     }
-  } else if (result.response?.statusCode == 404) {
-    Fluttertoast.showToast(msg: "You don't have any managed bookings yet.");
   } else {
     Fluttertoast.showToast(
         msg: "Couldn't open Manage Bookings right now. Please try again.");
