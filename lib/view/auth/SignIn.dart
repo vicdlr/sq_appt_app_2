@@ -45,8 +45,13 @@ class _LoginPageState extends State<LoginPage> {
 
     final result = await DioApi.post(path: ConfigUrl.loginUrl, data: data);
 
-    if (result.response?.data != null) {
-      SharedPref.setAuthToken("${result.response?.data["token"]}");
+    final token = result.response?.data is Map ? result.response?.data["token"] : null;
+
+    // A 200 response with no usable token would otherwise get stored as the literal string
+    // "null" (Dart's string interpolation of a null value), silently poisoning every subsequent
+    // authenticated request with an "Invalid Token" server error instead of failing here.
+    if (result.response?.data != null && token is String && token.isNotEmpty) {
+      SharedPref.setAuthToken(token);
       SharedPref.setUserData(UserData.fromJson(result.response?.data["user"]));
       setState(() {
         isLoading = false;
@@ -65,7 +70,11 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         isLoading = false;
       });
-      result.handleError(context);
+      if (result.dioError != null) {
+        result.handleError(context);
+      } else {
+        await Fluttertoast.showToast(msg: "Login failed. Please try again.");
+      }
     }
   }
 

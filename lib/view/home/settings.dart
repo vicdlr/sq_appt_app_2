@@ -475,7 +475,18 @@ class _SettingsRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (trailingText != null) ...[
-                  Text(trailingText!, style: const TextStyle(color: Colors.grey)),
+                  ConstrainedBox(
+                    // Caps the trailing value (e.g. a long city name) so it can't squeeze the
+                    // title/subtitle column down to near-zero width, which forces Text to wrap
+                    // one character per line instead of truncating.
+                    constraints: const BoxConstraints(maxWidth: 120),
+                    child: Text(
+                      trailingText!,
+                      style: const TextStyle(color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
                   const SizedBox(width: 4),
                 ],
                 if (onTap != null)
