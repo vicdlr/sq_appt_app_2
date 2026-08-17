@@ -196,6 +196,10 @@ class _ScanFrameOverlay extends StatelessWidget {
             child: Text(
               "Align the QR code within the frame",
               textAlign: TextAlign.center,
+              // Pinned regardless of the device's Dynamic Type / accessibility text-size
+              // setting -- this is a small overlay hint on top of the camera preview, not
+              // reading content, so it shouldn't grow and crowd out the scan frame.
+              textScaler: TextScaler.noScaling,
               style: const TextStyle(
                 color: Colors.white,
                 backgroundColor: Colors.black54,

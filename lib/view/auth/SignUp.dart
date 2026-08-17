@@ -85,7 +85,13 @@ class _SignupPageState extends State<SignupPage> {
       final result = await DioApi.post(path: ConfigUrl.signUpUrl, data: data);
 
       if (result.response?.statusCode == 200) {
-        SharedPref.setAuthToken("${result.response?.data["token"]}");
+        // Signup doesn't return a token until the account is email-activated, so only store one
+        // if it's actually present -- otherwise Dart's string interpolation of null would store
+        // the literal string "null", poisoning every later authenticated request.
+        final token = result.response?.data is Map ? result.response?.data["token"] : null;
+        if (token is String && token.isNotEmpty) {
+          SharedPref.setAuthToken(token);
+        }
         await Fluttertoast.showToast(msg: "successfully Registered");
         setState(() {
           isLoading = false;

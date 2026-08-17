@@ -469,14 +469,30 @@ class _SettingsRow extends StatelessWidget {
           child: Icon(icon, color: iconColor, size: 20),
         ),
         title: Text(title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(fontWeight: FontWeight.w600, color: titleColor)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        subtitle: Text(subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12)),
         trailing: trailing ??
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (trailingText != null) ...[
-                  Text(trailingText!, style: const TextStyle(color: Colors.grey)),
+                  ConstrainedBox(
+                    // Caps the trailing value (e.g. a long city name) so it can't squeeze the
+                    // title/subtitle column down to near-zero width, which forces Text to wrap
+                    // one character per line instead of truncating.
+                    constraints: const BoxConstraints(maxWidth: 120),
+                    child: Text(
+                      trailingText!,
+                      style: const TextStyle(color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
                   const SizedBox(width: 4),
                 ],
                 if (onTap != null)

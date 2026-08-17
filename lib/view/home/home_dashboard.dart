@@ -97,7 +97,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Pinned regardless of the device's Dynamic Type setting -- this is the app's
+                  // wordmark/branding in an already width-constrained toolbar, not reading
+                  // content, so it shouldn't compete with the action icons for space.
                   const Text("SmartQ",
+                      textScaler: TextScaler.noScaling,
                       style: TextStyle(
                           color: kSmartQGreen,
                           fontWeight: FontWeight.bold,
@@ -105,6 +109,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   Text("Smarter Queues. Better Experience.",
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
+                      textScaler: TextScaler.noScaling,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -283,13 +288,25 @@ class _QuickActionsGrid extends StatelessWidget {
             return GetTicket();
           }));
     }),
+    // Routes to CareConnect's Manage Bookings WebView (same SSO-minted link as the
+    // "Manage Your Bookings" card below), not the app's own MyBooking() list -- confirmed
+    // 2026-08-15 that node_app_server's own booking pool and CareConnect's are separate, and
+    // CareConnect is taking over booking management from the app, so this is the single
+    // source of truth for a user's appointments going forward.
     _QuickAction(
         Icons.calendar_today_outlined, "Appointments", kServiceProviderBlue,
         (context) {
-      return () =>
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-            return MyBooking();
-          }));
+      return () async {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+        await _openManageBookings(context, onLoaded: () {
+          if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+        });
+      };
     }),
     _QuickAction(
         Icons.notifications_outlined, "Notifications", const Color(0xFF7B3FA0),
@@ -413,11 +430,15 @@ class _BadgeFeatureCardState extends State<_BadgeFeatureCard> {
                       Icon(Icons.shield_outlined,
                           color: Colors.white, size: 18),
                       SizedBox(width: 6),
-                      Text("SmartQ Badge / Pass",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15)),
+                      Expanded(
+                        child: Text("SmartQ Badge / Pass",
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15)),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -524,6 +545,33 @@ class _ServiceProviderPanel extends StatelessWidget {
 // (ccuser) via a token-minted SSO link (node_app_server's /careconnect/manage-bookings-link,
 // mirroring the queue-access bridge's mint/consume pattern), so there's no separate ccuser
 // login step from inside the app.
+// Shared by the "Appointments" Quick Action and _ManageBookingsCard -- both open the same
+// CareConnect SSO-minted view (node_app_server's /careconnect/manage-bookings-link). CareConnect
+// now auto-provisions an account on a device's first call (2026-08-15) instead of 404ing when
+// there's no CareConnect account yet, so this always lands on CareConnect (its /bookings list,
+// empty for a brand-new account) rather than needing a "no bookings yet" special case here.
+// `onLoaded` fires once the network call resolves, before navigation/toast, so callers with their
+// own loading UI (a button spinner, a blocking dialog) can dismiss it at the right time.
+Future<void> _openManageBookings(BuildContext context,
+    {VoidCallback? onLoaded}) async {
+  final result =
+      await DioApi.post(path: ConfigUrl.manageBookingsLinkUrl, data: {});
+
+  onLoaded?.call();
+
+  final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
+  if (result.response != null && careConnectUrl != null) {
+    if (context.mounted) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+        return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
+      }));
+    }
+  } else {
+    Fluttertoast.showToast(
+        msg: "Couldn't open Manage Bookings right now. Please try again.");
+  }
+}
+
 class _ManageBookingsCard extends StatefulWidget {
   @override
   State<_ManageBookingsCard> createState() => _ManageBookingsCardState();
@@ -532,27 +580,11 @@ class _ManageBookingsCard extends StatefulWidget {
 class _ManageBookingsCardState extends State<_ManageBookingsCard> {
   bool _isLoading = false;
 
-  Future<void> _openManageBookings() async {
+  Future<void> _handleTap() async {
     setState(() => _isLoading = true);
-
-    final result =
-        await DioApi.post(path: ConfigUrl.manageBookingsLinkUrl, data: {});
-
-    setState(() => _isLoading = false);
-
-    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
-    if (result.response != null && careConnectUrl != null) {
-      if (mounted) {
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-          return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
-        }));
-      }
-    } else if (result.response?.statusCode == 404) {
-      Fluttertoast.showToast(msg: "You don't have any managed bookings yet.");
-    } else {
-      Fluttertoast.showToast(
-          msg: "Couldn't open Manage Bookings right now. Please try again.");
-    }
+    await _openManageBookings(context, onLoaded: () {
+      if (mounted) setState(() => _isLoading = false);
+    });
   }
 
   @override
@@ -590,7 +622,7 @@ class _ManageBookingsCardState extends State<_ManageBookingsCard> {
                 backgroundColor: kSmartQGreen,
                 foregroundColor: Colors.white,
               ),
-              onPressed: _isLoading ? null : _openManageBookings,
+              onPressed: _isLoading ? null : _handleTap,
               child: _isLoading
                   ? const SizedBox(
                       height: 18,

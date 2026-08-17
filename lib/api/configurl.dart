@@ -21,6 +21,7 @@ abstract class ConfigUrl {
   static String updateProfile = "/profile";
   static String notificationUrl = "/notifications/user";
   static String getBadgeTokenUrl = "/badge-token";
+  static String updateFcmTokenUrl = "/update-fcm-token";
   static String queueAccessUrl(String bookingId) =>
       "/bookings/$bookingId/queue-access";
   static String manageBookingsLinkUrl = "/careconnect/manage-bookings-link";

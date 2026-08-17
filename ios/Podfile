@@ -37,10 +37,26 @@ target 'Runner' do
   end
 end
 
+# REQUIRED on Flutter 3.24+: run `flutter config --no-enable-swift-package-manager` before
+# `pod install`/`flutter run`/`flutter build ios`. With SPM left on (the default), Flutter
+# routes most plugins through Swift Package Manager instead of CocoaPods, and SPM's own
+# per-package architecture handling doesn't pick up the EXCLUDED_ARCHS fix below -- it builds
+# some SPM packages for arm64 and others (anything depending on mobile_scanner's GoogleMLKit,
+# which has no arm64 simulator slice) for x86_64 in the same build, which fails to link with
+# "unsupported Swift architecture" errors on an Apple Silicon Mac. This is a machine-local
+# `flutter config` setting, not something this Podfile can enforce -- if Podfile.lock ever
+# drifts back to listing far fewer pods than pubspec.yaml's plugin count, SPM got re-enabled.
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
+          # flutter_additional_ios_build_settings (above) only excludes i386 for every pod
+          # target, even when Flutter's own Generated.xcconfig has decided the whole app must
+          # exclude arm64 too (because mobile_scanner's GoogleMLKit chain doesn't support arm64
+          # simulators). That leaves pods split across archs -- some default to arm64 (their own
+          # native host arch), while Runner and mobile_scanner build x86_64 -- which breaks the
+          # link step with "unsupported Swift architecture". Force every pod to match Runner.
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386 arm64'
           # You can remove unused permissions here
           # for more infomation: https://github.com/BaseflowIT/flutter-permission-handler/blob/master/permission_handler/ios/Classes/PermissionHandlerEnums.h
           # e.g. when you don't need camera permission, just add 'PERMISSION_CAMERA=0'
