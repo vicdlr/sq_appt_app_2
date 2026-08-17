@@ -115,11 +115,10 @@ class _CustomDropDownState extends State<CustomDropDown> {
             .toList(),
         // value: widget.selectedValue,
         onChanged: widget.changedValue,
+        isExpanded: true,
         buttonStyleData: const ButtonStyleData(
-
           padding: EdgeInsets.symmetric(horizontal: 16),
           height: 40,
-          width: 200,
         ),
         dropdownStyleData: const  DropdownStyleData(
           decoration: BoxDecoration(

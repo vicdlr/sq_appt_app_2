@@ -14,7 +14,6 @@ import '../auth/SignIn.dart';
 import 'app_drawer.dart';
 import 'get_ticket.dart';
 import 'home_page.dart';
-import 'my_booking.dart';
 import 'notification.dart';
 import 'request_new_booking.dart';
 import 'service_provider_mode.dart';
@@ -201,13 +200,48 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 }
 
-class _ActiveQueueCard extends StatelessWidget {
+class _ActiveQueueCard extends StatefulWidget {
   final BookingModel booking;
 
   const _ActiveQueueCard({required this.booking});
 
   @override
+  State<_ActiveQueueCard> createState() => _ActiveQueueCardState();
+}
+
+class _ActiveQueueCardState extends State<_ActiveQueueCard> {
+  bool _isLoadingStatus = false;
+
+  // "View Status" is about *this* booking specifically, so it mints a focused
+  // queue-access token (same bridge as my_booking.dart's _viewQueue -- lands
+  // on /bookings?focus=<id>) rather than the generic Manage Bookings link
+  // "View all" uses, which has no concept of which booking to highlight.
+  Future<void> _viewStatus() async {
+    setState(() => _isLoadingStatus = true);
+
+    final result = await DioApi.post(
+        path: ConfigUrl.queueAccessUrl(widget.booking.id.toString()),
+        data: {});
+
+    if (!mounted) return;
+    setState(() => _isLoadingStatus = false);
+
+    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
+    if (result.response != null && careConnectUrl != null) {
+      if (mounted) {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+          return WebViewPage(url: careConnectUrl, title: 'Queue Status');
+        }));
+      }
+    } else {
+      Fluttertoast.showToast(
+          msg: "Couldn't open the queue right now. Please try again.");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final booking = widget.booking;
     return Container(
       decoration: BoxDecoration(
         color: kSmartQGreenLight,
@@ -225,12 +259,7 @@ class _ActiveQueueCard extends StatelessWidget {
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: kSmartQGreen)),
               TextButton(
-                onPressed: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (context) {
-                    return MyBooking();
-                  }));
-                },
+                onPressed: () => _openManageBookings(context),
                 child: const Text("View all",
                     style: TextStyle(color: kSmartQGreen)),
               ),
@@ -255,13 +284,15 @@ class _ActiveQueueCard extends StatelessWidget {
                 backgroundColor: kSmartQGreen,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (context) {
-                  return MyBooking();
-                }));
-              },
-              child: const Text("View Status"),
+              onPressed: _isLoadingStatus ? null : _viewStatus,
+              child: _isLoadingStatus
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text("View Status"),
             ),
           ),
         ],
@@ -303,7 +334,7 @@ class _QuickActionsGrid extends StatelessWidget {
           builder: (context) =>
               const Center(child: CircularProgressIndicator()),
         );
-        await _openManageBookings(context, onLoaded: () {
+        await _openManageBookings(context, source: 'appointments', onLoaded: () {
           if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
         });
       };
@@ -553,9 +584,10 @@ class _ServiceProviderPanel extends StatelessWidget {
 // `onLoaded` fires once the network call resolves, before navigation/toast, so callers with their
 // own loading UI (a button spinner, a blocking dialog) can dismiss it at the right time.
 Future<void> _openManageBookings(BuildContext context,
-    {VoidCallback? onLoaded}) async {
-  final result =
-      await DioApi.post(path: ConfigUrl.manageBookingsLinkUrl, data: {});
+    {VoidCallback? onLoaded, String? source}) async {
+  final result = await DioApi.post(
+      path: ConfigUrl.manageBookingsLinkUrl,
+      data: source != null ? {"source": source} : {});
 
   onLoaded?.call();
 
@@ -582,7 +614,7 @@ class _ManageBookingsCardState extends State<_ManageBookingsCard> {
 
   Future<void> _handleTap() async {
     setState(() => _isLoading = true);
-    await _openManageBookings(context, onLoaded: () {
+    await _openManageBookings(context, source: 'manage_bookings', onLoaded: () {
       if (mounted) setState(() => _isLoading = false);
     });
   }
