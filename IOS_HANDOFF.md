@@ -1,21 +1,21 @@
 # iOS Testing Handoff — SmartQ Mobile Redesign
 
-> Rewritten 2026-08-13 after a Windows session that did an Android-only push (API 36 targetSdk
-> compliance, 16KB memory page-size fix, notification bug fixes) to get the app into Google Play
-> Closed Testing. **None of that Android work has been verified on iOS yet** — some of it
-> (see §3) has direct iOS-side consequences that need fixing before `pod install`/build will even
-> succeed. This file supersedes the 2026-08-08 version; that one pointed at a now-superseded
-> branch. For full narrative detail, read `DEVLOG.md`'s 2026-08-08 and 2026-08-12/13 entries and
+> Rewritten 2026-08-17 after a Windows session that landed real fixes on top of the Mac's own
+> 2026-08-17 iOS work (FCM token wiring, `firebase_messaging` upgrade, iOS 26 UIScene pattern,
+> simulator-arch fix, App Store Connect encryption exemption — all already committed). This file
+> supersedes the 2026-08-13 version, whose §3/§4 "still open" items (FCM token-refresh wiring,
+> `pod install` unverified) are now largely resolved by the Mac's own work — see §2. For full
+> narrative detail on the Windows-side work, read `DEVLOG.md`'s 2026-08-15/16/17 entries and
 > `pending_work.md`'s open-items list, both in this same repo.
 
 ## 1. Repos and branches to check out
 
 | Repo | GitHub | Branch | What's on it |
 |---|---|---|---|
-| Mobile app | `vicdlr/sq_appt_app_2` | **`fix/android-15-compliance`** (not `feature/redesign-2026` — that branch is now behind) | Full redesign (SignIn/SignUp, Home dashboard, Drawer, Settings, Contact Us, Get Ticket, booking flow, badge security fix) **plus** notification bug fixes, Android API-36 toolchain bump, and a `mobile_scanner` 3.5.6→6.0.11 upgrade that affects iOS too (see §3) |
-| Backend | `vicdlr/node_app_server` | `main` | Badge token endpoint, queue-access mint route, `/service-options` fix, FCM token-refresh sync + dead-token auto-clear, account-deletion page. **`main` and `peer-notification` are both at commit `10c4089`, both live/deployed on Render** — confirmed in sync as of 2026-08-13. |
-| CareConnect | `vicdlr/SQ_CareConnect` | `master` | Already fully merged — nothing to check out separately |
-| Docs (this repo) | `vicdlr/sq_appt_app_2` (**same GitHub repo as the mobile app** — a separate clone on its own branch, not a different project) | `mobile-redesign` | `DEVLOG.md`, `pending_work.md`, this file, the 7 mockup JPEGs used as the design spec. **This branch has never had the actual app code on it** — don't build from it. |
+| Mobile app | `vicdlr/sq_appt_app_2` | **`fix/android-15-compliance`** | Full redesign, Android API-36/16KB compliance, notification-channel fixes, the Mac's 2026-08-17 iOS work, and today's Windows fixes (see §3). **`versionCode`/`versionName` in `android/app/build.gradle` bumped to `53`/`"48.0.5"` for an Android Open Testing submission — Android-only numbering, no bearing on iOS's `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION`, don't try to keep them in sync.** `pubspec.yaml`'s `version:` is still `1.0.7+1` — bump the build number before archiving for TestFlight so it doesn't collide with anything already in App Store Connect. |
+| Backend | `vicdlr/node_app_server` | `main` (also mirrored to `peer-notification`, which is what Render actually deploys from — **always push both**, they've drifted before) | Commit `12aaf7d` as of 2026-08-17: forwards a `source` param through `/careconnect/manage-bookings-link` (see CareConnect row), plus a real connection-pool-leak fix across ~30 routes that was causing intermittent production 500s on `/login` etc. — already deployed, nothing to do here. |
+| CareConnect | `vicdlr/SQ_CareConnect` | `master` | Commit `754823b` as of 2026-08-17: Manage Bookings now redirects to ccuser home when the patient has zero bookings (Appointments/My Queues unaffected — see §3). Also a `capturedImageUrl` display fix for Data Capture bookings on ccuser's "My Bookings" page (uncommitted as of this writing, may or may not have landed by the time you read this — check `git log`). Already merged/deployed on Render, nothing to check out for iOS building purposes. |
+| Docs (this repo) | `vicdlr/sq_appt_app_2` (**same GitHub repo as the mobile app** — a separate clone on its own branch, not a different project) | `mobile-redesign` | `DEVLOG.md`, `pending_work.md`, this file. **This branch has never had the actual app code on it** — don't build from it. |
 
 On macOS:
 ```bash
@@ -23,88 +23,81 @@ git clone https://github.com/vicdlr/sq_appt_app_2.git
 cd sq_appt_app_2 && git checkout fix/android-15-compliance
 git pull
 ```
-(same pattern for `node_app_server`, just `main`; `SQ_CareConnect` just needs `master`, already default)
 
-**Flutter SDK:** use a recent stable (3.44.x or newer — this branch's `pubspec.yaml` now requires
+**Flutter SDK:** use a recent stable (3.44.x or newer — this branch's `pubspec.yaml` requires
 Dart >=3.7.0 via `device_info_plus ^11.5.0`). `flutter --version` first; if `pub get` fails with a
-version-solving error, that's why. On the Windows machine this project needed a second, newer
-Flutter install (`C:\flutter_stable_2026`) separate from the system-default one — check
-`flutter --version` on the Mac before assuming the default install is new enough.
+version-solving error, that's why.
 
 ## 2. What's already done — no need to re-verify unless something looks off
 
-- Badge QR redesigned as a server-minted encrypted `customerId`-only token (no more raw
-  `auth_token`/`fcmToken` in the QR).
-- CareConnect queue-access bridge (booking-scoped WebView link-out) and Service Provider Mode —
-  both built and working, CareConnect's side already merged to `master`.
-- Full UI redesign against all 7 mockups: SignIn/SignUp, Home dashboard, Drawer, Settings,
-  Contact Us, Get Ticket, My Bookings, booking flow.
-- Booking flow collapsed to 3 steps (Industry → Organisation → Service Provider), with
-  single-provider organisations auto-skipping straight to the date/time or Data Capture page.
-- WebView renderer-process crashes now handled with a "Retry" button instead of spinning forever
-  (`get_ticket.dart`'s `WebViewPage`) — found on a real device, not simulated.
-- My Appointments now sorts newest-first; the empty-notifications screen's `RenderFlex` overflow
-  bug is fixed; a silent current-month-only filter that was hiding older notifications is removed.
-- `node_app_server`'s `/service-options` fix and the FCM token-refresh/dead-token-clear work are
-  **now deployed to production** (see table above) — the 2026-08-08 handoff's "not deployed yet"
-  caveat no longer applies.
+- **iOS build pipeline itself** (done by the Mac session, 2026-08-17): `firebase_messaging`
+  upgraded to 16.5.0 (resolved a `GoogleDataTransport` conflict with `mobile_scanner`), simulator
+  arch mismatch fixed for builds with Swift Package Manager disabled, Flutter's
+  implicit-engine/UIScene pattern adopted for iOS 26, and a standard-encryption-only exemption
+  declared to skip App Store Connect's export-compliance prompt.
+- **iOS push notifications: client-side FCM token-refresh wiring is done** (Mac, commit
+  `6464179`) — the 2026-08-13 handoff's "most important iOS-side task left" is resolved. Worth a
+  real end-to-end check (token rotates → `/update-fcm-token` actually fires) but the code path
+  exists now, it's not just a debug `print`.
+- **`pod install`**: the 2026-08-13 Podfile/`IPHONEOS_DEPLOYMENT_TARGET` bump to 15.5 (for
+  `mobile_scanner` 6.0.11) was made blind from Windows and flagged as unverified — given the Mac
+  session has since built successfully enough to do simulator-arch and UIScene work, this has
+  presumably already been confirmed working. If picking this up fresh, still worth a sanity
+  `pod install` run first before assuming.
+- Full UI redesign, badge QR security fix, CareConnect queue-access bridge, 3-step booking flow,
+  WebView renderer-crash handling — all from the 2026-08-13 handoff, unchanged and not re-touched
+  since.
 
-## 3. iOS-specific things that changed this session — act on these
+## 3. What changed on the Windows side today (2026-08-17) — needs iOS-side verification
 
-- **`mobile_scanner` was upgraded 3.5.6 → 6.0.11** (Android-driven: Google Play now requires 16KB
-  memory page-size support in native libraries, which needed a newer CameraX). Its iOS podspec
-  pins **`s.platform = :ios, '15.5.0'`**, which was higher than this repo's `ios/Podfile`
-  (`13.0`) and the Xcode project's `IPHONEOS_DEPLOYMENT_TARGET` (a mix of `12.0`/`15.0` across
-  build configs) — would have broken `pod install`. **Already fixed** (commit `93620f8`,
-  2026-08-13): `Podfile` and all `IPHONEOS_DEPLOYMENT_TARGET` entries bumped to `15.5`. This was
-  done blind from Windows (no Xcode/CocoaPods available there) — **run `pod install` fresh on the
-  Mac to regenerate `Podfile.lock`, and if it still fails, the version bump itself is the first
-  thing to double-check.**
-- **`device_info` → `device_info_plus` migration** touched the iOS code path directly
-  (`lib/view/auth/SignUp.dart`'s `initUniqueIdentifierState()` uses
-  `DeviceInfoPlugin().iosInfo` → `identifierForVendor` for iOS device ID collection at signup).
-  The API shape is the same, but this is untested on an actual iOS build — confirm signup still
-  captures a device ID correctly.
-- **Kotlin/Gradle/AGP toolchain bump is Android-only** (`android/*.gradle`,
-  `android/gradle/wrapper/*`) — nothing to port to iOS, don't let it distract from real iOS work.
-- **Camera permission string is generic, not scanning-specific**:
-  `NSCameraUsageDescription` in `ios/Runner/Info.plist` currently reads "To capture profile photo
-  please grant camera access" — technically covers the Get Ticket scanner's camera use too (one
-  string covers all camera use on iOS), but worth rewording if App Store review flags it as
-  misleading. Not currently blocking, just noted.
+None of this is iOS-specific code, but none of it has been tested on iOS at all yet (Windows has
+no iOS testing capability):
 
-## 4. Still open — not iOS-specific, but directly relevant to whoever tests push here
+- **Logout was routing to New Registration instead of Sign In** (both `home_dashboard.dart`'s
+  menu logout and `settings.dart`'s Logout tile) — fixed, commit `aeb9a13`. Quick manual check:
+  log out, confirm you land on Sign In.
+- **Sign Up's City picker had a dead tap-zone** (`DropdownButton2` hardcoded to 200px inside a
+  field that visually spans much wider) — fixed, commit `7b7ab30`. Quick check: tap anywhere
+  across the City field, confirm the dropdown opens.
+- **Home's "My Active Queues" card and Manage Bookings routing** — reworked today, also commit
+  `7b7ab30`:
+  - "View Status" now mints a focused `queue-access-token` for that specific booking (lands on
+    `/bookings?focus=<id>` in CareConnect), instead of the generic Manage Bookings link.
+  - Manage Bookings (the Home card) now sends a `source: 'manage_bookings'` param through to
+    CareConnect; if the patient has zero bookings, CareConnect redirects to ccuser home instead
+    of an empty `/bookings` list. Appointments (quick action) and My Active Queues' "View all"
+    deliberately keep the old always-`/bookings` behavior — they pass a different `source` (or
+    none), by design, per explicit product direction. If testing this, the distinction matters:
+    don't "fix" Appointments to also redirect home, that's intentional.
+- **Data Capture bookings' image**: ccuser's own "My Bookings" page didn't show the captured
+  image at all (ccadmin already did) — fixed CareConnect-side, not app-side, nothing to test in
+  the app itself beyond opening a Data Capture booking's detail view and confirming the image
+  shows.
 
-- **iOS push notifications: server-side fix is deployed, but the Flutter client still doesn't call
-  it.** Confirmed by reading `lib/notification/notification.dart` directly (2026-08-13): the
-  `isTokenRefresh()` method listens to `messaging.onTokenRefresh` but its callback **only
-  `print`s a debug log — it never calls `POST /update-fcm-token`.** Until this is wired up (both
-  on token-refresh and defensively on every app launch/foreground, since `/login` itself never
-  touches `fcmtoken`), the DB-side token can still go stale exactly the way the original bug
-  report described. This is arguably the single most important iOS-side code task left.
-- Signing: **not re-verified this session** (Windows can't check Xcode signing). Per the
-  2026-08-07 DEVLOG entry it was resolved — Apple Distribution certificate + App Store
-  distribution provisioning profile for `com.smartqsys.sqapptapp` on team `FN232J5K2B`, valid
-  until 2027-08-07. Should still be valid, but confirm in Xcode rather than assuming.
-- **No force-update workaround needed for iOS**, still true as far as known: server hardcodes
-  `minimum_version_ios: "1.0.3"`; app's `MARKETING_VERSION` is `2.0.1`
-  (`ios/Runner.xcodeproj/project.pbxproj`), well above the gate. (Not re-verified against the
-  server this session — if the server's iOS minimum was ever bumped, re-check.) This is unlike
-  Android, which has its own real `versionCode`/`versionName` (`50`/`"48.0.2"` as of this
-  session, just submitted to Google Play Closed Testing) — Android's numbering has no bearing on
-  iOS's `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION`, don't try to keep them in sync.
+None of the above has been run through an actual iOS build/simulator — first real verification of
+all of it happens whenever this branch next gets built on the Mac.
+
+## 4. Still open
+
+- **Signing**: not re-verified by the Windows session (no Xcode access). Per the 2026-08-07
+  DEVLOG entry: Apple Distribution certificate + App Store distribution provisioning profile for
+  `com.smartqsys.sqapptapp` on team `FN232J5K2B`, valid until 2027-08-07. Should still be valid,
+  confirm in Xcode rather than assuming.
+- **No TestFlight build has ever existed for this app.** Android just went to Open Testing
+  (submitted 2026-08-17, in Google's review as of this writing) — the natural iOS equivalent is a
+  first TestFlight build, not a direct App Store production release. `testers-ios.json` (used by
+  `node_app_server/notify-testers/`) is still an empty placeholder for exactly this reason.
 - **No staging backend** — both platforms hit the live production API and database during
   testing. Bookings created while testing are real rows in the real database.
-- Remaining manual-verification checklist (My Bookings status cards, badge screen with the new
-  token, Service Provider Mode WebView links, Settings picker bottom sheets) — see
-  `pending_work.md`'s "Remaining manual verification" item. None of it is iOS-specific, it just
-  hasn't been walked through on any platform yet beyond what DEVLOG lists as tested.
+- Remaining manual-verification checklist (My Bookings status cards, badge screen, Service
+  Provider Mode WebView links, Settings picker bottom sheets) — see `pending_work.md`'s
+  "Remaining manual verification" item, not iOS-specific, hasn't been walked through on either
+  platform yet beyond what DEVLOG lists as tested.
 
 ## 5. Quick orientation for whoever (or whichever Claude session) picks this up
 
-Read `pending_work.md` first — it's the live, most-current record (this Windows session's Android
-compliance/closed-testing push is logged there in detail, dated 2026-08-13). Fall back to
-`DEVLOG.md`'s dated entries for the fuller narrative and history. Once on the Mac: `pod install`
-should now work (§3's Podfile fix already landed, just needs a fresh `pod install` to regenerate
-`Podfile.lock`), then wire up the FCM token-refresh call (§4) — that's the most concrete,
-well-scoped piece of real iOS work sitting here right now.
+Read `pending_work.md` first — it's the live, most-current record. Once on the Mac: confirm
+`pod install` still succeeds, build to a simulator/device and smoke-test §3's items (all untested
+on iOS), then work toward a first TestFlight upload if the build's clean. Version 53/48.0.5's
+release notes (from the Android Open Testing submission) are a reasonable starting point for
+TestFlight's own release notes, adjusted for anything iOS-specific.
