@@ -10,7 +10,7 @@ import '../../api/configurl.dart';
 import '../../constant/app_colors.dart';
 import '../../provider/home_provider.dart';
 import '../../utils/utils.dart';
-import '../auth/SignUp.dart';
+import '../auth/SignIn.dart';
 import 'app_drawer.dart';
 import 'get_ticket.dart';
 import 'home_page.dart';
@@ -73,7 +73,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) {
-          return const SignupPage();
+          return const LoginPage();
         }), (route) => false);
       }
     }

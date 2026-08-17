@@ -5,6 +5,7 @@ import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 import 'package:sq_notification/constant/app_colors.dart';
 import 'package:sq_notification/utils/utils.dart';
+import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
 import 'package:sq_notification/view/home/contact_us.dart';
 import 'package:sq_notification/view/home/service_provider_mode.dart';
@@ -160,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SharedPref.deleteData();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) {
-          return const SignupPage();
+          return const LoginPage();
         }), (route) => false);
       }
     }
