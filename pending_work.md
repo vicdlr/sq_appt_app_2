@@ -52,11 +52,12 @@
   Mac's `a8cddb5` bump to that version was never followed by an Android rebuild to catch this).
   All committed in `70006b6`.
 
-- **Android version 54 (48.0.6) submitted to Open Testing 2026-08-18 — awaiting Google's review.**
-  Includes everything from the previous 53 (48.0.5) submission (also still awaiting review/
-  publish — its "ready to publish" state on Play Console was deliberately left untouched) plus
-  today's fixes above. Also still deliberately untouched: the separate pending Mac release
-  (`52`/`48.0.4`) sitting "Ready to publish" in Closed Testing - Alpha.
+- ~~**Android version 54 (48.0.6) submitted to Open Testing 2026-08-18 — awaiting Google's
+  review.**~~ **LIVE as of 2026-08-18 3:12 PM** — cleared review fast this session, confirmed via
+  Play Console: "Active", "Available to unlimited testers", rolled out to 177 countries/regions.
+  Supersedes the previous 53 (48.0.5) submission entirely (54 is a strict superset). Still
+  deliberately untouched: the separate pending Mac release (`52`/`48.0.4`) sitting "Ready to
+  publish" in Closed Testing - Alpha.
 
 - **Data bug found 2026-08-17, still not fixed**: real account `vicdlr@gmail.com` (id=133) has
   `city="Cebu ph"` in `mdevice`, confirmed should be `"Metro Manila"`. This silently breaks New
