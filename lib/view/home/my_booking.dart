@@ -116,6 +116,27 @@ class _MyBookingState extends State<MyBooking> {
                       }
                     }
 
+                    // apptTime is CareConnect's confirmed final appointment time -- once set,
+                    // it supersedes the originally-requested startTime/endTime slot above.
+                    String? formattedApptTime;
+                    if (booking.apptTime != null) {
+                      try {
+                        final apptDt =
+                            DateTime.parse(booking.apptTime.toString()).toLocal();
+                        formattedApptTime =
+                            DateFormat('d MMMM hh:mm a').format(apptDt);
+                      } catch (e) {
+                        // leave formattedApptTime null on parse failure
+                      }
+                    }
+
+                    // remarks carries CareConnect's outcome message -- the rejection reason
+                    // for declined/cancelled, or a confirmation/booking-ref summary otherwise.
+                    final remarksText =
+                        booking.remarks?.toString().trim().isNotEmpty == true
+                            ? booking.remarks.toString().trim()
+                            : null;
+
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       shape: RoundedRectangleBorder(
@@ -157,10 +178,25 @@ class _MyBookingState extends State<MyBooking> {
                                 ),
                               ],
                             ),
-                            if (formattedDataTime != null) ...[
+                            if (formattedApptTime != null) ...[
+                              const SizedBox(height: 6),
+                              Text("Appointment: $formattedApptTime",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(fontWeight: FontWeight.w600)),
+                            ] else if (formattedDataTime != null) ...[
                               const SizedBox(height: 6),
                               Text(formattedDataTime,
                                   style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                            if (remarksText != null) ...[
+                              const SizedBox(height: 6),
+                              Text(remarksText,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: kind == _BookingStatusKind.declined
+                                          ? Colors.red[700]
+                                          : Colors.grey[700])),
                             ],
                             const SizedBox(height: 10),
                             Row(

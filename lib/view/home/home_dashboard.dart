@@ -43,9 +43,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   BookingModel? _activeQueueBooking(List<BookingModel> bookings) {
     for (final booking in bookings) {
-      if (booking.handledBy == "CARECONNECT" &&
-          booking.status.toLowerCase() != "cancelled" &&
-          booking.status.toLowerCase() != "completed") {
+      // Substring-based, matching my_booking.dart's _statusKind -- a literal-equality check
+      // against "cancelled"/"completed" missed statuses like "Request to Cancel" (set by
+      // /cancel-booking on an already-CareConnect-rejected booking), which has no live queue
+      // to view but isn't literally "Cancelled".
+      final status = booking.status.toLowerCase();
+      final isTerminal = status.contains("cancel") ||
+          status.contains("declin") ||
+          status.contains("reject") ||
+          status.contains("complet") ||
+          status.contains("served");
+      if (booking.handledBy == "CARECONNECT" && !isTerminal) {
         return booking;
       }
     }

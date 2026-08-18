@@ -53,9 +53,11 @@ android {
         applicationId "com.smartqsys.sq_notification"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion flutter.minSdkVersion
-        versionCode  53
-        versionName "48.0.5"
+        // firebase_messaging 16.5.0's Android manifest requires minSdk 23 -- Flutter's own
+        // default (flutter.minSdkVersion) is lower, so this must be pinned explicitly.
+        minSdkVersion 23
+        versionCode  54
+        versionName "48.0.6"
         targetSdkVersion 36
 //        versionCode flutterVersionCode.toInteger()
 //        versionName flutterVersionName
