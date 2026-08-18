@@ -2,6 +2,314 @@
 
 ---
 
+### 2026-08-18 — My Bookings verbose status detail; Flutter SDK upgrade saga to unblock physical-device testing
+
+**Context:** Picked up the previous session's still-open "My Active Queues → View Status still lands
+on the mobile booking table instead of CareConnect's ccuser bookings" report, plus a new ask: make
+My Bookings' status cards more informative (final appointment info when confirmed, reason when
+cancelled). That second ask turned into a real toolchain-repair detour once actual device testing
+was attempted.
+
+**1. Confirmed CareConnect's booking routing is already industry-agnostic — no change needed.**
+User asked whether "CareConnect handles all industry bookings" had actually been implemented.
+Read `node_app_server/app.js`'s `routeBookingToHandler`/`callCareConnectWebhook` (~line 1653/1812):
+every booking, any industry, is POSTed to CareConnect's webhook first; CareConnect itself decides
+per-unit whether it handles it (404/`handled:false` → falls back to SAM). Confirmed this matches
+what was discussed — routing is not industry-gated on NAS's side, by design.
+
+**2. Added verbose status detail to `sq_appt_app_2`'s My Bookings cards (`my_booking.dart`).**
+The data was already flowing end-to-end and already parsed into `BookingModel` — this was a pure
+UI change. `applyCareConnectOutcome` (`app.js:1776`) already writes `appt_time` (CareConnect's
+confirmed final appointment time) and `remarks` (`"Booking rejected: <reason>"` for
+declined/cancelled, `"<statusLabel>. Booking #<dailyBookingNo>."` otherwise) on every outcome;
+`/bookings/user/:userId` does `SELECT *`, and `BookingModel.fromJson` already parsed both fields —
+`my_booking.dart` simply never rendered them. Now shows `appt_time` (when set) as an explicit
+"Appointment: <date>" line ahead of the originally-requested slot, and `remarks` as a subtitle
+(red for declined/cancelled, grey otherwise). `flutter analyze` clean on the file. **Not yet
+committed, not yet visually confirmed on device** (see #6).
+
+**3. Diagnosed a real, pre-existing stale-toolchain problem while prepping to test on device.**
+`flutter analyze`/`pub get` in this shell failed outright: local Flutter was 3.24.3/Dart 3.5.3, but
+the 2026-08-13 API 36 compliance push (`06a02196`) had pinned `device_info_plus: ^11.5.0`, which
+needs Dart ≥3.7.0. This machine's Flutter had never been bumped alongside that dependency change —
+likely broken in this shell since 2026-08-13.
+
+**4. `flutter upgrade` to latest stable (3.47.0/Dart 3.13.0) fixed that but broke the Android Gradle
+build.** Flutter 3.47 auto-migrates projects toward AGP 9's new DSL and built-in-Kotlin management
+(silently added `android.builtInKotlin=false`/`android.newDsl=false` to `gradle.properties`), which
+fought with `sq_appt_app_2`'s explicitly-pinned Kotlin 2.2.20/AGP 8.11.1 setup — Gradle reported the
+project's Kotlin version as 2.0.0 despite both `android/build.gradle` and `android/settings.gradle`
+correctly declaring 2.2.20. User decided to pin to an older stable rather than adapt the Gradle
+config to 3.47.
+
+**5. Pinned Flutter to 3.29.3** (oldest stable shipping Dart ≥3.7, predating the AGP9/built-in-Kotlin
+changes) via a direct `git checkout 3.29.3` inside the Flutter SDK's own repo
+(`C:\flutter_windows_3.24.3-stable\flutter` — despite the stale directory name, this is a git
+checkout kept on the stable channel; the `flutter version` subcommand isn't available in this tool
+build, so switched manually). Had to first discard the SDK repo's own auto-regenerated
+`pubspec.lock` (tooling-internal, not user content) to allow the checkout.
+
+**6. That surfaced a second cascading constraint**: `fluttertoast: ^10.0.0` needs Dart ≥3.12.0,
+higher than 3.29.3's Dart 3.7.2. Fixed via pub's own suggested resolution — downgraded the pin to
+`^9.0.0` in `sq_appt_app_2/pubspec.yaml`. Verified low-risk first: every call site in the app is the
+plain `Fluttertoast.showToast(msg: ...)` API, stable across fluttertoast's major versions.
+`pub get` then resolved cleanly (43 dependencies changed), `flutter analyze` came back clean at 178
+pre-existing style issues / 0 errors (matches the ~180-issue baseline from the 2026-08-15 Mac
+merge).
+
+**7. Device build then hit a third, unrelated pre-existing gap**: `firebase_messaging` 16.5.0
+(bumped by the Mac's `a8cddb5`, 2026-08-14) requires `minSdkVersion 23` in its manifest, but
+`android/app/build.gradle`'s `defaultConfig` was still deferring to Flutter's own default
+(`flutter.minSdkVersion`, effectively 21) — never caught because the Mac session never rebuilt
+Android after that bump. Fixed by pinning `minSdkVersion 23` explicitly, per Flutter's own
+suggested fix.
+
+**8. App built and launched successfully on the physical Oppo CPH1909** (`flutter run -d CPH1909
+--debug`). **Visual confirmation of #2 blocked**: a device-level Emergency Alert (a real NDRRMC
+Orange Rainfall Warning, unrelated to the app) is covering the screen and won't dismiss via `adb
+input tap` on its OK button (OPPO/ColorOS appears to filter synthetic touches on this particular
+system overlay); the screen also auto-locks every few seconds, needing a fresh `KEYCODE_WAKEUP`
+before each capture. Session paused waiting on the user to manually dismiss the alert on-device.
+
+**9. Re-examined the "View Status still routes to the mobile booking table" report from the
+previous session**, but the investigation was interrupted before reaching a conclusion. Read the
+current `_ActiveQueueCard._viewStatus()` in `home_dashboard.dart` — the logic looks correct (mints
+a focused `queue-access-token`, opens CareConnect's WebView on success), matching what the
+2026-08-17 session already committed (`754823b`/`12aaf7d`/`7b7ab30`) and flagged as **not yet
+device-confirmed**. Never got to check whether the device that reproduced the bug was actually
+running a build containing that fix. **Still open** — see `pending_work.md`.
+
+**10. User dismissed the Emergency Alert; relaunched and root-caused the View Status bug for
+real.** Re-ran `flutter run -d CPH1909` (after an `adb` "device offline" hiccup that needed a
+physical USB replug to clear). User reported the concrete symptom directly: "View Status" showed a
+toast, "Couldn't open the queue right now." `pretty_dio_logger`'s console output (already wired into
+the app) showed NAS's `/bookings/281/queue-access` returning a 502. With the user's permission,
+opened Render's dashboard in Chrome (already authenticated) and searched `node_app_server`'s live
+logs for "queue-access" — found the real server-side error NAS itself only logs, never returns to
+the client: `Failed to mint CareConnect queue-access token for booking 281 404 { message: 'Booking
+not found' }`. Traced the actual chain via a one-off read-only `pg` query against NAS's production
+DB (booking 281: `status='Request to Cancel'`, `status_code=9`, `handled_by='CARECONNECT'`,
+`remarks='Booking rejected: Requested time is outside the doctor's clinic hours'`) plus a read of
+CareConnect's webhook route:
+  - Booking 281 was originally rejected by CareConnect at creation time (422, outside clinic
+    hours) — CareConnect's webhook route returns that error *before* ever calling
+    `prisma.booking.create` (`SQ_CareConnect/app/api/webhook/booking/route.ts:184-232`), so nothing
+    was ever persisted on CareConnect's side for it. NAS still correctly recorded
+    `handled_by='CARECONNECT'` + the rejection reason — that part is correct bookkeeping.
+  - Something later called NAS's `/cancel-booking` (`app.js:2175`) on this same already-rejected
+    booking. That route unconditionally does `UPDATE booking SET status_code=9, status='Request to
+    Cancel'` with no guard against re-touching an already-terminal booking — it overwrote `status`
+    from `'Cancelled'` back to `'Request to Cancel'` without touching `remarks`. **Flagged to the
+    user as a separate, un-fixed backend gap** — not touched this session, since the client-side
+    fix below already resolves the visible symptom.
+  - `home_dashboard.dart`'s `_activeQueueBooking()` filter only excluded the literal strings
+    `"cancelled"`/`"completed"` — `"request to cancel"` doesn't match either, so this dead booking
+    kept qualifying for the "My Active Queues" card and its now-permanently-broken "View Status"
+    button. `my_booking.dart`'s own list already used a broader substring check that would have
+    caught it; the two files disagreed.
+  - **Fix**: rewrote `_activeQueueBooking()` to use the same substring classification (`cancel` /
+    `declin` / `reject` / `complet` / `served`) as `my_booking.dart`'s `_statusKind`, so any
+    terminal-status booking is excluded regardless of exact wording. `flutter analyze` clean (4
+    pre-existing style infos, nothing new). Hot-restarted on the Oppo and confirmed visually: the
+    "My Active Queues" card for booking 281 is gone; Home now shows only the generic "Manage Your
+    Bookings" card, matching "View all"'s (already-working) behavior.
+
+**11. Committed and shipped everything from today.** Bumped `versionCode`/`versionName` to
+`54`/`"48.0.6"` in `android/app/build.gradle`. Committed all of today's real changes — the
+`my_booking.dart` verbose status detail, the `_activeQueueBooking()` fix, the `minSdkVersion 23`
+pin, and the `fluttertoast` downgrade — as `70006b6` on `fix/android-15-compliance`. Built a signed
+release AAB (`flutter build appbundle --release`, real upload keystore, 35.7MB, only a routine
+"no debug symbols uploaded" advisory). Device-support count actually *improved* vs. the prior
+release (13,340 vs. 12,306 total, +1,034 newly supported, 0 lost) since minSdk dropped 24→23.
+Submitted `54 (48.0.6)` to Open Testing via Play Console (account `vicsq10809@gmail.com` — the
+extension kept defaulting new tabs to the wrong Google identity, `vic@smartqsys.com`, which cannot
+touch this app; had to have the user manually switch accounts in a browser tab already
+authenticated correctly, since account sign-in isn't something to automate). Left two unrelated
+pending items on Play Console's Publishing overview completely untouched, as intended: v53's
+already-approved-but-unpublished Open Testing rollout, and the separate v52 (48.0.4) Closed
+Testing - Alpha release the user previously decided to leave alone. Pushed `70006b6` to
+`origin/fix/android-15-compliance` at the user's request.
+
+**12. User then reported View Status/View All/Manage Bookings all "kept looping trying to
+connect," correctly suspecting it wasn't mobile code.** Checked `sq-careconnect`'s Render service
+directly: a banner read "Your free instance will spin down with inactivity, which can delay
+requests by 50 seconds or more" — confirmed via Settings, Instance Type was **Free**, unlike
+`node_app_server`'s already-upgraded Starter plan. Root cause: every one of those three features
+routes through NAS calling CareConnect server-to-server with an 8-second `AbortController` timeout
+(`callCareConnectWebhook`, `/bookings/:bookingId/queue-access`, `/careconnect/manage-bookings-link`
+all share this constant) — always shorter than a 50s+ cold start, so whenever CareConnect had spun
+down, all three failed identically and retrying just re-raced the same timeout. This also almost
+certainly explains the older, previously-unresolved "intermittent latency on `node_app_server`/
+`ccuser.smartqsys.com`" item carried in `pending_work.md` since before this session — never
+traced to the Render plan setting until now. **User upgraded `sq-careconnect` to Starter** (a
+billing decision left entirely to them). Verified the fix directly: `curl` against CareConnect's
+base URL went from ~7.8s to consistently <1s across 3 consecutive requests post-upgrade.
+
+**13. User reported the CareConnect upgrade didn't fully fix it — WebView still spins on a blank
+white page for ~1 minute before displaying, on every attempt, surviving a logout/login *and* a
+full device power cycle.** That ruled out both the (already-fixed) backend cold-start theory and a
+transient memory-pressure theory. Root-caused for real this time by clearing `adb logcat`, having
+the user reproduce it live, then filtering the dump to the app's actual PID (`pidof
+com.smartqsys.sq_notification`) instead of the unfiltered buffer (which had been dominated by noise
+from other apps, including a red-herring pass that misread normal Chrome sandboxed-process
+recycling as evidence of a crash loop). The real signal:
+```
+E/WebViewLibraryLoader: can't load with relro file; address space not reserved
+E/system/bin/webview_zygote32: Failed to make and chown /acct/uid_99006: Permission denied
+```
+This is a known Android bug class: normally the OS pre-loads WebView's native libraries into a
+shared RELRO (relocation-read-only) memory region once, and every new renderer process just maps
+it — fast. On this device that shared region can't be reserved (paired with a permission failure
+on an `/acct` cgroup accounting path), so **every single WebView renderer process cold-loads and
+relocates its native libraries from scratch** instead of reusing the cache — slow enough on this
+device's modest, older MediaTek/ColorOS hardware to produce almost exactly the observed ~1-minute
+delay, consistently, on every attempt. Confirmed this is genuinely device/firmware-level, not
+app or backend code: the API mint calls stayed fast (896ms, 982ms, 1376ms across three separate
+attempts) the entire time.
+
+**14. Checked two possible on-device remediations — both dead ends.** Developer Options → "Set
+WebView implementation" showed only two entries: Android System WebView 70.0.3538.110 ("Disabled
+for user Owner", unselectable) and Chrome 138.0.7204.180 (already selected, the only real option)
+— nothing to toggle between. Attempting to check Chrome for a pending Play Store update hit a
+purchase-verification (biometric/password) setup screen — correctly left for the user to handle,
+not something to automate through. Concluded this is best treated as a known limitation of this
+specific physical test device rather than something further reachable from this session.
+
+**15. Compared against the iOS implementation to see if this needs an iOS-side fix too — it
+doesn't, by construction.** `WebViewPage` (`get_ticket.dart`) is a single shared Dart widget using
+`flutter_inappwebview`'s `InAppWebView`, same code path on both platforms; on iOS it's backed by
+Apple's WKWebView, not Android's Chrome-based WebView. RELRO/shared-library relocation and the
+`webview_zygote`/`/acct` cgroup mechanism that failed here are Linux/Android-specific OS
+constructs with no iOS equivalent — WKWebView's process model can't hit this failure mode at all.
+**No iOS-side action needed for this specific bug.** Worth a real check whenever iOS testing
+resumes: `onRenderProcessGone` (the Android callback this widget's retry UI depends on) needs its
+iOS analog (WKWebView's content-process-termination event) verified to actually fire the same
+retry path — `flutter_inappwebview` supports both, but this session had no way to confirm it from
+Windows.
+
+**Session ends here with a clean, fully-shipped Android side, one real infrastructure bug fixed,
+and one real device-limitation root-caused (if not resolved).** Nothing outstanding from today is
+uncommitted or unpushed. The natural next step is the iOS equivalent — see `pending_work.md` and
+`IOS_HANDOFF.md` for what the Mac-side session needs to pick up to get a TestFlight build out.
+
+---
+
+### 2026-08-17 — Production incident hotfix, Settings logout fix, My Active Queues/CareConnect routing, Android v53 submitted to Open Testing
+
+**Context:** A dense session covering a real production outage hit mid-testing, a routing/UX fix
+with a genuine cross-repo CareConnect feature behind it, and a version submission — plus Mac-side
+work landing concurrently on the same branch.
+
+**1. RESOLVED a real production incident: `node_app_server` connection-pool exhaustion.** Surfaced
+while testing the logout fix on a physical Oppo device — real login attempts started failing with
+500s ("Failed to login", "Failed to fetch cities", "Failed to mint badge token") both from the app
+and via direct `curl`. Diagnosed by running NAS locally against the live DB: login logic itself was
+fast and correct, isolating the bug to the live Render process's connection pool. Render logs
+confirmed `pg-pool` "timeout exceeded" across every DB route — the whole pool (`max: 10`) was
+exhausted. Root cause: 30 of 34 `pool.connect()` call sites in `app.js` released the client only on
+the success path, never in `catch` — any thrown error permanently stranded a connection. Fixed all
+30 with `try/finally` (commit `61e857b`), pushed to both `main` and `peer-notification` (Render
+deploys from the latter). Verified locally by firing 15 consecutive error-triggering requests
+(more than pool max) with no exhaustion. Confirmed live: login latency dropped from ~26.6s
+timeouts to 0.79s. Bundled in the same commit: the previously-uncommitted
+`reconcileOrphanedBookings()` sweep, which Render logs showed was already running in production
+regardless of local uncommitted status.
+
+**2. Fixed Settings' Logout routing to New Registration instead of Sign In.** Same bug in two
+places (`home_dashboard.dart`'s app-bar menu, `settings.dart`'s Logout tile) — both called
+`SignupPage()` after clearing prefs instead of `LoginPage()`. Fixed both; Delete Account's
+same-looking redirect to `SignupPage()` was correctly left alone (different case — account no
+longer exists). Committed `aeb9a13`.
+
+**3. Mac-side work landed on the same branch mid-session — merged cleanly, no conflicts.** Real
+substantive commits (`93620f8..9b04c47` plus one more): FCM token-refresh wiring to
+`POST /update-fcm-token` (closes the long-open iOS push item), `firebase_messaging` → 16.5.0,
+simulator arch-mismatch fix, iOS 26 implicit-engine/UIScene adoption, an auth-token
+stringify-to-"null" fix, a Settings text-overflow crash fix, standard-encryption-only export
+compliance declaration, Settings row ellipsis capping, Home-screen header/badge-card fixes for
+small iPhones, routing Appointments through CareConnect's Manage Bookings, and dropping dead-end
+account handling now that CareConnect auto-provisions accounts. Also confirms `pod install` was
+actually run and succeeded on the Mac (real `Podfile.lock` changes). Pushed `4253247`.
+`flutter analyze`: 0 errors, 180 pre-existing style infos/warnings.
+
+**4. Built a real CareConnect cross-repo feature: per-booking "View Status" + Manage Bookings
+empty-state redirect.** Found while verifying a specific requirement (Manage Bookings should land
+on ccuser home when the patient has zero bookings, unlike Appointments/My Queues) that Manage
+Bookings and Appointments shared one indistinguishable code path. Final state: `_ActiveQueueCard`'s
+"View Status" now mints a focused `queue-access-token` → lands on that specific booking (`/bookings
+?focus=<id>`); a new `MobileSessionToken.source` field (CareConnect migration
+`20260817072816_add_source_to_mobile_session_token`) lets CareConnect tell `'manage_bookings'` +
+zero bookings apart from other cases, redirecting to ccuser home only for that combination. Pushed
+across `SQ_CareConnect` (`754823b`), `node_app_server` (`12aaf7d`, both `main`/`peer-notification`),
+`sq_appt_app_2` (`7b7ab30`). Same commit carries a City-dropdown fix
+(`isExpanded: true`). **Not yet visually confirmed on a physical device** — no active
+CareConnect-routed booking existed in the test account at the time.
+
+**5. Data bug found: `vicdlr@gmail.com` (id=133) has `city="Cebu ph"` in `mdevice`, should be
+"Metro Manila".** Root-caused a real "Healthcare doesn't show up in New Booking" complaint —
+`home_provider.dart` filters Industry/Organisation/Unit by the user's city, and Cebu ph only has
+Finance/Government in the `industry` table. **Not yet fixed** — the DB correction was identified
+but never run.
+
+**6. Fixed ccuser's My Bookings page never showing the captured image for Data Capture bookings**
+(the data was already flowing correctly through Cloudinary/webhook end-to-end — ccuser's own
+`/bookings` page just never fetched/displayed it, unlike ccadmin's two already-working views).
+Added `serviceType`/`capturedImageUrl`/`capturedText` to `/api/bookings/mine` and a matching
+"Captured Document" section to `BookingCard`. `tsc`/`eslint` clean. **Not committed, not visually
+confirmed** — no real Data Capture booking existed locally to check against.
+
+**7. Submitted Android version 53 (48.0.5) to Open Testing — pending Google review as of session
+end.** Bumped `versionCode`/`versionName`, built a signed release AAB with all of the session's
+mobile fixes, uploaded via Play Console, and resumed the Open Testing track (found paused).
+Bundled with resuming the track into one review cycle. A real device-support drop was flagged
+during review (2,081 fewer devices vs. the track's stale prior release) — expected, not a
+regression; that track just hadn't been through the Android 15/16 compliance push yet. Deliberately
+left untouched: a separate pending Mac release (`52`/`48.0.4`) sitting "Ready to publish" in Closed
+Testing - Alpha.
+
+**8. Confirmed this session's Windows Chrome browser identity via memory** (`b9a80ca0-...`,
+"Browser 2") — no re-verification needed going forward.
+
+**Session ended here.** Carried into the next session: the My Active Queues visual/device
+confirmation, the Cebu ph DB fix, the Data Capture image fix commit, and Android v53's review
+outcome — see `pending_work.md`.
+
+---
+
+### 2026-08-16 — Located and identified the correct Android release keystore for Mac handoff
+
+**Context:** `WINDOWS_KEYSTORE_TRANSFER.md` (in this repo) documented an unfinished task — the Mac
+checkout of `sq_appt_app_2` (branch `fix/android-15-compliance`) needs to produce a signed release
+build but has no keystore locally; the real signing files exist somewhere on this Windows machine.
+
+**1. Confirmed the files and resolved the `storeFile` path.** User pointed to
+`C:\Users\vic\AndroidStudioProjects\sq_appt_app_2`. Found `android\key.properties`; its
+`storeFile= keystore.jks` resolves relative to the **`android/app/`** module directory (Gradle's
+`file()` call inside `build.gradle`'s `signingConfigs` block is relative to the module dir, not the
+`android/` root), matching `android\app\keystore.jks` — not the two files sitting in
+`android\app\archived_unused_keystores\` (`releasekey.jks`, `.keystore`), which are clearly marked
+unused.
+
+**2. Broader search surfaced a real ambiguity — flagged rather than guessed.** A search across
+`AndroidStudioProjects` turned up two more `key.properties` files: `sq_notification_app` (a
+different app, ruled out) and `sq_app_release`. `sq_app_release`'s keystore (`.keystore`, dated
+March 2024) is a genuinely different file by hash and size from `sq_appt_app_2`'s `keystore.jks`
+(dated May 2025) — not a duplicate. Per the transfer doc's explicit instruction, asked the user
+rather than picking one silently (wrong upload key = Play Store rejects the release). **User
+confirmed `sq_appt_app_2`'s `keystore.jks` (May 2025) is the correct, currently-used one.**
+
+**3. Transfer method changed from external drive to Zoho WorkDrive — drive-staging steps in
+`WINDOWS_KEYSTORE_TRANSFER.md` were not executed.** No external drive was ever plugged in (checked
+`Get-Volume`, only fixed drives `C`/`D`/`E` present). User opted to upload the two files directly
+via Zoho WorkDrive instead. Gave Mac-side placement paths: `key.properties` → `android/key.properties`,
+`keystore.jks` → `android/app/keystore.jks` (both relative to the `sq_appt_app_2` checkout root on
+the Mac).
+
+**Session ended here.** Still open: confirm the two files actually land on the Mac side and that a
+signed release build succeeds using them — see `pending_work.md`.
+
+---
+
 ### 2026-08-15 — Closed Testing release confirmed live; built a standalone tester-notification emailer
 
 **Context:** Follow-up to 2026-08-13's Closed Testing submission. Confirmed the release actually

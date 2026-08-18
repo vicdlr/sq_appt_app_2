@@ -12,7 +12,7 @@
 
 | Repo | GitHub | Branch | What's on it |
 |---|---|---|---|
-| Mobile app | `vicdlr/sq_appt_app_2` | **`fix/android-15-compliance`** | Full redesign, Android API-36/16KB compliance, notification-channel fixes, the Mac's 2026-08-17 iOS work, and today's Windows fixes (see §3). **`versionCode`/`versionName` in `android/app/build.gradle` bumped to `53`/`"48.0.5"` for an Android Open Testing submission — Android-only numbering, no bearing on iOS's `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION`, don't try to keep them in sync.** `pubspec.yaml`'s `version:` is still `1.0.7+1` — bump the build number before archiving for TestFlight so it doesn't collide with anything already in App Store Connect. |
+| Mobile app | `vicdlr/sq_appt_app_2` | **`fix/android-15-compliance`** (at `70006b6` as of 2026-08-18) | Full redesign, Android API-36/16KB compliance, notification-channel fixes, the Mac's 2026-08-17 iOS work, and the Windows fixes from 2026-08-17/18 (see §3/§3b). **`versionCode`/`versionName` in `android/app/build.gradle` are now `54`/`"48.0.6"` for an Android Open Testing submission — Android-only numbering, no bearing on iOS's `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION`, don't try to keep them in sync.** `pubspec.yaml`'s `version:` is still `1.0.7+1` — bump the build number before archiving for TestFlight so it doesn't collide with anything already in App Store Connect. |
 | Backend | `vicdlr/node_app_server` | `main` (also mirrored to `peer-notification`, which is what Render actually deploys from — **always push both**, they've drifted before) | Commit `12aaf7d` as of 2026-08-17: forwards a `source` param through `/careconnect/manage-bookings-link` (see CareConnect row), plus a real connection-pool-leak fix across ~30 routes that was causing intermittent production 500s on `/login` etc. — already deployed, nothing to do here. |
 | CareConnect | `vicdlr/SQ_CareConnect` | `master` | Commit `754823b` as of 2026-08-17: Manage Bookings now redirects to ccuser home when the patient has zero bookings (Appointments/My Queues unaffected — see §3). Also a `capturedImageUrl` display fix for Data Capture bookings on ccuser's "My Bookings" page (uncommitted as of this writing, may or may not have landed by the time you read this — check `git log`). Already merged/deployed on Render, nothing to check out for iOS building purposes. |
 | Docs (this repo) | `vicdlr/sq_appt_app_2` (**same GitHub repo as the mobile app** — a separate clone on its own branch, not a different project) | `mobile-redesign` | `DEVLOG.md`, `pending_work.md`, this file. **This branch has never had the actual app code on it** — don't build from it. |
@@ -77,6 +77,25 @@ no iOS testing capability):
 None of the above has been run through an actual iOS build/simulator — first real verification of
 all of it happens whenever this branch next gets built on the Mac.
 
+## 3b. What changed on the Windows side 2026-08-18 (after this file was first written)
+
+Branch is now at `70006b6` (was `7b7ab30` above). Also not iOS-specific code, also untested on
+iOS:
+
+- **My Bookings cards now show CareConnect's confirmed appointment time and outcome remarks**
+  (`my_booking.dart`) — decline reason in red for rejected/cancelled bookings, confirmation detail
+  otherwise. Pure UI addition, data was already in the API response.
+- **Fixed a dead "View Status" button on Home's "My Active Queues" card** for bookings CareConnect
+  rejected at creation time (`home_dashboard.dart`'s `_activeQueueBooking()` filter) — cosmetic/
+  correctness fix, no new dependency.
+- **`pubspec.yaml`: `fluttertoast` downgraded `^10.0.0` → `^9.0.0`** (Dart-version cascade from a
+  Windows-side Flutter SDK pin, unrelated to iOS) — **run `pod install` again after `git pull`**,
+  since a changed Flutter dependency can touch the Podfile.lock even for an iOS-only-irrelevant
+  package swap. `android/app/build.gradle`'s `minSdkVersion 23` pin is Android-only, no iOS
+  equivalent needed.
+- Android shipped as version **54 (48.0.6)**, `versionCode` 54 — Android-only numbering, see the
+  repo table above for why this doesn't map to iOS's build number.
+
 ## 4. Still open
 
 - **Signing**: not re-verified by the Windows session (no Xcode access). Per the 2026-08-07
@@ -96,8 +115,11 @@ all of it happens whenever this branch next gets built on the Mac.
 
 ## 5. Quick orientation for whoever (or whichever Claude session) picks this up
 
-Read `pending_work.md` first — it's the live, most-current record. Once on the Mac: confirm
-`pod install` still succeeds, build to a simulator/device and smoke-test §3's items (all untested
-on iOS), then work toward a first TestFlight upload if the build's clean. Version 53/48.0.5's
-release notes (from the Android Open Testing submission) are a reasonable starting point for
-TestFlight's own release notes, adjusted for anything iOS-specific.
+Read `pending_work.md` first — it's the live, most-current record. Once on the Mac: `git pull` to
+pick up `70006b6`, confirm `pod install` still succeeds (re-run it regardless, `pubspec.yaml`
+changed — see §3b), build to a simulator/device and smoke-test §3/§3b's items (all untested on
+iOS), then work toward a first TestFlight upload if the build's clean. Version 54/48.0.6's release
+notes (from the Android Open Testing submission — "Improved booking status details... Fixed an
+issue where a stale booking could show an inactive View Status button on Home... Minor stability
+and compatibility updates.") are a reasonable starting point for TestFlight's own release notes,
+adjusted for anything iOS-specific.
