@@ -21,6 +21,31 @@
   worth a quick addendum pass but nothing in them is iOS-specific code, same as its existing §3
   items.
 
+- **Shipped and verified end-to-end: force-update kill-switch, replacing dead version-comparison
+  code.** User asked whether the app force-updates on launch — it had a mechanism (`dio.dart`'s
+  `_checkForUpdate`) but both backend constants it compared against (`checkMinimumVersionAndroid.js`
+  `"21.0.3"`, `checkMinimumVersionIos.js` `"1.0.3"`) were hardcoded and never touched since written,
+  always below every real shipped version (`48 > 21`, iOS's real `MARKETING_VERSION 2.0.1 > 1.0.3`)
+  — dead code, likely never fired for a real user. Redesigned per user direction as a plain boolean
+  kill-switch (`checkForceUpdateAndroid.js`/`checkForceUpdateIos.js`, driven by new
+  `FORCE_UPDATE_ANDROID`/`FORCE_UPDATE_IOS` env vars, documented in `node_app_server/.env.example`,
+  **off/unset in production right now**) instead of a version comparison — this backend has no way
+  to tell which Play Store/App Store track issued an install, so comparing versions risks
+  force-blocking users on a track that hasn't caught up (confirmed real: Production was still on
+  version 47 while Open Testing had just shipped 54). Client (`dio.dart`) caches the flags from
+  every response but only shows the blocking dialog via `DioConfig.maybeBlockForForceUpdate(context)`
+  at two deliberate re-entry points the user named — New Booking's tap handler and
+  `_openManageBookings()` — rather than a "shown once per session" flag that could go stale for a
+  long-lived app process. **Verified live on the Oppo**: flag on → undismissable "Update Required"
+  dialog blocks New Booking; flag off → normal navigation. Caught a real mistake mid-test: the
+  first deploy attempt didn't fire because the backend changes had only been edited locally, never
+  committed/pushed — Render just rebuilt the old code against the new (unread) env var. Fixed by
+  actually committing (`921154c` on `node_app_server`) and pushing to **both** `main` and
+  `peer-notification`. **For iOS**: `FORCE_UPDATE_IOS` exists and is wired the same way client-side,
+  but has no gate points added on the iOS-only surface yet (New Booking/Manage Bookings are shared
+  Dart code, so they're already covered) — don't set it true until there's an actual TestFlight/App
+  Store release to point users at, same reasoning as Android.
+
 - **Root-caused and fixed: My Active Queues' "View Status" button doing nothing (toast: "Couldn't
   open the queue right now").** Confirmed via Render's live logs + a direct DB check, not
   guesswork: booking 281 was CareConnect-rejected at creation (422, outside clinic hours) — that

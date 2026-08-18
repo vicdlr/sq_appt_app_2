@@ -187,10 +187,52 @@ iOS analog (WKWebView's content-process-termination event) verified to actually 
 retry path — `flutter_inappwebview` supports both, but this session had no way to confirm it from
 Windows.
 
+**16. User asked whether the app has a force-update-on-launch feature — it did, but was dead
+code.** Traced `lib/api/dio.dart`'s `_checkForUpdate`: a Dio interceptor firing on every API
+response, comparing the installed version against `minimum_version_android`/`minimum_version_ios`
+fields NAS's global auth middleware (`auth.js`) attached to every authenticated response, sourced
+from two tiny helper files. Both were hardcoded static strings — `"21.0.3"` (Android) and `"1.0.3"`
+(iOS) — that had apparently never been touched since written. Since version comparison checks the
+major number first, `48 > 21` (and iOS's real `MARKETING_VERSION = 2.0.1` > `1.0.3`, confirmed by
+reading `ios/Runner.xcodeproj/project.pbxproj`) short-circuited to "no update needed" every time —
+this gate has likely never fired for a real user on either platform.
+
+**17. Redesigned it as a manual boolean kill-switch instead of a version comparison, per user
+direction, then wired it into two deliberate re-entry points instead of firing on every API call.**
+Key insight from the user: this backend has no way to know which Play Store/App Store *track*
+issued a given install, so any version-comparison approach risks force-blocking users on a track
+that hasn't caught up yet — confirmed this was a real risk by checking Play Console directly
+(Production was still on version 47 while Open Testing had just shipped 54, an 11-month gap).
+Replaced `checkMinimumVersionAndroid.js`/`checkMinimumVersionIos.js` with
+`checkForceUpdateAndroid.js`/`checkForceUpdateIos.js`, plain booleans off by default, driven by new
+`FORCE_UPDATE_ANDROID`/`FORCE_UPDATE_IOS` env vars — documented in `.env.example`, never set to
+`true` in production. Second refinement, also from the user: don't rely on a "shown once per app
+session" flag, since a long-lived app process that never restarts could go days without
+re-checking. Client-side (`dio.dart`) now just caches the two flags from every response (cheap, no
+dialog fires from there) and exposes `DioConfig.maybeBlockForForceUpdate(context)`, called
+explicitly at exactly two points the user named: the New Booking quick action's tap handler, and
+`_openManageBookings()` (the one shared function behind the Manage Bookings card, "View all", and
+Appointments) right after each fresh response — so even a session that never restarts gets gated
+at the moments that actually matter.
+
+**18. Shipped and verified end-to-end on the physical Oppo, catching a real mistake along the
+way.** First deploy attempt: flipped `FORCE_UPDATE_ANDROID=true` on Render, redeployed, tested on
+device — no dialog fired. Root cause: the backend code changes had only been edited locally, never
+committed or pushed, so Render's redeploy just rebuilt the same old `minimum_version_*` logic
+against the new (unread) env var. Committed properly this time (`921154c` on `node_app_server`,
+pushed to **both** `main` and `peer-notification` — Render deploys from the latter, this project's
+own recurring gotcha) and redeployed for real. Confirmed on-device: `FORCE_UPDATE_ANDROID=true` →
+tapping New Booking shows an undismissable "Update Required" dialog; flag removed and redeployed
+→ New Booking navigates normally again, zero behavior change. Left the env var unset (off) in
+production after testing.
+
 **Session ends here with a clean, fully-shipped Android side, one real infrastructure bug fixed,
-and one real device-limitation root-caused (if not resolved).** Nothing outstanding from today is
-uncommitted or unpushed. The natural next step is the iOS equivalent — see `pending_work.md` and
-`IOS_HANDOFF.md` for what the Mac-side session needs to pick up to get a TestFlight build out.
+one real device-limitation root-caused, and a dead feature revived and verified working.** Nothing
+outstanding from today is uncommitted or unpushed, across all three repos touched
+(`sq_appt_app_2`, `node_app_server`, and this docs repo). The natural next step is the iOS
+equivalent — see `pending_work.md` and `IOS_HANDOFF.md` for what the Mac-side session needs to
+pick up to get a TestFlight build out, including wiring `FORCE_UPDATE_IOS` the same deliberate way
+once there's an actual TestFlight release to point users at.
 
 ---
 
