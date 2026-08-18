@@ -84,6 +84,11 @@
   deliberately untouched: the separate pending Mac release (`52`/`48.0.4`) sitting "Ready to
   publish" in Closed Testing - Alpha.
 
+- **Android version 55 (48.0.7) submitted to Open Testing 2026-08-18 — awaiting Google's review.**
+  Ships the force-update kill-switch (`e544a3b`/`41cd593` on `fix/android-15-compliance`) on top of
+  54. Same "1 change sent for review" flow as before; nothing else in Publishing overview was
+  touched.
+
 - **Data bug found 2026-08-17, still not fixed**: real account `vicdlr@gmail.com` (id=133) has
   `city="Cebu ph"` in `mdevice`, confirmed should be `"Metro Manila"`. This silently breaks New
   Booking's Industry/Organisation/Unit filtering (`home_provider.dart` filters all three by
