@@ -7,6 +7,7 @@ import '../../Model/BookingModel.dart';
 import '../../SharedPrefrence/SharedPrefrence.dart';
 import '../../api/api.dart';
 import '../../api/configurl.dart';
+import '../../api/dio.dart';
 import '../../constant/app_colors.dart';
 import '../../provider/home_provider.dart';
 import '../../utils/utils.dart';
@@ -358,6 +359,7 @@ class _QuickActionsGrid extends StatelessWidget {
     _QuickAction(Icons.add_box_outlined, "New Booking", const Color(0xFFC9772E),
         (context) {
       return () {
+        if (DioConfig.maybeBlockForForceUpdate(context)) return;
         Provider.of<HomeProvider>(context, listen: false).setIndustriesEmpty();
         Navigator.of(context).push(MaterialPageRoute(builder: (context) {
           return RequestNewBooking();
@@ -598,6 +600,8 @@ Future<void> _openManageBookings(BuildContext context,
       data: source != null ? {"source": source} : {});
 
   onLoaded?.call();
+
+  if (context.mounted && DioConfig.maybeBlockForForceUpdate(context)) return;
 
   final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
   if (result.response != null && careConnectUrl != null) {

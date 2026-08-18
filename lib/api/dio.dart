@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 // import 'package:pretty_dio_logger/pretty_dio_logger.dart';
@@ -12,11 +11,15 @@ import 'package:url_launcher/url_launcher.dart';
 import '../constant/dailog.dart';
 import 'configurl.dart';
 
-import 'package:sq_notification/main.dart'; // import where navigatorKey is defined
-
-
 class DioConfig {
-
+  // Kill-switch flags mirrored from every API response's force_update_android/force_update_ios
+  // fields (see node_app_server's auth.js). Cached here rather than acted on immediately -- an
+  // undismissable dialog firing off whatever random background API call happens to return first
+  // would interrupt users mid-task; callers instead check this at deliberate re-entry points
+  // (New Booking, Manage Bookings) via maybeBlockForForceUpdate, so a long-lived app session that
+  // never restarts still gets gated at the moments that actually matter.
+  static bool forceUpdateAndroid = false;
+  static bool forceUpdateIos = false;
 
   static BaseOptions options = BaseOptions(
     baseUrl: ConfigUrl.baseUrl,
@@ -28,98 +31,44 @@ class DioConfig {
     ..interceptors.add(PrettyDioLogger())
     ..interceptors.add(InterceptorsWrapper(
       onResponse: (response, handler) async {
-        // Check for version info in API response
         if (response.data is Map) {
-          await _checkForUpdate(response.data);
-          }
-          handler.next(response);
-          },
+          _cacheForceUpdateFlags(response.data);
+        }
+        handler.next(response);
+      },
     ));
 
   static get dio => _dio;
 
-  static Future<void> _checkForUpdate(Map<String, dynamic> responseData) async {
-    try {
-      // Get current app version
-      final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version;
-
-      // Get minimum required version from API response
-      String? minimumVersion;
-      if (Platform.isAndroid && responseData.containsKey("minimum_version_android")) {
-        minimumVersion = responseData["minimum_version_android"];
-      } else if (Platform.isIOS && responseData.containsKey("minimum_version_ios")) {
-        minimumVersion = responseData["minimum_version_ios"];
-      }
-      // If minimum version is not provided, skip check
-      if (minimumVersion == null || minimumVersion.isEmpty) return;
-      // Compare versions
-      if (_isUpdateRequired(currentVersion, minimumVersion)) {
-        String updateUrl = "";
-        final updateMessage = "A new version is required. Please update the app.";
-
-        if (Platform.isAndroid) {
-          updateUrl = "https://play.google.com/store/apps/details?id=com.smartqsys.sq_notification";
-        } else if (Platform.isIOS) {
-          updateUrl = "https://apps.apple.com/us/app/sq-appt-app/id6499111118";
-        }
-
-        BuildContext? context = navigatorKey.currentContext;
-        _showForceUpdateDialog(context, updateMessage, updateUrl);
-      }
-    } catch (e) {
-      // Handle any errors in version checking silently
-      print('Version check error: $e');
-    }
+  static void _cacheForceUpdateFlags(Map<String, dynamic> responseData) {
+    forceUpdateAndroid = responseData["force_update_android"] == true;
+    forceUpdateIos = responseData["force_update_ios"] == true;
   }
 
-  static bool _isUpdateRequired(String currentVersion, String minimumVersion) {
-    // Parse version strings (assuming format like "1.2.3")
-    List<int> current = _parseVersion(currentVersion);
-    List<int> minimum = _parseVersion(minimumVersion);
+  // Returns true (and shows the blocking dialog) if the app must be updated before proceeding.
+  // Call this at the start of a flow, before letting it continue.
+  static bool maybeBlockForForceUpdate(BuildContext context) {
+    final required = Platform.isAndroid
+        ? forceUpdateAndroid
+        : Platform.isIOS
+            ? forceUpdateIos
+            : false;
+    if (!required) return false;
 
-    // Compare version numbers
-    for (int i = 0; i < 3; i++) {
-      if (current[i] < minimum[i]) {
-        return true; // Update required
-      } else if (current[i] > minimum[i]) {
-        return false; // Current version is higher
-      }
-      // If equal, continue to next part
-    }
-
-    return false; // Versions are equal, no update required
+    final updateUrl = Platform.isAndroid
+        ? "https://play.google.com/store/apps/details?id=com.smartqsys.sq_notification"
+        : "https://apps.apple.com/us/app/sq-appt-app/id6499111118";
+    _showForceUpdateDialog(context, updateUrl);
+    return true;
   }
 
-  static List<int> _parseVersion(String version) {
-    // Remove any non-numeric characters except dots
-    String cleanVersion = version.replaceAll(RegExp(r'[^\d\.]'), '');
-
-    // Split by dots and convert to integers
-    List<String> parts = cleanVersion.split('.');
-    List<int> versionParts = [];
-
-    // Ensure we have at least 3 parts (major.minor.patch)
-    for (int i = 0; i < 3; i++) {
-      if (i < parts.length && parts[i].isNotEmpty) {
-        versionParts.add(int.tryParse(parts[i]) ?? 0);
-      } else {
-        versionParts.add(0);
-      }
-    }
-
-    return versionParts;
-  }
-
-  static void _showForceUpdateDialog(BuildContext? context, String message, String url) {
-    if (context == null) return;
-
+  static void _showForceUpdateDialog(BuildContext context, String url) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         title: const Text("Update Required"),
-        content: Text(message),
+        content: const Text("A new version is required. Please update the app."),
         actions: [
           TextButton(
             onPressed: () async {
