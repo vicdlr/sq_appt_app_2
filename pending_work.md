@@ -7,19 +7,49 @@
 
 ---
 
-## Open / needs attention (as of 2026-08-18)
+## Open / needs attention (as of 2026-08-18, Mac session update)
 
-- **For the Mac session: iOS/TestFlight is the natural next step — Android just shipped 54
-  (48.0.6) to Open Testing.** `fix/android-15-compliance` is fully up to date at `70006b6` (pushed
-  to origin) — `git pull` picks up everything below plus the previous 2026-08-17 Mac-side iOS work
-  (FCM wiring, `firebase_messaging` 16.5.0, iOS 26 UIScene, simulator-arch fix — see
-  `IOS_HANDOFF.md`). **No TestFlight build has ever existed for this app** — Android's Open
-  Testing is the direct precedent, not a full App Store release. Since `pubspec.yaml` changed
-  (`fluttertoast` downgrade, see below), run `pod install` again before assuming the last Podfile
-  state still resolves. `IOS_HANDOFF.md` has the full checklist and orientation — read it first;
-  its §3 doesn't yet reflect today's changes (the View Status fix and verbose booking-status UI),
-  worth a quick addendum pass but nothing in them is iOS-specific code, same as its existing §3
-  items.
+- **Correction to earlier entries in this file and to `IOS_HANDOFF.md`: TestFlight builds already
+  existed before this session, and more were added.** App Store Connect's app-level page already
+  showed "SQ Appt App" at **iOS 1.0.4, Ready for Distribution**, with TestFlight builds **1.0.4
+  (1)**, **1.0.5 (1)**, **1.0.6 (1)** already `Complete` and **1.0.7 (1)**/**1.0.7 (2)** already
+  `Ready to Submit` — none of this was ever logged here. Every "No TestFlight build has ever
+  existed for this app" line elsewhere (this file's older entries, `IOS_HANDOFF.md` §4) is stale.
+  **This Mac session added builds 1.0.7 (3), (4), and (5)** — full narrative in `DEVLOG.md`'s
+  2026-08-18 "(Mac session)" entry. Short version: (3) shipped from a stale branch missing the
+  2026-08-17 Windows fixes (logout, City-picker, Manage Bookings routing) — don't point testers at
+  it specifically. (4) has all those fixes plus a new narrower app icon, confirmed uploaded. (5)
+  adds the force-update kill-switch (`41cd593`) on top of (4) — **upload not yet confirmed as of
+  this writing**, Transporter was open mid-delivery.
+
+- **`fix/android-15-compliance` has 5 local commits on this Mac not yet pushed to `origin`**: the
+  icon change, a cleanup commit for an accidentally-committed stray file, and three version-bump
+  commits (`+3`/`+4`/`+5` in sequence — the first two are "dead" build numbers already consumed by
+  uploads, kept as real commits rather than amended). **Push these before assuming `origin` matches
+  what's actually been built and uploaded.**
+
+- **This Mac's Flutter SDK is now 3.47.0** (upgraded in place from a stale 3.24.3 via `flutter
+  upgrade --force`, needed to unblock `pub get` — same `device_info_plus ^11.5.0` Dart-version
+  problem the Windows session hit on its own machine, fixed differently here since this session
+  never touched Android). **Untested**: whether 3.47.0 breaks this project's Android Gradle build
+  the way it did on Windows (AGP9/built-in-Kotlin auto-migration) — nobody has rebuilt Android on
+  this Mac since the upgrade. Check before assuming parity.
+
+- **Confirmed dead end, documented so it isn't re-attempted: this app cannot run in any iOS
+  Simulator on this Mac right now**, full root-cause in `DEVLOG.md`'s 2026-08-18 "(Mac session)"
+  entry §7. Short version: x86_64 simulators crash at launch (missing `libswiftWebKit.dylib`, only
+  ships in iOS 26+ simulator runtimes, which are arm64-only on this Mac); arm64 simulators fail to
+  link (`GoogleMLKit`'s `MLImage.framework`, pulled in via `mobile_scanner`, has an `arm64` slice
+  but it's tagged for device, not simulator — a real binary limitation, not a config bug). Real
+  devices and `flutter build ipa` are unaffected. Don't spend more time trying to fix this without
+  either upgrading `mobile_scanner` past 6.0.11 (currently pinned for Android 16KB compliance) or
+  accepting device-only testing.
+
+- **iOS/TestFlight is otherwise in good shape** — Android shipped 54 (48.0.6) to Open Testing.
+  `pod install` verified working for the first time this session (previously flagged "unverified"
+  in every handoff doc). `IOS_HANDOFF.md` has the full checklist; its §3 doesn't yet reflect the
+  2026-08-18 Windows changes (View Status fix, verbose booking-status UI) or anything from this
+  Mac session — worth a rewrite pass, not just an addendum, given how much of it is now stale.
 
 - **Shipped and verified end-to-end: force-update kill-switch, replacing dead version-comparison
   code.** User asked whether the app force-updates on launch — it had a mechanism (`dio.dart`'s

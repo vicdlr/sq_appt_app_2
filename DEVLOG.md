@@ -2,6 +2,112 @@
 
 ---
 
+### 2026-08-18 (Mac session) — First real TestFlight uploads; corrected a "no TestFlight build ever existed" claim; narrower app icon; arm64-simulator dead end documented
+
+**Context:** Picked up `IOS_HANDOFF.md`'s instruction to get `fix/android-15-compliance` building on
+the Mac and work toward a first TestFlight submission. Two framing corrections came out of this
+session that are worth reading before trusting anything upstream about iOS TestFlight status.
+
+**1. Correction: this was not actually a from-zero "first-ever TestFlight build."** App Store
+Connect's Apps page already showed "SQ Appt App" at the app level as **iOS 1.0.4, Ready for
+Distribution**, and its TestFlight page already listed builds **1.0.4 (1)**, **1.0.5 (1)**, **1.0.6
+(1)** as `Complete`, plus **1.0.7 (1)** and **1.0.7 (2)** already sitting `Ready to Submit` — all
+from some earlier session never reflected in this DEVLOG or `pending_work.md`. An internal tester
+group (`SmartqDev`) is already configured. So real iOS build/TestFlight work predates this session
+by several versions; treat `IOS_HANDOFF.md`'s "No TestFlight build has ever existed for this app"
+line (§4, written 2026-08-17) as **stale/wrong** — corrected in `pending_work.md`.
+
+**2. Mac's Flutter SDK was stale and blocked `pub get` outright** — 3.24.3/Dart 3.5.3, same
+`device_info_plus ^11.5.0` (needs Dart ≥3.7.0) problem the Windows session hit and fixed by pinning
+*their own* machine to 3.29.3. On the Mac, `flutter upgrade --force` to latest stable (**3.47.0**,
+Dart 3.13.0) was used instead — no Android Gradle rebuild was attempted this session (iOS-only
+work), so unlike Windows, whether 3.47 would break this project's Android build on the Mac is
+**untested and unknown**. Worth checking before assuming parity if Android is ever built here.
+
+**3. `pod install` succeeded cleanly** — the 2026-08-13 Podfile/deployment-target bump verified
+working for the first time (previously flagged "unverified" in every handoff doc).
+
+**4. First upload — build 1.0.7 (3) — was built from a stale local branch and shipped without the
+2026-08-17 Windows fixes.** Root cause: `git status` reported "up to date" from a stale local
+knowledge of `origin` (no fetch had actually been run since the session started); `origin` had
+moved 4 commits ahead (`aeb9a13` logout-routing fix, two merge commits, `7b7ab30` City-picker +
+Manage Bookings/My Active Queues routing rework) between session start and when the build kicked
+off. Discovered only after the build was already uploaded and "Processing" in TestFlight.
+**Testers who get build 3 specifically will still see the pre-fix logout bug, dead City-picker tap
+zone, and old Manage Bookings routing** — none of that is in this build. Superseded by build 4/5
+below; not worth pulling from TestFlight retroactively, just don't point testers at it specifically.
+
+**5. Rebased local work onto the correct `origin` head and rebuilt as build 1.0.7 (4).** `git
+rebase origin/fix/android-15-compliance` (one local commit, the +3 bump) applied cleanly on top of
+`70006b6`. This build genuinely contains all the 2026-08-17/18 Windows fixes. **Confirmed uploaded
+via Transporter** (per user, not independently re-verified in App Store Connect — the browser
+session logged out both times a check was attempted).
+
+**6. Changed the iOS home-screen icon.** User supplied a new source image
+(`~/Downloads/new 180.png`, 1254×1254). Iterated on a "too squarish" complaint by squeezing the
+logo ~20% narrower horizontally and padding the freed width with white on both sides (keeps the
+icon canvas square per Apple's requirement, reads less block-like at small sizes — the squeeze does
+mildly oval the "Q"'s round strokes, user approved after seeing a preview). Regenerated all 11
+`AppIcon.appiconset` sizes via `sips`. Visually confirmed by installing on an iPhone 16
+(iOS 18.4) simulator and screenshotting the home screen. Committed as two commits (a wildcard
+`git add` accidentally swept in an unrelated stray `new 180.png` file sitting in the appiconset
+folder already — not something this session created, not referenced by `Contents.json` — removed
+in a follow-up commit rather than amending).
+
+**7. Definitively root-caused why this app cannot run in any Simulator on this Mac right now** —
+worth preserving even though the outcome was "don't fix it," since it'll recur for anyone else on
+Apple Silicon + Xcode 26:
+   - x86_64 simulators (iOS 17.4/18.4, the only ones this project's `EXCLUDED_ARCHS[sdk=iphonesimulator*]
+     = i386 arm64` Podfile hack permits — see `ios/Podfile`'s `post_install`, itself forced by
+     `mobile_scanner` 6.0.11's own podspec excluding arm64 for simulator) crash at launch:
+     `Library not loaded: /usr/lib/swift/libswiftWebKit.dylib`, needed by
+     `flutter_inappwebview_ios` because it was compiled against Xcode 26.6's SDK — but that library
+     only ships in the **iOS 26 simulator runtime**, which on this Mac is **arm64-only** (no x86_64
+     slice at all).
+   - Tried lifting the arm64 exclusion (patched the pub-cache copy of `mobile_scanner.podspec`,
+     `ios/Podfile`, and even hand-edited `ios/Flutter/Generated.xcconfig` to break a
+     self-reinforcing stale-detection loop in Flutter's own tooling — `xcode_project.dart`'s
+     `_targetsExcludingArm` re-derives the exclusion from live `xcodebuild -showBuildSettings`
+     output, which was itself already poisoned by the prior stale `Generated.xcconfig`). Got past
+     all of that and reached the **real** wall: `MLImage.framework` (GoogleMLKit, pulled in by
+     `mobile_scanner`) does contain an `arm64` slice, but it's tagged for the **device** platform
+     variant, not simulator — `Error (Xcode): Building for 'iOS-simulator', but linking in object
+     file ... built for 'iOS'`. `lipo -info` doesn't surface this distinction; the linker enforces
+     it strictly. This is a genuine binary limitation of the vendored MLKit version, not a config
+     mistake — the plugin author's own podspec TODO comment ("add back arm64 ... when switching to
+     the Vision API") already flagged this as known/deliberate.
+   - **Net: no simulator combination on this Mac can run this app while `mobile_scanner` stays
+     pinned at 6.0.11.** Real devices and `flutter build ipa` are unaffected (different code path,
+     always arm64-device). All experimental config changes were reverted back to the working
+     x86_64-forced state; nothing about this is committed.
+
+**8. Picked up `41cd593`'s force-update kill-switch, rebuilt again as build 1.0.7 (5).** After the
+icon/build-4 work, pulled again and found `origin` had moved one more commit
+(`41cd593`, force-update kill-switch — see this file's own 2026-08-18 Windows-session entry above
+for the backend side). Rebased cleanly, re-ran `pub get`/`pod install` (no actual dependency delta
+in that commit, but lockfiles had been reset during the arm64 experiment cleanup), rebuilt. **Build
+number had to jump to 5, not stay at 4** — confirmed with the user that build 4 had already been
+delivered via Transporter before this pull landed, so 4 was no longer available. Build 5 is the
+current head of local work; **upload not yet confirmed as of this writing** (Transporter was
+opened, user was mid-delivery).
+
+**Local git state, not yet pushed to `origin/fix/android-15-compliance`**: five commits sit on top
+of `41cd593` — the icon change (`6cfe2d6` + a cleanup commit `f90e379` removing the accidentally-
+committed stray file), then three version-bump commits in sequence (`+3`, `+4`, `+5` — the `+3`/`+4`
+ones are "dead" in the sense that their build number was already consumed and superseded, but kept
+as real commits rather than squashed/amended, per this session's git-safety practice of never
+amending). **Someone needs to push these** before the next session picks this branch up, or the
+push itself is a fine next step whenever build 5's upload is confirmed.
+
+**Files touched this session:** `sq_appt_app_2` (`fix/android-15-compliance`) — 5 local commits,
+not yet pushed (see above). `~/.pub-cache/hosted/pub.dev/mobile_scanner-6.0.11/ios/mobile_scanner.podspec`
+was temporarily patched then reverted (shared pub-cache file, affects any project on this Mac using
+that exact plugin version — reverted cleanly, no lasting change). `/Applications/flutter` upgraded
+in place from 3.24.3 to 3.47.0 (not project-local, affects any Flutter project built on this Mac
+going forward).
+
+---
+
 ### 2026-08-18 — My Bookings verbose status detail; Flutter SDK upgrade saga to unblock physical-device testing
 
 **Context:** Picked up the previous session's still-open "My Active Queues → View Status still lands
