@@ -34,13 +34,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = SharedPref.getNotificationsEnabled();
   String _language = SharedPref.getLanguage();
 
-  Future<void> deleteAccount() async {
+  Future<bool> deleteAccount() async {
     final result =
         await DioApi.delete(path: ConfigUrl.deleteUserUrl(SharedPref.getUserData().id));
 
-    if (result.response == null) {
-      result.handleError(context);
+    if (result.response?.statusCode == 200) {
+      return true;
     }
+    result.handleError(context);
+    return false;
   }
 
   @override
@@ -138,13 +140,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await deleteAccount();
-                SharedPref.deleteData();
-                if (mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) {
-                    return const SignupPage();
-                  }), (route) => false);
+                final deleted = await deleteAccount();
+                if (deleted) {
+                  SharedPref.deleteData();
+                  if (mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) {
+                      return const SignupPage();
+                    }), (route) => false);
+                  }
                 }
               },
               child: const Text("Yes", style: TextStyle(color: kDestructiveRed)),
