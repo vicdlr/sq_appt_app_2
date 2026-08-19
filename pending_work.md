@@ -34,7 +34,32 @@
   ready to publish" (approved by Google, never manually published) was deliberately left untouched,
   not part of this submission.
 
-- **Found mid-session: uncommitted, in-progress work already sitting in `sq_appt_app_2`'s working
+- **⚠️ Checkouts have moved — `sq_appt_app_2` and `node_app_server` now also exist under
+  `D:\Claude\`, in addition to the old `C:\Users\vic\AndroidStudioProjects\` locations.** Found
+  when the user reported opening `D:\Claude\sq_appt_app_2` in Android Studio, previously unknown
+  to any project notes. `D:\Claude\node_app_server` (branch `main`) and `D:\Claude\sq_appt_app_2`
+  (branch `fix/android-15-compliance`) are real, live checkouts of the same GitHub repos as their
+  `AndroidStudioProjects` counterparts — `C:\Users\vic\AndroidStudioProjects\node_app_server` no
+  longer exists (moved, not copied). **Not yet confirmed with the user whether this is a deliberate
+  full migration** (matching `CLAUDE.md`'s "all projects live under `D:\Claude\`" convention) or
+  still in progress — `KNOWLEDGE_BASE.md`'s per-project note (`projects/sq_appt_app.md`) and this
+  file's older "two-checkout split" warnings below still point at the old `AndroidStudioProjects`
+  path and need a rewrite once confirmed. Don't delete/assume-stale either location without asking.
+
+- **The "Service Provider Mode" SSO work below is no longer just uncommitted-in-progress — it's
+  now committed, in the new `D:\Claude\` checkouts, but not pushed.** Client: `3b653eb` on
+  `D:\Claude\sq_appt_app_2`'s `fix/android-15-compliance` ("Mint an SSO token before opening
+  ccadmin from Service Provider Mode"). Backend: `f50edcc` on `D:\Claude\node_app_server`'s `main`
+  ("Add /careconnect/service-provider-link for mobile SSO into ccadmin"). **Neither pushed** — the
+  backend endpoint the client now calls doesn't exist in production yet. Asked the user whether to
+  push both (backend needs `main` **and** `peer-notification` to actually deploy, same as this
+  session's other backend fix); no answer yet as of hand-off. The original discovery entry below
+  (found uncommitted in the *old* `AndroidStudioProjects` checkout, stashed twice around the
+  Android 56 build) is superseded by this — that old checkout's copy is now stale/duplicate work,
+  not the canonical one.
+
+- **Original discovery (superseded by the entry above, kept for the stash/build-safety context):**
+  uncommitted, in-progress work found sitting in `sq_appt_app_2`'s working
   tree** (`lib/api/configurl.dart`, `lib/view/home/service_provider_mode.dart`) implementing a
   "Service Provider Mode" SSO token-bridge — mints a link via a new `/careconnect/service-provider-link`
   backend endpoint (itself uncommitted in the local `node_app_server` checkout, added 2026-08-19 per

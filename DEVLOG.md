@@ -163,6 +163,21 @@ developer account (`devteam@smartqsys`) is closed/inactive since 2021 — the re
 Start full rollout" entry sitting in Publishing overview's "Changes ready to publish" (Google-approved,
 never manually published) completely untouched, since that wasn't part of this task.
 
+**4. Discovered mid-handoff: checkouts have moved, and the stashed Service Provider Mode work is
+now committed elsewhere.** User reported opening `D:\Claude\sq_appt_app_2` in Android Studio —
+a location not in any project notes. Investigated: `C:\Users\vic\AndroidStudioProjects\node_app_server`
+no longer exists (moved, not copied, to `D:\Claude\node_app_server`); `D:\Claude\sq_appt_app_2`
+is a separate live checkout of the same repo as the `AndroidStudioProjects` one, on the same
+`fix/android-15-compliance` branch. Both new checkouts have the Service Provider Mode SSO feature
+(item 3's aside) **finished and committed** — `3b653eb` (client) and `f50edcc` (backend,
+`/careconnect/service-provider-link`) — but **neither is pushed**, so the feature doesn't work in
+production yet if tested from here. Flagged for the user rather than pushed unilaterally (a
+backend push to `peer-notification` deploys immediately); no decision yet as of this hand-off —
+see `pending_work.md`'s ⚠️ entries. Whether this is a deliberate full migration to `D:\Claude\`
+(matching `CLAUDE.md`'s convention) or still in progress is also unconfirmed — `KNOWLEDGE_BASE.md`'s
+`projects/sq_appt_app.md` still documents the old two-checkout split and needs a rewrite once
+that's settled.
+
 ---
 
 ### 2026-08-18 (Mac session) — First real TestFlight uploads; corrected a "no TestFlight build ever existed" claim; narrower app icon; arm64-simulator dead end documented
