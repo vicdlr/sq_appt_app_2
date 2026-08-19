@@ -2,6 +2,33 @@
 
 ---
 
+### 2026-08-19 (Windows session, later) — Retired stale tracked Flutter app code from this docs-only branch
+
+**Context:** While moving `sq_appt_app_2`/`node_app_server` from `C:\Users\vic\AndroidStudioProjects\`
+to `D:\Claude\` (unrelated task), discovered this checkout (`mobile-redesign`) still had 162
+git-tracked files under `android/`/`ios/`/`lib/`/`linux/`/`macos/`/`test/`/`web/`/`windows/`/
+`pubspec.*` — genuine old pre-redesign app code (e.g. `lib/main.dart`, `lib/view/home/home_page.dart`,
+singular `lib/view/home/notification.dart`), plus committed build artifacts that never should have
+been tracked (`android/app/build/ios/Pods.build/.../dgph` paths). This contradicts
+`IOS_HANDOFF.md`'s documented convention that `mobile-redesign` "never had app code, don't build
+from it" — the code was real, just stale, predating that convention or the branch's re-purposing
+as docs-only.
+
+**Fix:** `git rm -r` on all app-code paths (230 files, 12,907 deletions), confirmed with the user
+first since it's a real commit affecting shared history both Windows and Mac pull from — not just
+local cleanup. Cross-checked with Mac Claude beforehand (it confirmed its own actual docs-editing
+workflow uses a completely separate, unsynced worktree elsewhere, not this checkout or its
+Syncthing mirror, so this removal doesn't touch anything Mac was actively relying on). Also cleared
+the local untracked Flutter build cruft (`build/`, `.dart_tool/`, `.flutter-plugins*`) that was
+sitting alongside the tracked files.
+
+**Committed** `5ba2185`, merged one concurrent Mac commit (`64f4a6d`, docs-only, no overlap) via
+`git pull`, pushed as `fed8051` to `origin/mobile-redesign`. This branch now holds only
+`DEVLOG.md`/`pending_work.md`/briefing docs/mockups, matching its documented intent. Real app code
+lives exclusively in `D:\Claude\sq_appt_app_2` (Windows) and Mac's own separate checkout.
+
+---
+
 ### 2026-08-19 (Mac session) — TestFlight build 1.0.7 (6): picked up the delete-account fix, closing the Windows session's "⚠️ pull before next build" flag
 
 **Context:** Windows session's same-day entry (below) flagged that `fix/android-15-compliance` had
