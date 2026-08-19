@@ -25,10 +25,12 @@ abstract class ConfigUrl {
   static String queueAccessUrl(String bookingId) =>
       "/bookings/$bookingId/queue-access";
   static String manageBookingsLinkUrl = "/careconnect/manage-bookings-link";
+  // Mints a token-bridged SSO link into ccadmin (STAFF session), same pattern as
+  // manageBookingsLinkUrl above but for Service Provider Mode -- see service_provider_mode.dart.
+  static String serviceProviderLinkUrl = "/careconnect/service-provider-link";
 
-  // CareConnect's ccadmin pages, opened directly in a WebView for Service Provider Mode -- staff
-  // already have their own separate ccadmin login, no token bridge needed here (unlike the
-  // patient queue-access flow above).
+  // CareConnect's ccadmin pages -- opened via serviceProviderLinkUrl's token-bridged SSO link
+  // (2026-08-19), not directly, so Service Provider Mode never hits ccadmin's own login wall.
   static String careConnectAdminBaseUrl = "https://ccadmin.smartqsys.com";
 
   static String deleteUserUrl(String userId) => "/users/$userId";
