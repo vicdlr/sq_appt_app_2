@@ -1,5 +1,32 @@
 # iOS Testing Handoff — SmartQ Mobile Redesign
 
+## Standing convention: build-parity check (added 2026-08-19)
+
+Android's version (`android/app/build.gradle`'s `versionCode`/`versionName`) and iOS's version
+(`pubspec.yaml`'s `version:` field) are two completely independent, manually-edited numbers with
+**no automatic linkage** — bumping one has zero effect on the other, and the numbers alone never
+tell you whether e.g. "Android 56 (48.0.8)" and "iOS 1.0.7(6)" ship the same underlying code.
+
+**Whenever either platform's version is bumped, check actual git ancestry against the other
+platform's most recent bump commit before logging it:**
+```bash
+git merge-base --is-ancestor <other platform's last bump commit> <this bump commit> \
+  && echo "at/ahead of parity" || echo "NOT at parity -- see git log below for what's missing"
+git log <older commit>..<newer commit> --oneline   # exactly what's included on one side but not the other
+```
+**Log the actual result in the DEVLOG.md entry for that bump** — not just the version number.
+Something like: *"Android 56 (48.0.8) is at parity with iOS 1.0.7(6) — ancestor check confirmed, no
+commits in between"*, or *"iOS 1.0.7(6) is missing Android 56's SSO commit (3b653eb) — not yet at
+parity, needs another iOS bump before shipping if that fix matters for this release."*
+
+Real example that motivated this (2026-08-19): Android 55 (48.0.7) turned out to be *missing* the
+delete-account fix (`55c9fa6`) that iOS 1.0.7(6) already shipped — despite being the "adjacent"
+version bump chronologically, they were not actually the same update. Android 56 (48.0.8), the
+next bump after that, is the one that actually reached parity with iOS 1.0.7(6). Assuming adjacent
+version numbers = same code would have been wrong here.
+
+---
+
 > Rewritten 2026-08-17 after a Windows session that landed real fixes on top of the Mac's own
 > 2026-08-17 iOS work (FCM token wiring, `firebase_messaging` upgrade, iOS 26 UIScene pattern,
 > simulator-arch fix, App Store Connect encryption exemption — all already committed). This file

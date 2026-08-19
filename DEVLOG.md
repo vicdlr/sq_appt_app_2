@@ -1,5 +1,10 @@
 # sq_appt_app — Development Log
 
+> **Bumping Android's or iOS's version?** Read `IOS_HANDOFF.md`'s "Standing convention:
+> build-parity check" section first and log the actual git-ancestry result in your entry below —
+> not just the version number. The two platforms' version numbers have no automatic relationship
+> to each other.
+
 ---
 
 ### 2026-08-19 (Windows session, later) — Retired stale tracked Flutter app code from this docs-only branch
