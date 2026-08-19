@@ -23,7 +23,27 @@ Connect gets rejected as a duplicate).
 **3. Built and uploaded via Transporter.** `flutter build ipa --release` succeeded clean —
 `Version Number: 1.0.7`, `Build Number: 6`, IPA at `build/ios/ipa` (35.4MB). Contains everything
 through build 5 (all 2026-08-17/18 Windows fixes, the narrower app icon) plus `55c9fa6`'s
-delete-account confirmation fix. **User confirmed upload completed.**
+delete-account confirmation fix. **User confirmed upload completed**, later verified in App Store
+Connect: build 6 shows `Complete`.
+
+**4. Retired every other TestFlight build — only build 6 is live for testers now.** User asked to
+"retire all the rest." Expired via each build's "Expire Build" button in App Store Connect
+(confirmation dialog each time, "This build will no longer be available to testers"): all of
+Version 1.0.7's builds 1 through 5, plus Version 1.0.6 (1) and Version 1.0.5 (1) — those three
+version groups had been sitting `Ready to Submit`/assigned to the `SmartqDev` internal group since
+before this session. Versions 1.0.4, 1.0.3, and 1.0.1's builds were already `Expired` from
+whatever session originally shipped them (see this file's 2026-08-18 entry §1 for how those
+pre-existing builds were discovered). **Verified via the `SmartqDev` group's own Builds tab**
+(not just the main builds list) that it now shows exactly one build, `1.0.7 (6)`, status
+`Testing` — confirms testers actually see build 6 as their only option, not just that other builds
+say "Expired" on the admin side.
+
+**5. Added "What to Test" release notes to build 6** (previously blank) — summarized the
+cumulative changes since this is the only build testers can install: Logout-routing fix, City
+picker fix, Manage Bookings/My Active Queues routing accuracy, My Bookings appointment-time/
+decline-reason detail, the stale View Status fix, the delete-account confirmation fix, and the new
+app icon. Asked testers to specifically exercise sign in/out, new booking, My Bookings, My Active
+Queues, and Settings > Delete Account.
 
 **Still true from 2026-08-18, unchanged**: this app cannot run in any iOS Simulator on this Mac
 (arm64-simulator dead end, see that entry's §7) — device/TestFlight builds are the only way to

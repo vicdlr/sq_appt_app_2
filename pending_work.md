@@ -22,9 +22,18 @@
   logged here. Every "No TestFlight build has ever existed for this app" line elsewhere (this
   file's older entries, `IOS_HANDOFF.md` §4) is stale. **Builds added since**: 1.0.7 (3) — shipped
   from a stale branch missing the 2026-08-17 Windows fixes (logout, City-picker, Manage Bookings
-  routing), don't point testers at it specifically; (4) — has all those fixes plus the narrower app
-  icon; (5) — adds the force-update kill-switch (`41cd593`); **(6), current head** — adds
-  `55c9fa6`'s delete-account confirmation fix. All of (3) through (6) confirmed uploaded.
+  routing); (4) — has all those fixes plus the narrower app icon; (5) — adds the force-update
+  kill-switch (`41cd593`); **(6)** — adds `55c9fa6`'s delete-account confirmation fix. All of (3)
+  through (6) confirmed uploaded.
+
+- **Resolved: all TestFlight builds except 1.0.7 (6) are now expired — testers can only install
+  build 6.** User asked to clean up the clutter of old builds. Expired 1.0.7 (1)-(5), 1.0.6 (1),
+  1.0.5 (1) via App Store Connect's per-build "Expire Build" action; 1.0.4/1.0.3/1.0.1's builds
+  were already expired from an earlier, unlogged session. **Verified from the tester's-eye view**,
+  not just the admin build list: the `SmartqDev` internal group's own Builds tab shows exactly one
+  build, `1.0.7 (6)`. Also added "What to Test" release notes to build 6 (previously blank) —
+  cumulative summary since it's the only installable build, asks testers to specifically exercise
+  sign in/out, new booking, My Bookings, My Active Queues, and Settings > Delete Account.
 
 - **`fix/android-15-compliance`'s Mac-session commits are pushed and `origin` is current** (as of
   build 6, commit history: icon change → three build-number bumps `+3`/`+4`/`+5` → `55c9fa6`
