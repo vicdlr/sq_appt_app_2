@@ -51,7 +51,7 @@ verify anything on iOS here.
 
 ---
 
-### 2026-08-19 (Windows session) — Registration broken for all new users, root-caused and fixed; account deletion redesigned as soft-delete so re-registration works; **needs a new TestFlight build before iOS testers hit either bug**
+### 2026-08-19 (Windows session) — Registration broken for all new users, root-caused and fixed; account deletion redesigned as soft-delete so re-registration works; Android 56 (48.0.8) submitted to Open Testing
 
 **1. Registration was broken for every new user, not just the one reported.** User reported
 `joeydlr@gmail.com` got a "Failed to register" dialog signing up. Checked Render's live logs for
@@ -101,13 +101,24 @@ confirmation — otherwise the existing error dialog shows and the user stays on
 - This repo (`mobile-redesign`): `dc340f4`, same fix mirrored for consistency — rebased onto the
   Mac session's `a6a68ed` devlog commit, pushed.
 
-**⚠️ For the Mac session — pull before the next TestFlight build.** `fix/android-15-compliance`
-has a new commit (`55c9fa6`) on top of whatever this Mac last built (`f97cf7e`, 1.0.7+5 per
-`pending_work.md` below). It's a small, low-risk client change (one file, `settings.dart`'s delete-
-account flow) but any TestFlight build cut from a stale local branch will ship the old
-fire-and-forget delete behavior — `git fetch && git rebase origin/fix/android-15-compliance` (or
-pull) before building, same "confirm you're actually on origin's head" step that bit build 1.0.7(3)
-on 2026-08-18.
+**Resolved same-day: the Mac session picked up `55c9fa6` and shipped TestFlight build 1.0.7(6)**
+— see that session's entry above, logged earlier on this page since it landed chronologically after
+this one but appears first. No outstanding action for iOS from this fix.
+
+**3. Built and submitted Android version 56 (48.0.8) to Open Testing.** Before building, found
+`sq_appt_app_2`'s working tree already had uncommitted, in-progress work unrelated to this fix — a
+"Service Provider Mode" SSO token-bridge feature (`configurl.dart`, `service_provider_mode.dart`),
+paired with an also-uncommitted new endpoint in the local `node_app_server` checkout
+(`/careconnect/service-provider-link`). Not authored this session, not deployed, not tested —
+stashed it before building so the release wouldn't ship a half-finished feature, then restored it
+afterward untouched. Bumped `android/app/build.gradle` 55→56 (48.0.7→48.0.8, `969ff3a`), built
+`flutter build appbundle --release` on the pinned 3.29.3 SDK (38.6MB `.aab`), uploaded and submitted
+via Play Console. **Account gotcha worth remembering**: `vicdlr@gmail.com`'s only associated
+developer account (`devteam@smartqsys`) is closed/inactive since 2021 — the real publishing account
+(`Vic10809`, app `com.smartqsys.sq_notification`) is under a *different* Google identity,
+`vicsq10809@gmail.com`. Submitted only the new "56" change; left the pre-existing "55 (48.0.7) —
+Start full rollout" entry sitting in Publishing overview's "Changes ready to publish" (Google-approved,
+never manually published) completely untouched, since that wasn't part of this task.
 
 ---
 

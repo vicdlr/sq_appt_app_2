@@ -14,6 +14,28 @@
   rebuilt, and confirmed the Transporter upload completed. Full story in `DEVLOG.md`'s 2026-08-19
   "(Mac session)" entry.
 
+- **Android version 56 (48.0.8) submitted to Open Testing 2026-08-19 — awaiting Google's review.**
+  Ships the same `deleteAccount()` await/check fix (`55c9fa6`/`969ff3a` on
+  `fix/android-15-compliance`) as TestFlight build 1.0.7(6) above, on top of Android's 55. Built and
+  submitted via `vicsq10809@gmail.com`'s Play Console account (**not** `vicdlr@gmail.com` — that
+  identity's only associated developer account, `devteam@smartqsys`, is closed/inactive since 2021;
+  don't waste time trying it again). Submitted only the new "56" change under Publishing overview —
+  the pre-existing "55 (48.0.7) — Start full rollout" entry that was already sitting in "Changes
+  ready to publish" (approved by Google, never manually published) was deliberately left untouched,
+  not part of this submission.
+
+- **Found mid-session: uncommitted, in-progress work already sitting in `sq_appt_app_2`'s working
+  tree** (`lib/api/configurl.dart`, `lib/view/home/service_provider_mode.dart`) implementing a
+  "Service Provider Mode" SSO token-bridge — mints a link via a new `/careconnect/service-provider-link`
+  backend endpoint (itself uncommitted in the local `node_app_server` checkout, added 2026-08-19 per
+  its own code comments) instead of opening `ccadmin` directly, so mobile access never hits
+  `ccadmin`'s own login wall. **Not authored by this session, not something this session evaluated
+  or tested** — stashed twice (once before building 56, restored after) purely so the Android
+  release build wouldn't accidentally ship an unfinished, undeployed feature. Currently back in the
+  working tree, still uncommitted, exactly as found. Whoever picks this up next: it depends on the
+  matching uncommitted backend endpoint actually being committed and deployed to Render first, or
+  every card in Service Provider Mode will fail to open.
+
 - **Correction to earlier entries in this file and to `IOS_HANDOFF.md`: TestFlight builds already
   existed before the 2026-08-18 Mac session, and more have been added since.** App Store Connect's
   app-level page already showed "SQ Appt App" at **iOS 1.0.4, Ready for Distribution**, with
