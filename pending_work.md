@@ -7,39 +7,30 @@
 
 ---
 
-## Open / needs attention (as of 2026-08-19, Windows session update)
+## Open / needs attention (as of 2026-08-19, Mac session update)
 
-- **⚠️ For the Mac session: `fix/android-15-compliance` has a new commit (`55c9fa6`) not yet in any
-  TestFlight build — pull it before cutting the next one.** Full story in `DEVLOG.md`'s 2026-08-19
-  entry; short version: registration was completely broken for all new users (missing DB
-  auto-increment on `mdevice.id`, now fixed on the backend, no client changes needed for that part),
-  and account deletion is now a proper soft-delete so re-registering a previously-deleted email
-  works instead of getting blocked as a duplicate — required a client fix too, since
-  `deleteAccount()` in `settings.dart` wasn't awaiting/checking the delete request's result before
-  clearing local session and navigating away. That fix is `55c9fa6`, rebased cleanly on top of this
-  Mac's `f97cf7e` (1.0.7+5) — `git fetch && git rebase origin/fix/android-15-compliance` (or pull)
-  first, same "confirm you're on origin's head" step that bit build 1.0.7(3) on 2026-08-18. Backend
-  half (`node_app_server` `8bf38d2`) is already pushed to `peer-notification` and should be live via
-  Render auto-deploy — no Mac action needed for that side, just the client rebuild.
+- **Resolved: build 1.0.7 (6) contains `55c9fa6`'s delete-account fix.** The Windows session's ⚠️
+  flag (pull before cutting the next TestFlight build) is closed — Mac pulled/rebased cleanly,
+  rebuilt, and confirmed the Transporter upload completed. Full story in `DEVLOG.md`'s 2026-08-19
+  "(Mac session)" entry.
 
 - **Correction to earlier entries in this file and to `IOS_HANDOFF.md`: TestFlight builds already
-  existed before this session, and more were added.** App Store Connect's app-level page already
-  showed "SQ Appt App" at **iOS 1.0.4, Ready for Distribution**, with TestFlight builds **1.0.4
-  (1)**, **1.0.5 (1)**, **1.0.6 (1)** already `Complete` and **1.0.7 (1)**/**1.0.7 (2)** already
-  `Ready to Submit` — none of this was ever logged here. Every "No TestFlight build has ever
-  existed for this app" line elsewhere (this file's older entries, `IOS_HANDOFF.md` §4) is stale.
-  **This Mac session added builds 1.0.7 (3), (4), and (5)** — full narrative in `DEVLOG.md`'s
-  2026-08-18 "(Mac session)" entry. Short version: (3) shipped from a stale branch missing the
-  2026-08-17 Windows fixes (logout, City-picker, Manage Bookings routing) — don't point testers at
-  it specifically. (4) has all those fixes plus a new narrower app icon, confirmed uploaded. (5)
-  adds the force-update kill-switch (`41cd593`) on top of (4) — **upload not yet confirmed as of
-  this writing**, Transporter was open mid-delivery.
+  existed before the 2026-08-18 Mac session, and more have been added since.** App Store Connect's
+  app-level page already showed "SQ Appt App" at **iOS 1.0.4, Ready for Distribution**, with
+  TestFlight builds **1.0.4 (1)**, **1.0.5 (1)**, **1.0.6 (1)** already `Complete` and **1.0.7
+  (1)**/**1.0.7 (2)** already `Ready to Submit` before that session started — none of it was ever
+  logged here. Every "No TestFlight build has ever existed for this app" line elsewhere (this
+  file's older entries, `IOS_HANDOFF.md` §4) is stale. **Builds added since**: 1.0.7 (3) — shipped
+  from a stale branch missing the 2026-08-17 Windows fixes (logout, City-picker, Manage Bookings
+  routing), don't point testers at it specifically; (4) — has all those fixes plus the narrower app
+  icon; (5) — adds the force-update kill-switch (`41cd593`); **(6), current head** — adds
+  `55c9fa6`'s delete-account confirmation fix. All of (3) through (6) confirmed uploaded.
 
-- **`fix/android-15-compliance` has 5 local commits on this Mac not yet pushed to `origin`**: the
-  icon change, a cleanup commit for an accidentally-committed stray file, and three version-bump
-  commits (`+3`/`+4`/`+5` in sequence — the first two are "dead" build numbers already consumed by
-  uploads, kept as real commits rather than amended). **Push these before assuming `origin` matches
-  what's actually been built and uploaded.**
+- **`fix/android-15-compliance`'s Mac-session commits are pushed and `origin` is current** (as of
+  build 6, commit history: icon change → three build-number bumps `+3`/`+4`/`+5` → `55c9fa6`
+  (Windows) → `+6` bump). No outstanding local-only commits on this Mac as of this writing — check
+  `git status`/`git log origin/fix/android-15-compliance..HEAD` before assuming that's still true
+  in a later session.
 
 - **This Mac's Flutter SDK is now 3.47.0** (upgraded in place from a stale 3.24.3 via `flutter
   upgrade --force`, needed to unblock `pub get` — same `device_info_plus ^11.5.0` Dart-version

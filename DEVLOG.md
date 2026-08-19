@@ -2,6 +2,35 @@
 
 ---
 
+### 2026-08-19 (Mac session) — TestFlight build 1.0.7 (6): picked up the delete-account fix, closing the Windows session's "⚠️ pull before next build" flag
+
+**Context:** Windows session's same-day entry (below) flagged that `fix/android-15-compliance` had
+moved to `55c9fa6` (delete-account confirmation fix) on top of what this Mac had last built
+(`f97cf7e`, 1.0.7+5) and warned any build cut from a stale local branch would ship the old
+fire-and-forget delete behavior — the same mistake that shipped build 1.0.7(3) without the
+2026-08-17 Windows fixes. This session is that pull.
+
+**1. `git fetch && git rebase origin/fix/android-15-compliance`** picked up `55c9fa6` cleanly, no
+conflicts. No dependency changes in that commit (one Dart file, `settings.dart`), so no `pod
+install` needed.
+
+**2. Confirmed build 1.0.7 (5) had actually finished uploading** (asked directly rather than
+assuming) before bumping — **build number is now 1.0.7+6**, per this session's established
+one-build-number-per-upload discipline (see 2026-08-18 entry below for why: build 3 shipped from
+stale code, and reusing a build number that's already `Ready to Submit`/`Processing` in App Store
+Connect gets rejected as a duplicate).
+
+**3. Built and uploaded via Transporter.** `flutter build ipa --release` succeeded clean —
+`Version Number: 1.0.7`, `Build Number: 6`, IPA at `build/ios/ipa` (35.4MB). Contains everything
+through build 5 (all 2026-08-17/18 Windows fixes, the narrower app icon) plus `55c9fa6`'s
+delete-account confirmation fix. **User confirmed upload completed.**
+
+**Still true from 2026-08-18, unchanged**: this app cannot run in any iOS Simulator on this Mac
+(arm64-simulator dead end, see that entry's §7) — device/TestFlight builds are the only way to
+verify anything on iOS here.
+
+---
+
 ### 2026-08-19 (Windows session) — Registration broken for all new users, root-caused and fixed; account deletion redesigned as soft-delete so re-registration works; **needs a new TestFlight build before iOS testers hit either bug**
 
 **1. Registration was broken for every new user, not just the one reported.** User reported
