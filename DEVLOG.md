@@ -2,6 +2,66 @@
 
 ---
 
+### 2026-08-19 (Windows session) — Registration broken for all new users, root-caused and fixed; account deletion redesigned as soft-delete so re-registration works; **needs a new TestFlight build before iOS testers hit either bug**
+
+**1. Registration was broken for every new user, not just the one reported.** User reported
+`joeydlr@gmail.com` got a "Failed to register" dialog signing up. Checked Render's live logs for
+`node_app_server` and found the real error: `null value in column "id" of relation "mdevice"
+violates not-null constraint` (Postgres `23502`). Root cause: `mdevice.id` had no default and no
+owned sequence at all (`pg_get_serial_sequence` returned null, no triggers) — the last row to get
+an `id` was `134` on 2026-08-13; every `/register`/`/pre-register` insert since then hit this same
+NOT NULL violation, since neither route supplies `id` explicitly. Confirmed via direct DB query
+that `joeydlr@gmail.com` had zero rows (ruling out the "email already exists" path) — this was a
+live, systemic outage, not a per-user issue. **Fixed** by recreating the sequence and wiring it
+back as the column default (`CREATE SEQUENCE mdevice_id_seq OWNED BY mdevice.id`, `setval` to the
+current max, `ALTER TABLE ... SET DEFAULT nextval(...)`) — run directly against production by the
+user via Database Workbench (statements had to be executed one at a time; Postgres's extended
+query protocol rejects multiple commands in one prepared statement). Verified fixed: column default
+is `nextval('mdevice_id_seq'::regclass)`, sequence `last_value=134, is_called=true`.
+
+**2. Follow-up product bug, also fixed: deleted accounts couldn't re-register.** User noted that
+since account deletion doesn't seem to free up the email, a previously-deleted user re-registering
+just gets blocked as a duplicate. Investigated `DELETE /users/:userId` — it *was* a real hard
+`DELETE FROM mdevice`, so in principle deletion should already free the email... except
+`sq_appt_app_2`'s `deleteAccount()` (`settings.dart`) fired the request **without awaiting or
+checking the result** — the caller cleared local session and navigated to Signup regardless of
+whether the server call actually succeeded, so a failed delete (network blip, race, anything)
+silently left the row behind while the user believed the account was gone.
+
+Rather than just fixing the client bug and leaving hard-delete in place, redesigned this as an
+explicit soft-delete (flagged as a security-relevant decision, confirmed with the user before
+implementing): `DELETE /users/:userId` now sets `isdelete=true` + clears `auth_token` instead of
+removing the row; `/register` blocks an existing email only when `isdelete=false`, and **reactivates**
+a soft-deleted row in place (new password/device/verification token, same `guid`/`customerid` so
+old bookings still resolve) instead of either blocking it or inserting a duplicate; `/login` now
+rejects soft-deleted accounts (wasn't checked before — needed once the row persists after
+"deletion" instead of disappearing). This specifically avoids a takeover hole: nobody can hijack a
+still-active account by "re-registering" someone else's email, since only rows already marked
+deleted are reactivatable. Paired client fix: `deleteAccount()` in **both** `sq_appt_app_2`
+(`fix/android-15-compliance`) and this docs-workspace copy (`mobile-redesign`) now returns whether
+the server confirmed deletion (`200`), and local logout/navigation only happens on that
+confirmation — otherwise the existing error dialog shows and the user stays on Settings.
+
+**Commits:**
+- `node_app_server`: `8bf38d2` ("Soft-delete accounts and allow re-registration of deleted emails")
+  — pushed to **both** `main` and `peer-notification` (Render's actual deploy branch). Should
+  already be live via Render auto-deploy.
+- `sq_appt_app_2` `fix/android-15-compliance`: `55c9fa6` ("Fix delete-account not confirming
+  success before clearing local session") — rebased cleanly onto the Mac session's iOS build-number
+  commits (`f97cf7e` etc.), nothing lost, pushed.
+- This repo (`mobile-redesign`): `dc340f4`, same fix mirrored for consistency — rebased onto the
+  Mac session's `a6a68ed` devlog commit, pushed.
+
+**⚠️ For the Mac session — pull before the next TestFlight build.** `fix/android-15-compliance`
+has a new commit (`55c9fa6`) on top of whatever this Mac last built (`f97cf7e`, 1.0.7+5 per
+`pending_work.md` below). It's a small, low-risk client change (one file, `settings.dart`'s delete-
+account flow) but any TestFlight build cut from a stale local branch will ship the old
+fire-and-forget delete behavior — `git fetch && git rebase origin/fix/android-15-compliance` (or
+pull) before building, same "confirm you're actually on origin's head" step that bit build 1.0.7(3)
+on 2026-08-18.
+
+---
+
 ### 2026-08-18 (Mac session) — First real TestFlight uploads; corrected a "no TestFlight build ever existed" claim; narrower app icon; arm64-simulator dead end documented
 
 **Context:** Picked up `IOS_HANDOFF.md`'s instruction to get `fix/android-15-compliance` building on

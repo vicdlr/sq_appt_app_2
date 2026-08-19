@@ -7,7 +7,20 @@
 
 ---
 
-## Open / needs attention (as of 2026-08-18, Mac session update)
+## Open / needs attention (as of 2026-08-19, Windows session update)
+
+- **⚠️ For the Mac session: `fix/android-15-compliance` has a new commit (`55c9fa6`) not yet in any
+  TestFlight build — pull it before cutting the next one.** Full story in `DEVLOG.md`'s 2026-08-19
+  entry; short version: registration was completely broken for all new users (missing DB
+  auto-increment on `mdevice.id`, now fixed on the backend, no client changes needed for that part),
+  and account deletion is now a proper soft-delete so re-registering a previously-deleted email
+  works instead of getting blocked as a duplicate — required a client fix too, since
+  `deleteAccount()` in `settings.dart` wasn't awaiting/checking the delete request's result before
+  clearing local session and navigating away. That fix is `55c9fa6`, rebased cleanly on top of this
+  Mac's `f97cf7e` (1.0.7+5) — `git fetch && git rebase origin/fix/android-15-compliance` (or pull)
+  first, same "confirm you're on origin's head" step that bit build 1.0.7(3) on 2026-08-18. Backend
+  half (`node_app_server` `8bf38d2`) is already pushed to `peer-notification` and should be live via
+  Render auto-deploy — no Mac action needed for that side, just the client rebuild.
 
 - **Correction to earlier entries in this file and to `IOS_HANDOFF.md`: TestFlight builds already
   existed before this session, and more were added.** App Store Connect's app-level page already
