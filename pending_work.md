@@ -9,6 +9,16 @@
 
 ## Open / needs attention (as of 2026-08-19, Mac session update)
 
+- **⚠️ Build 1.0.7 (6) is submitted for external Beta App Review — status `Waiting for Review` as
+  of this writing, not yet approved.** A new External Testing group ("External Testers") was
+  created with **0 testers added yet** — whoever picks this up next should check whether Apple
+  approved it (usually 24-48 hours) and, once approved, actually invite testers (email invites or
+  the group's public TestFlight link, both under that group's Settings tab in App Store Connect).
+  Chosen over going straight to production App Store review — mirrors the Android precedent
+  (Closed → Open Testing before any production release) and this Mac can't Simulator-test iOS at
+  all (see below), so real external testers are the only pre-release verification available.
+  Full story in `DEVLOG.md`'s 2026-08-19 "(Mac session)" entry, item 6.
+
 - **Resolved: build 1.0.7 (6) contains `55c9fa6`'s delete-account fix.** The Windows session's ⚠️
   flag (pull before cutting the next TestFlight build) is closed — Mac pulled/rebased cleanly,
   rebuilt, and confirmed the Transporter upload completed. Full story in `DEVLOG.md`'s 2026-08-19
