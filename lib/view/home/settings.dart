@@ -8,6 +8,7 @@ import 'package:sq_notification/view/auth/SignUp.dart';
 import 'package:sq_notification/view/home/widget/search_dropdown.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../constant/dailog.dart';
 import '../../provider/theme_provider.dart';
 import 'WebView.dart';
 
@@ -21,21 +22,28 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  void deleteAccount() async {
+  Future<bool> deleteAccount() async {
     var headers = {'x-access-token': SharedPref.getAuthToken()};
     var dio = Dio();
-    var response = await dio.request(
-      'https://node-app-server.onrender.com/users/${SharedPref.getUserData().id}',
-      options: Options(
-        method: 'DELETE',
-        headers: headers,
-      ),
-    );
+    try {
+      var response = await dio.request(
+        'https://node-app-server.onrender.com/users/${SharedPref.getUserData().id}',
+        options: Options(
+          method: 'DELETE',
+          headers: headers,
+        ),
+      );
 
-    if (response.statusCode == 200) {
-      print("user delete successfully === ${response.data}");
-    } else {
-      print(response.statusMessage);
+      if (response.statusCode == 200) {
+        print("user delete successfully === ${response.data}");
+        return true;
+      } else {
+        print(response.statusMessage);
+        return false;
+      }
+    } catch (e) {
+      print("Error deleting account: $e");
+      return false;
     }
   }
 
@@ -294,13 +302,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     onPressed: () async {
                                       Navigator.of(context)
                                           .pop(); // Close dialog
-                                      deleteAccount(); // Call the deleteAccount method
-                                      // Optionally, log out and navigate to signup page
-                                      SharedPref.deleteData();
-                                      Navigator.of(context).pushAndRemoveUntil(
-                                          MaterialPageRoute(builder: (context) {
-                                        return const SignupPage();
-                                      }), (route) => false);
+                                      final deleted = await deleteAccount();
+                                      if (!context.mounted) return;
+                                      if (deleted) {
+                                        SharedPref.deleteData();
+                                        Navigator.of(context).pushAndRemoveUntil(
+                                            MaterialPageRoute(builder: (context) {
+                                          return const SignupPage();
+                                        }), (route) => false);
+                                      } else {
+                                        Dialogs.errorDialog(context,
+                                            "Failed to delete account. Please check your connection and try again.");
+                                      }
                                     },
                                     child: Text("Yes"),
                                   ),
