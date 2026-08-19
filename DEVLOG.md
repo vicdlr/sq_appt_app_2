@@ -45,6 +45,17 @@ decline-reason detail, the stale View Status fix, the delete-account confirmatio
 app icon. Asked testers to specifically exercise sign in/out, new booking, My Bookings, My Active
 Queues, and Settings > Delete Account.
 
+**6. Submitted build 1.0.7 (6) for external testing — first Beta App Review submission for this
+app.** User asked whether to promote to external testing or go straight to a production App Store
+submission; recommended external testing first (mirrors the Android precedent of Closed → Open
+Testing before any production release, and this Mac has no way to Simulator-test iOS at all — see
+§7 below — so real external testers are the only pre-release verification available). Created a
+new External Testing group (**"External Testers"**, 0 testers as of this writing — user will add
+people afterward via the group's Testers tab or its public TestFlight link), added build 6 to it,
+carried over the same "What to Test" notes from internal testing, and submitted. **Status:
+`Waiting for Review`** (Apple's Beta App Review — typically 24-48 hours, lighter than full App
+Store review). Not yet approved as of this writing.
+
 **Still true from 2026-08-18, unchanged**: this app cannot run in any iOS Simulator on this Mac
 (arm64-simulator dead end, see that entry's §7) — device/TestFlight builds are the only way to
 verify anything on iOS here.
