@@ -34,4 +34,5 @@ abstract class ConfigUrl {
   static String careConnectAdminBaseUrl = "https://ccadmin.smartqsys.com";
 
   static String deleteUserUrl(String userId) => "/users/$userId";
+  static String forgotPasswordUrl = "/forgot-password";
 }

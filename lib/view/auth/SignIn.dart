@@ -4,7 +4,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../Model/UserDataModel.dart';
 import '../../SharedPrefrence/SharedPrefrence.dart';
@@ -78,13 +77,78 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _launchURL() async {
-    final Uri url = Uri.parse('https://node-app-server.onrender.com/forgetPasswordPage');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
-    }
+  // Was previously just opening a browser to a URL that doesn't match any real server route
+  // (the actual page is /forget-password-page, and it needs an email+token the browser was never
+  // given) -- landed on "A token is required for authentication" from the server's fallback auth
+  // middleware. The real flow is POST /forgot-password with just an email, which emails the user
+  // a real reset link; collect that email in-app instead.
+  void _showForgotPasswordDialog() {
+    final controller = TextEditingController(
+      text: isEmailValid(emailTextEditingController.text) ? emailTextEditingController.text : '',
+    );
+    bool sending = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text("Forgot Password"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Enter your account email and we'll send you a password reset link."),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(hintText: "Email address"),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: sending ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: sending
+                      ? null
+                      : () async {
+                          final email = controller.text.trim();
+                          if (!isEmailValid(email)) {
+                            await Fluttertoast.showToast(msg: "Enter a valid email address");
+                            return;
+                          }
+                          setDialogState(() => sending = true);
+                          final result = await DioApi.post(
+                            path: ConfigUrl.forgotPasswordUrl,
+                            data: {"email": email.toLowerCase()},
+                          );
+                          setDialogState(() => sending = false);
+                          if (result.response?.data is Map && result.response?.data["success"] == true) {
+                            Navigator.of(dialogContext).pop();
+                            await Fluttertoast.showToast(
+                                msg: result.response?.data["message"] ?? "Password reset link sent to your email");
+                          } else if (result.dioError != null) {
+                            result.handleError(dialogContext);
+                          } else {
+                            await Fluttertoast.showToast(msg: "Failed to send reset link. Please try again.");
+                          }
+                        },
+                  child: sending
+                      ? const SizedBox(
+                          height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text("Send Reset Link"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   InputBorder _fieldBorder() => OutlineInputBorder(
@@ -164,7 +228,7 @@ class _LoginPageState extends State<LoginPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: _launchURL,
+                        onPressed: _showForgotPasswordDialog,
                         child: const Text("Forgot Password?", style: TextStyle(color: kSmartQGreen)),
                       ),
                     ),
