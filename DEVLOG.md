@@ -80,12 +80,15 @@ Google review than Open Testing once an app has publishing history -- both go th
 lightweight testing-track review. The real "instant, zero review" option is Internal Testing.
 User chose Internal Testing once this was clarified.
 
-**5. Building Android 58 (48.0.10) for Internal Testing, in progress.** Needed a new version code
--- Play Console requires uniqueness across *every* track, not just within one, and 57 was already
-claimed by Open Testing. Bumped and rebuilt (same commit as the firebase_core fix, `4a88781`).
-Upload hit a minor snag (browser's file picker reused a stale cached selection, still showing
-version code 57) -- not yet confirmed resolved as of this entry; check `pending_work.md` /
-Internal Testing's Releases tab for the actual outcome.
+**5. Android 58 (48.0.10) shipped to Internal Testing — live immediately, no review.** Needed a
+new version code -- Play Console requires uniqueness across *every* track, not just within one,
+and 57 was already claimed by Open Testing. Bumped and rebuilt (same commit as the firebase_core
+fix, `4a88781`). Upload hit a minor snag first (browser's file picker reused a stale cached
+selection, still showing version code 57, rejected) -- re-uploaded fresh and it took. Confirmed
+"Available to internal testers" the moment Save and publish was clicked (10:56 AM) -- Internal
+Testing genuinely has no review step, unlike Open/Closed. Same fixes as 57 (Forgot Password, Data
+Capture image compression) plus the firebase_core build fix, now reachable by whoever's already
+on the existing internal tester list.
 
 ---
 

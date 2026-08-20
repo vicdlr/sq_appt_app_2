@@ -66,14 +66,12 @@
   is **Internal Testing**. User chose Internal Testing instead of Closed Testing once this was
   clarified.
 
-- **⏳ In progress: Android 58 (48.0.10) upload to Internal testing, not yet completed.** Existing
-  tester list already configured (100-tester cap, invite-only) -- track summary showed last real
-  release was 42/42.0.1 from Apr 2025, very stale. Hit a minor snag: the first upload attempt
-  reused a stale cached file from the browser's "recent files" picker (still version code 57,
-  rejected with "Version code 57 has already been used") -- asked the user to remove and re-upload
-  fresh from `D:\Claude\sq_appt_app_2\build\app\outputs\bundle\release\app-release.aab` (confirmed
-  on disk this file is genuinely the 58 build, timestamped correctly). **Not yet confirmed
-  resolved as of this note** -- check Internal testing's Releases tab for the actual outcome.
+- **Resolved: Android 58 (48.0.10) is live on Internal testing.** First upload attempt reused a
+  stale cached file from the browser's "recent files" picker (still version code 57, rejected);
+  re-uploaded fresh and it took. Internal testing has no review step at all -- confirmed
+  "Available to internal testers" immediately after Save and publish (2026-08-20, 10:56 AM),
+  visible to whoever's already on the existing 100-tester-cap invite list. Carries the same fixes
+  as 57 (Forgot Password, Data Capture image compression) plus the firebase_core build fix.
 
 ## Open / needs attention (as of 2026-08-19, Mac session update)
 
