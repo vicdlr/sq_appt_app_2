@@ -36,7 +36,12 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   package_info_plus: ^8.3.0
-#  firebase_core: ^2.24.2
+  # Was commented out despite firebase_messaging depending on it -- Dart-level resolution masked
+  # this (firebase_core was already pulled in transitively, locked at 4.13.0), but FlutterFire's
+  # Android Gradle plugin requires it to be a direct pubspec dependency to register the native
+  # plugin at all ("Could not find the firebase_core FlutterFire plugin"). Pinned to the version
+  # already locked so this doesn't force any other resolution to change.
+  firebase_core: ^4.13.0
 #  firebase_storage: ^11.6.0
 #  firebase_auth: ^4.16.0
   fluttertoast: ^9.0.0
