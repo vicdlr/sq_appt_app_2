@@ -7,6 +7,39 @@
 
 ---
 
+### 2026-08-20 (Windows session) — Root-caused and fixed: "Forgot Password" showed "A token is required for authentication"
+
+**Context:** User reported the Sign In page's "Forgot Password?" link was broken, mentioning
+something about needing a token.
+
+**Root cause, confirmed live via direct `curl`, not guesswork:** `SignIn.dart`'s `_launchURL()`
+opened `https://node-app-server.onrender.com/forgetPasswordPage` directly in the device's browser.
+That path doesn't match any real route on the server -- the actual reset-landing page is
+`/forget-password-page` (hyphenated), and it requires `email`+`token` query params supplied by a
+real reset-request flow, neither of which the bare browser-launch ever provided. Hitting the wrong,
+param-less path fell through to the server's fallback auth middleware, which returned exactly what
+the user saw: `403 "A token is required for authentication"`. Confirmed the correctly-shaped
+requests work fine (`GET /forget-password-page?email=...&token=...` → `400 "Invalid or expired
+password reset link"` for a bogus token, as expected; `POST /forgot-password` with a bogus email →
+`400 "Email is incorrect, Enter Correct email"`, also as expected) -- the entire server-side reset
+flow (`POST /forgot-password` generates+emails a real token link → `GET /forget-password-page`
+renders a reset form → `POST /setForgetPassword` completes it) was already fully built and working;
+the mobile app simply never called the first step.
+
+**Fix:** `sq_appt_app_2/lib/view/auth/SignIn.dart` (commit `0438736` on `fix/android-15-compliance`,
+pushed) -- replaced the dead browser-launch with an in-app `AlertDialog` that collects the email
+(pre-filled from the Sign In form if already valid) and calls `POST /forgot-password`, surfacing
+its real success/error message via the same `Result.handleError`/`Fluttertoast` conventions already
+used elsewhere on this screen. Added `ConfigUrl.forgotPasswordUrl`. `flutter analyze` clean, no new
+warnings. **Not tested end-to-end on a device this session** (no device/emulator available) -- the
+server-side curl checks above confirm the API contract is right, but the actual in-app dialog
+flow/email delivery hasn't been click-tested.
+
+**For the Mac session:** flagged in `pending_work.md` -- pull `fix/android-15-compliance` before
+the next TestFlight build. Android's current submission (56/48.0.8) doesn't have this fix either.
+
+---
+
 ### 2026-08-19 (Windows session, later) — Retired stale tracked Flutter app code from this docs-only branch
 
 **Context:** While moving `sq_appt_app_2`/`node_app_server` from `C:\Users\vic\AndroidStudioProjects\`

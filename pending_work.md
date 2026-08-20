@@ -7,6 +7,25 @@
 
 ---
 
+## Open / needs attention (as of 2026-08-20, Windows session)
+
+- **⚠️ For the Mac session: `fix/android-15-compliance` has a new commit (`0438736`) fixing a real
+  "Forgot Password" bug — pull before the next TestFlight build.** User reported tapping "Forgot
+  Password?" on Sign In showed "A token is required for authentication." Root-caused: the button
+  just opened `https://node-app-server.onrender.com/forgetPasswordPage` directly in a browser --
+  that path doesn't match any real server route (the actual page is `/forget-password-page`,
+  needing `email`+`token` query params the browser was never given), so it fell through to the
+  server's fallback auth middleware. Confirmed live via direct `curl`. The real flow
+  (`POST /forgot-password` with just an email → emails a working reset link → that page's own form
+  completes the reset) was already fully implemented server-side, just never called from the app.
+  Fixed in `lib/view/auth/SignIn.dart` -- replaced the dead browser-launch with an in-app dialog
+  that collects the email and calls that endpoint. `flutter analyze` clean. **Not yet tested
+  end-to-end on a device** (no device/emulator available this session) -- worth a real click-through
+  (enter a known account's email, confirm the reset email arrives, click through to a working reset
+  page) before or shortly after it ships. `git fetch && git rebase origin/fix/android-15-compliance`
+  before building, same standing rule as every prior cross-session handoff on this branch.
+  Android's `48.0.8`/56 doesn't yet have this fix either -- worth a follow-up bump once verified.
+
 ## Open / needs attention (as of 2026-08-19, Mac session update)
 
 - **⚠️ Build 1.0.7 (6) is submitted for external Beta App Review — status `Waiting for Review` as
