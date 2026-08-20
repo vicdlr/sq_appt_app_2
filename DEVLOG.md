@@ -40,6 +40,55 @@ the next TestFlight build. Android's current submission (56/48.0.8) doesn't have
 
 ---
 
+### 2026-08-20 (Windows session, later) — Data Capture image compression; a real build-breaking pubspec bug found and fixed; Android 57 shipped to Open Testing; Closed vs. Internal testing clarified
+
+**1. Confirmed the CareConnect OCR-failure investigation wasn't a mobile-app problem, then made a
+real improvement anyway.** User asked to verify the ~2/3 `capturedText: null` rate found in
+`SQ_CareConnect` wasn't caused by the mobile app uploading bad images. Checked 6 real failing
+images directly against their Cloudinary URLs -- all loaded fine, correct content-type, real byte
+content (2-7MB each). Not corruption. But `form_page.dart`'s `ImagePicker().pickImage()` had no
+compression params at all, uploading full native camera resolution -- a real contributing risk
+factor for the backend's fetch-then-send-to-Gemini step timing out on larger files. Added
+`maxWidth: 1920, imageQuality: 80` (commit `24c8657`) -- still plenty legible for a document
+photo, cuts typical file size substantially, and speeds up upload for users on weak connections
+too.
+
+**2. Found and fixed a real, unrelated build-breaking bug while cutting the next Android
+release.** `flutter build appbundle --release` failed immediately: "Could not find the
+firebase_core FlutterFire plugin, have you added it as a dependency in your pubspec?"
+`firebase_core` was commented out in `pubspec.yaml` despite `firebase_messaging` needing it --
+Dart-level resolution masked this (already pulled in transitively via `pubspec.lock`, locked at
+`4.13.0`), but FlutterFire's Android Gradle plugin requires it as a **direct** pubspec dependency
+to register the native Gradle project at all. Fixed by declaring it directly at the already-locked
+version (`firebase_core: ^4.13.0`) -- no other resolution changed (`pubspec.lock` diff was one
+line). Along the way also hit a real pub-cache corruption issue (`firebase_core-4.13.0` and ~15
+other packages had empty/incomplete cache directories, likely an old interrupted download) that
+looked like the same bug but wasn't -- `flutter pub cache repair`, run twice, cleared it. Both
+issues are now resolved; commit `4a88781` (bundled with the version bump below).
+
+**3. Android version 57 (48.0.9) submitted to Open Testing** -- ships the Forgot Password fix
+(`0438736`) and the image compression above (`24c8657`) on top of 56. Submitted only the new "57"
+change; the pre-existing "56 (48.0.8) -- Start full rollout" entry (Google-approved, never
+manually published) was again left untouched, same as every prior release this session.
+
+**4. User asked about submitting to Closed Testing "for quicker release."** Checked the actual
+Play Console state before assuming: two Closed Testing tracks already exist (`BetaTest`, dormant
+since Mar 2025; `Alpha`, still holding the long-stale build 52/48.0.4 that's been flagged
+repeatedly throughout this project's history as deliberately untouched -- confirmed **still**
+sitting there, unresolved). Clarified for the user: Closed Testing doesn't actually get faster
+Google review than Open Testing once an app has publishing history -- both go through the same
+lightweight testing-track review. The real "instant, zero review" option is Internal Testing.
+User chose Internal Testing once this was clarified.
+
+**5. Building Android 58 (48.0.10) for Internal Testing, in progress.** Needed a new version code
+-- Play Console requires uniqueness across *every* track, not just within one, and 57 was already
+claimed by Open Testing. Bumped and rebuilt (same commit as the firebase_core fix, `4a88781`).
+Upload hit a minor snag (browser's file picker reused a stale cached selection, still showing
+version code 57) -- not yet confirmed resolved as of this entry; check `pending_work.md` /
+Internal Testing's Releases tab for the actual outcome.
+
+---
+
 ### 2026-08-19 (Windows session, later) — Retired stale tracked Flutter app code from this docs-only branch
 
 **Context:** While moving `sq_appt_app_2`/`node_app_server` from `C:\Users\vic\AndroidStudioProjects\`

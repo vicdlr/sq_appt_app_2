@@ -46,6 +46,35 @@
   the first pass left some packages still failed, second pass cleared them) fixed it. Not a code
   issue, don't chase this if it doesn't recur.
 
+- **`fix/android-15-compliance` also has `4a88781`: a real build-breaking pubspec bug, fixed.**
+  `firebase_core` was commented out in `pubspec.yaml` despite `firebase_messaging` requiring it --
+  Dart-level resolution masked this (already pulled in transitively, locked at `4.13.0`), but
+  FlutterFire's Android Gradle plugin needs it as a **direct** pubspec dependency to register the
+  native plugin at all, and errored with "Could not find the firebase_core FlutterFire plugin."
+  Declared it directly at the already-locked version (`firebase_core: ^4.13.0`) so no other
+  resolution changed. **Without this fix, no clean build of this branch succeeds** -- worth
+  knowing if the Mac session (different pub cache, different OS) hits the same error.
+  Also bumped to **58 (48.0.10)** in the same commit, since Play Console requires a unique
+  `versionCode` across every track, not just within one (57 was already used on Open Testing).
+
+- **User asked about Closed Testing "for quicker release."** Investigated: this app already has
+  two Closed Testing tracks (`BetaTest`, dormant since Mar 2025; `Alpha`, still holding the
+  long-stale build 52/48.0.4 flagged repeatedly throughout this project's history as deliberately
+  untouched -- **still untouched, not resolved, still sitting there**). Closed Testing doesn't
+  actually get faster Google review than Open Testing for an app with existing publishing history
+  (both get the same lightweight testing-track review) -- the real "instant, zero review" option
+  is **Internal Testing**. User chose Internal Testing instead of Closed Testing once this was
+  clarified.
+
+- **⏳ In progress: Android 58 (48.0.10) upload to Internal testing, not yet completed.** Existing
+  tester list already configured (100-tester cap, invite-only) -- track summary showed last real
+  release was 42/42.0.1 from Apr 2025, very stale. Hit a minor snag: the first upload attempt
+  reused a stale cached file from the browser's "recent files" picker (still version code 57,
+  rejected with "Version code 57 has already been used") -- asked the user to remove and re-upload
+  fresh from `D:\Claude\sq_appt_app_2\build\app\outputs\bundle\release\app-release.aab` (confirmed
+  on disk this file is genuinely the 58 build, timestamped correctly). **Not yet confirmed
+  resolved as of this note** -- check Internal testing's Releases tab for the actual outcome.
+
 ## Open / needs attention (as of 2026-08-19, Mac session update)
 
 - **⚠️ Build 1.0.7 (6) is submitted for external Beta App Review — status `Waiting for Review` as
