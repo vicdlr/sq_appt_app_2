@@ -54,7 +54,17 @@ class _FormPageState extends State<FormPage> {
   }
 
   Future _getImage(ImageSource source) async {
-    final pickedFile = await ImagePicker().pickImage(source: source);
+    // Full native camera resolution was being uploaded uncompressed (real captures ran 2-7MB) --
+    // CareConnect's backend OCR step (lib/prescription-vision.ts) fetches the whole image and
+    // sends it inline to Gemini, so larger files meant more exposure to timeout/rate-limit
+    // failures (2026-08-20, found while investigating a real capturedText=null failure rate).
+    // 1920px/80% quality is plenty for a legible document photo while cutting typical file size
+    // by roughly 5-10x.
+    final pickedFile = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1920,
+      imageQuality: 80,
+    );
     setState(() {
       _image = pickedFile != null ? File(pickedFile.path) : null;
     });
