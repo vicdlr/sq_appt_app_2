@@ -35,8 +35,11 @@
   eliminate -- see `SQ_CareConnect`'s own retry-logic fix for the rest) that failure rate going
   forward. Same pull-before-build note as `0438736` above applies.
 
-- **Android version 57 (48.0.9) built 2026-08-20, Open Testing submission in progress** — ships both
-  `0438736` (Forgot Password fix) and `24c8657` (Data Capture image compression) on top of 56.
+- **Android version 57 (48.0.9) submitted to Open Testing 2026-08-20 — awaiting Google's review.**
+  Ships both `0438736` (Forgot Password fix) and `24c8657` (Data Capture image compression) on
+  top of 56. Submitted only the new "57" change under Publishing overview — the pre-existing
+  "56 (48.0.8) — Start full rollout" entry sitting in "Changes ready to publish" (Google-approved,
+  never manually published) was again deliberately left untouched.
   Hit a real, unrelated local-environment snag while building: several pub cache entries
   (`firebase_core-4.13.0` and ~15 others) were corrupted/incomplete (empty or missing-file stub
   directories, likely an earlier interrupted download) — `flutter pub cache repair` (run twice;
