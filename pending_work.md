@@ -24,7 +24,24 @@
   (enter a known account's email, confirm the reset email arrives, click through to a working reset
   page) before or shortly after it ships. `git fetch && git rebase origin/fix/android-15-compliance`
   before building, same standing rule as every prior cross-session handoff on this branch.
-  Android's `48.0.8`/56 doesn't yet have this fix either -- worth a follow-up bump once verified.
+
+- **`fix/android-15-compliance` also has `24c8657`: Data Capture photos are now compressed
+  client-side before upload** (`ImagePicker(maxWidth: 1920, imageQuality: 80)` in
+  `lib/view/home/form_page.dart`) -- found while confirming a real CareConnect OCR-failure rate
+  (~2/3 of Data Capture bookings had `capturedText: null`) wasn't caused by the mobile app
+  producing bad images (it wasn't -- checked 6 real failing images directly, all loaded fine from
+  Cloudinary at 2-7MB each). Uncompressed multi-MB uploads were still a real contributing risk
+  factor for the backend's fetch-then-send-to-Gemini step timing out, so this should reduce (not
+  eliminate -- see `SQ_CareConnect`'s own retry-logic fix for the rest) that failure rate going
+  forward. Same pull-before-build note as `0438736` above applies.
+
+- **Android version 57 (48.0.9) built 2026-08-20, Open Testing submission in progress** — ships both
+  `0438736` (Forgot Password fix) and `24c8657` (Data Capture image compression) on top of 56.
+  Hit a real, unrelated local-environment snag while building: several pub cache entries
+  (`firebase_core-4.13.0` and ~15 others) were corrupted/incomplete (empty or missing-file stub
+  directories, likely an earlier interrupted download) — `flutter pub cache repair` (run twice;
+  the first pass left some packages still failed, second pass cleared them) fixed it. Not a code
+  issue, don't chase this if it doesn't recur.
 
 ## Open / needs attention (as of 2026-08-19, Mac session update)
 
