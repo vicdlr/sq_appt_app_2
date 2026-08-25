@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<map>
+<string name="flutter.authToken">FAKE_TEST_TOKEN_DO_NOT_USE</string>
+<string name="flutter.userData">{&quot;id&quot;:&quot;999999&quot;,&quot;email&quot;:&quot;logouttest@example.com&quot;,&quot;username&quot;:&quot;Logout Test&quot;,&quot;fcm_token&quot;:&quot;&quot;,&quot;city&quot;:&quot;Metro Manila&quot;,&quot;region&quot;:&quot;NCR&quot;,&quot;customerId&quot;:&quot;C999&quot;,&quot;is_service_provider&quot;:false}</string>
+<boolean name="flutter.notificationsEnabled" value="true" />
+</map>

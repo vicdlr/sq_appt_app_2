@@ -7,6 +7,78 @@
 
 ---
 
+### 2026-08-20 (Windows session, later still) — Closed Testing Alpha correction; TestFlight Apple ID loop fixed via External Testing migration; build 1.0.7(7) promoted; public join links created for both platforms
+
+**1. Correction to prior session notes: Closed Testing - Alpha's build 52 is not stale, it's live.**
+Earlier handoff docs (this file, `pending_work.md`) repeatedly described Alpha's build 52/48.0.4
+as "long-stale," "deliberately untouched." Direct verification in Play Console showed it's actually
+**live and active** -- "Available to selected testers," serving a real 16-person "Testers" email
+list, last released just 2 days prior. Flagged the correction to the user rather than silently
+proceeding. User chose to push the current build (59/48.0.11) to Alpha too, rather than retire the
+track. **Upload was left in progress** (the browser's file picker reused a stale cached selection
+showing an already-used version code -- the same class of bug hit repeatedly this project, e.g. the
+58/58.0.10 Internal Testing upload) -- **not confirmed complete**, needs a follow-up check next
+session.
+
+**2. Root-caused and fixed: TestFlight testers stuck in an endless Apple ID setup loop.** User
+reported testers invited via App Store Connect's Users and Access ("Internal Testers" flow) kept
+looping back to an Apple ID account-setup screen instead of ever reaching TestFlight. Root cause:
+Internal Testing in TestFlight is literally the same thing as Users and Access team membership --
+joining requires the tester's Apple ID to join the actual Apple Developer team, which forces a full
+Apple ID account-setup/2FA flow. External Testing has no such requirement -- it's a plain per-app
+tester invite, no team membership involved.
+
+**Fix:** moved the 5 affected people (all Customer Support-role team members: wmajsa2@icloud.com /
+Josefina Alejandro, joeydlr@gmail.com / Joey de la Rosa, charitodlr@icloud.com / Charito de La Rosa,
+haliverp@gmail.com / Harley aliver Pangandaman, joeapp6942@gmail.com / Jeorge Santos) to the
+"External Testers" TestFlight group via individual email invites, then deleted all 5 from Users and
+Access entirely (each deletion confirmed by name in the "Are you sure" dialog before clicking
+through). **Deliberately left untouched**: `vic@smartqsys.com` (Account Holder/Admin) and every
+other Users and Access entry that wasn't one of these 5 exact, already-accepted accounts -- several
+similarly-named-but-different pending "Resend Invitation" entries exist for at least two of these
+people (e.g. `charitodlr@gmail.com` vs. the target `charitodlr@icloud.com`; three other separate
+"Jeorge Santos" invite emails vs. the target `joeapp6942@gmail.com`) and were correctly left alone.
+
+**Gotcha hit repeatedly during this cleanup**: both the Users-and-Access delete action and the
+TestFlight tester-add action showed misleading immediate UI state right after clicking through -- a
+deleted user sometimes still appeared in the list with "No Apps" instead of actually being gone, and
+would show a broken "There was an issue retrieving details" profile if re-opened, requiring a
+second Delete click to actually finish the removal; a "tester added" success toast didn't always
+mean the tester was actually saved to the group (see item 3 below). **Always verify with a hard
+page reload/navigation, not the in-page toast or list state right after the action** -- App Store
+Connect's UI has repeatedly shown stale/optimistic state that doesn't match the real backend result.
+
+**3. Discovered and fixed: the prior session's "External Testers has 5 Testers" confirmation never
+actually persisted.** While promoting build 1.0.7(7) (item 4), the group's own page showed only
+**1 tester** (joeapp6942@gmail.com), not 5. Confirmed via App Store Connect's "Add Existing
+Testers" dialog (lists every tester already known to TestFlight, group membership aside) that the
+other 4 people didn't exist as TestFlight testers at all -- not a group-membership issue, they were
+simply never created in the first place. Re-invited all 4 via email, **one at a time** (the
+multi-row "Add New Testers" form is known-flaky with more than one row filled -- confirmed again
+this session: typed First/Last Name in row 1 didn't stick even solo, only Email reliably saved),
+and verified the final state with a fresh page reload each time rather than trusting the in-dialog
+confirmation. Group now genuinely holds 5 testers, confirmed via reload.
+
+**4. Promoted TestFlight build 1.0.7 (7) to External Testing.** Previously only assigned to the
+`SmartqDev` internal group. Added the "External Testers" group to the build via the build's own
+Group management, submitted the required "What to Test" notes ("Bug fixes and improvements,
+including a fix for the Forgot Password flow on the Sign In screen"), and it went straight to
+**`Testing` status** (no Beta App Review wait) -- likely inherited approval from 1.0.7(6)'s already
+-cleared review cycle. Confirmed via the group's Builds tab: both 1.0.7(6) and 1.0.7(7) show
+`Testing`.
+
+**5. Created public join links for both platforms, at user's request, for handing to prospective
+testers who aren't on the fixed email list.**
+- **TestFlight (External Testers group)**: `https://testflight.apple.com/join/HupcF3wa` -- "Open
+  to Anyone," no tester cap. Requires TestFlight installed; opens straight into the join flow.
+- **Android Open Testing**: `https://play.google.com/apps/testing/com.smartqsys.sq_notification`
+  -- pre-existing web opt-in link for the already-live Open Testing track (build 57/48.0.9,
+  "Unlimited" testers already configured), just surfaced/confirmed via Play Console rather than
+  newly created. Confirmed this is separate from the invite-only Closed Testing - Alpha link
+  (item 1) and wouldn't work for general/prospective testers.
+
+---
+
 ### 2026-08-20 (Windows session) — Root-caused and fixed: "Forgot Password" showed "A token is required for authentication"
 
 **Context:** User reported the Sign In page's "Forgot Password?" link was broken, mentioning

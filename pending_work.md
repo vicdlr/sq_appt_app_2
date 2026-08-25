@@ -7,6 +7,72 @@
 
 ---
 
+## Open / needs attention (as of 2026-08-25, Windows session — New Booking Service Provider search)
+
+- **Added a Unit ID search field to New Booking's Service Provider step** (`sq_appt_app_2/lib/
+  view/home/request_new_booking.dart`'s `_ProviderStep`), in anticipation of the unit list
+  growing long enough that scrolling/reading it becomes impractical. First attempt used a fixed
+  "SP-" prefix + digits-only input on the assumption all Unit IDs follow CareConnect's `SP-####`
+  scheme. Device-tested by typing "CH1909" on the emulator (`API36_EdgeToEdge`) against NKTI's
+  units — confirmed live that non-`SP-####` units exist (`In-coming`, `chair 1`, `Regular
+  Patient`, `Dra. Cecilia Montalban`, etc.) and the digits-only field silently mangled such input.
+  Briefly changed this to a plain-text substring-match field to cover both cases, but **per the
+  user: those non-`SP-####` units are legacy entries that pre-date CareConnect's Service Provider
+  registration/approval system and aren't real bookable providers** — so the quick-entry field
+  reverted to the original "SP-" prefix + digits-only design, which is correct for its actual
+  purpose (finding an approved registered provider by number). Legacy units remain reachable by
+  scrolling the plain list below, just not through this search field.
+  **Re-confirmed live against a real multi-item list** (DLSU Taft, Education industry, which by
+  this point in testing had grown to 10+ real `SP-####` units, `SP-0006`..`SP-0028`, including
+  inconsistent `SP_0007`/`SP_0009` underscore-vs-hyphen formatting in the raw data — the digit-
+  extraction regex handles both the same way): typing `8` correctly narrowed to the 2 real
+  matches (`SP-0008`, `SP-0028`); typing the full `0008` narrowed to exactly one; a
+  non-existent number correctly showed "No matching Unit ID". `flutter analyze` clean.
+  **Not committed.**
+- **Live-tested via a fake-login SharedPreferences push** (`adb shell run-as ... shared_prefs/
+  FlutterSharedPreferences.xml`), since the real test account (`vicdlr@gmail.com`) is still
+  logged out with no password available (see older entries below). Used this repo's own
+  `_fake_prefs.xml` fixture — **found and fixed a bug in the fixture itself**: its `city` was
+  `"Manila"`, but `home_provider.dart` filters Industries/Units by an *exact* match against
+  `SharedPref.getUserData().city`, and the real `/get-cities` list only has `"Metro Manila"` —
+  the mismatch silently produced an empty Industry list. Fixed the fixture to `"Metro Manila"`.
+  Emulator's `FlutterSharedPreferences.xml` was reset back to empty (logged-out) afterward so it
+  doesn't mislead a future session into thinking there's a real logged-in account.
+- **Also hit and worked around, unrelated to the above**: the Sign In screen renders solid black
+  on this `API36_EdgeToEdge` emulator with Impeller enabled (Sign Up renders fine) — worked
+  around with `flutter run --no-enable-impeller`. Not investigated further/root-caused; worth
+  knowing if a future session hits the same blank-screen symptom on Sign In specifically.
+
+## Open / needs attention (as of 2026-08-20, Windows session — TestFlight/Play Console follow-up)
+
+- **⚠️ Closed Testing - Alpha's build 59 (48.0.11) upload status is unknown — needs confirmation
+  next session.** Correction: Alpha's build 52/48.0.4 was previously (wrongly) logged in this file
+  as "long-stale" — it's actually **live**, "Available to selected testers," serving a real
+  16-person "Testers" list, released just 2 days before this was checked. User chose to push
+  current build 59 to Alpha too rather than retire the track, but the upload was left in progress
+  (stale cached file-picker selection needed a fresh re-select, same class of bug hit on the
+  Internal Testing upload earlier this session) and the session moved on to an unrelated TestFlight
+  issue before confirming it finished. Check Play Console's Closed Testing - Alpha track directly.
+
+- **Resolved: TestFlight testers stuck in an Apple ID account-setup loop.** Root cause: they'd been
+  invited via Users and Access ("Internal Testing"), which requires joining the actual Apple
+  Developer team (2FA-gated). Fixed by moving the 5 affected people to the "External Testers"
+  TestFlight group (no team membership required) and removing them from Users and Access. Full
+  story, including a real UI-persistence bug caught along the way (4 of the 5 "added" testers never
+  actually saved the first time), in `DEVLOG.md`'s 2026-08-20 "(Windows session, later still)"
+  entry.
+
+- **Resolved: TestFlight build 1.0.7 (7) promoted to External Testing**, went straight to `Testing`
+  status (no review wait). Public join links created/surfaced for both platforms at user's request:
+  TestFlight `https://testflight.apple.com/join/HupcF3wa`, Android Open Testing
+  `https://play.google.com/apps/testing/com.smartqsys.sq_notification` (pre-existing, just
+  confirmed live). Same DEVLOG entry as above.
+
+- **Minor, likely already resolved on its own**: `charitodlr@icloud.com`'s External Tester status
+  briefly showed "No Builds Available" right after being re-added (a transient state `joeydlr@gmail.com`
+  also showed moments earlier before settling to "Invited") — worth a quick glance next session to
+  confirm it settled the same way, not urgent.
+
 ## Open / needs attention (as of 2026-08-20, Windows session)
 
 - **⚠️ For the Mac session: `fix/android-15-compliance` has a new commit (`0438736`) fixing a real
