@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/constant/app_colors.dart';
@@ -318,14 +319,36 @@ class _OrganisationStepState extends State<_OrganisationStep> {
   }
 }
 
-class _ProviderStep extends StatelessWidget {
+class _ProviderStep extends StatefulWidget {
   final HomeProvider homeProvider;
   final ValueChanged<String> onSelectProvider;
 
   const _ProviderStep({required this.homeProvider, required this.onSelectProvider});
 
   @override
+  State<_ProviderStep> createState() => _ProviderStepState();
+}
+
+class _ProviderStepState extends State<_ProviderStep> {
+  // Unit IDs are "SP-" + digits only for units with an approved Service Provider registration
+  // (CareConnect's onboarding flow -- see SQ_CareConnect/lib/service-provider-no.ts). Confirmed
+  // live (device test typing "CH1909" against NKTI's units, which pre-date that registration
+  // system) that plenty of real units are still arbitrary free text ("In-coming", "chair 1",
+  // etc.) -- those are legacy entries without an approved SP- registration, not something this
+  // quick-entry field needs to reach. It's specifically for finding a registered provider by
+  // number as that list grows long; legacy units stay reachable by scrolling the plain list
+  // below, just not through this field.
+  String _digits = "";
+
+  @override
   Widget build(BuildContext context) {
+    final homeProvider = widget.homeProvider;
+    final filtered = _digits.isEmpty
+        ? homeProvider.unitList
+        : homeProvider.unitList
+            .where((u) => u.replaceAll(RegExp(r'[^0-9]'), '').contains(_digits))
+            .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -334,25 +357,39 @@ class _ProviderStep extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, size: 18),
           label: Text("Organisation: ${homeProvider.selectedCompanies}"),
         ),
+        TextField(
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (value) => setState(() => _digits = value),
+          decoration: const InputDecoration(
+            prefixText: "SP-",
+            hintText: "Enter Unit ID number",
+            prefixIcon: Icon(Icons.tag),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
         // Tapping a provider immediately continues -- no separate selected/tick state or
         // Continue button, choosing a provider here IS the action.
         Expanded(
           child: homeProvider.unitList.isEmpty
               ? const Center(child: Text("No service providers found"))
-              : ListView.builder(
-                  itemCount: homeProvider.unitList.length,
-                  itemBuilder: (context, index) {
-                    final unit = homeProvider.unitList[index];
-                    return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.storefront_outlined),
-                        title: Text(unit),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => onSelectProvider(unit),
-                      ),
-                    );
-                  },
-                ),
+              : filtered.isEmpty
+                  ? const Center(child: Text("No matching Unit ID"))
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final unit = filtered[index];
+                        return Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.storefront_outlined),
+                            title: Text(unit),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => widget.onSelectProvider(unit),
+                          ),
+                        );
+                      },
+                    ),
         ),
       ],
     );
