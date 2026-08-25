@@ -7,6 +7,61 @@
 
 ---
 
+### 2026-08-25 (Windows session) — New Booking Service Provider Unit ID search, committed and pushed
+
+User asked to add a Unit ID search field to New Booking's Service Provider step, anticipating the
+unit list growing long enough that scrolling/reading it becomes impractical.
+
+1. **First attempt: fixed "SP-" prefix + digits-only entry**, on the assumption all Unit IDs
+   follow CareConnect's `SP-####` scheme (`SQ_CareConnect/lib/service-provider-no.ts`). User asked
+   to test with "CH1909" before accepting it.
+2. **Live device test exposed a real bug.** Set up the `API36_EdgeToEdge` emulator with a
+   fake-login `SharedPreferences` push (`adb shell run-as ... shared_prefs/
+   FlutterSharedPreferences.xml`, using this repo's `_fake_prefs.xml` fixture — the real test
+   account, `vicdlr@gmail.com`, is still logged out with no password available). Found and fixed a
+   bug in the fixture itself along the way: its `city` was `"Manila"`, but `home_provider.dart`
+   filters Industries/Units by an *exact* match against `SharedPref.getUserData().city`, and the
+   real `/get-cities` list only has `"Metro Manila"` — silently produced an empty Industry list.
+   Typing "CH1909" against NKTI's real units confirmed the digits-only field silently mangled it
+   into "SP-1909" and could never match — because most units across non-CareConnect
+   industries/companies are legacy free text (`In-coming`, `chair 1`, `Regular Patient`, `Dra.
+   Cecilia Montalban`, etc.) that pre-date CareConnect's Service Provider registration/approval
+   system.
+3. **Corrected design, per the user: those legacy units aren't real bookable providers**, so the
+   fixed "SP-" prefix + digits-only field is actually correct for the field's real purpose
+   (finding an *approved, registered* provider by number) — legacy units stay reachable by
+   scrolling the plain list below, just not through this search field.
+   `sq_appt_app_2/lib/view/home/request_new_booking.dart`'s `_ProviderStep` now has this field,
+   filtering the list live as digits are typed (matches on the unit's own digits containing what's
+   typed, so a partial number narrows down instead of requiring the exact zero-padded value).
+4. **Re-confirmed live against a real multi-item list** (DLSU Taft, Education industry, which by
+   this point had grown to 10+ real `SP-####` units, `SP-0006`..`SP-0028`, including inconsistent
+   `SP_0007`/`SP_0009` underscore-vs-hyphen formatting in the raw data — the digit-extraction regex
+   handles both the same way): typing `8` correctly narrowed to the 2 real matches (`SP-0008`,
+   `SP-0028`); typing the full `0008` narrowed to exactly one; a non-existent number correctly
+   showed "No matching Unit ID". `flutter analyze` clean.
+5. **Also hit and worked around, unrelated to the above**: the Sign In screen renders solid black
+   on this emulator with Impeller enabled (Sign Up renders fine) — worked around with
+   `flutter run --no-enable-impeller`. Not root-caused; worth knowing if it recurs.
+6. **Cleaned up after testing**: emulator's `FlutterSharedPreferences.xml` reset back to empty
+   (logged-out) so it doesn't mislead a future session into thinking there's a real logged-in
+   account.
+7. **Committed and pushed**: `sq_appt_app_2`'s `fix/android-15-compliance` (`8ed8fbe`, was
+   `33e8c8b`) has the actual fix. This docs workspace's `mobile-redesign` (`f9ddbb1`, was
+   `888cc6f`) has the session log — that commit also folded in a previously-uncommitted
+   2026-08-20 session log (TestFlight Apple ID loop fix, Alpha correction, build 1.0.7(7)
+   promotion) that had been sitting in the working tree unresolved since that session.
+
+**Left open, deliberately not touched**: `sq_appt_app_2/android/app/build.gradle` still hardcodes
+`versionCode 59` / `versionName "48.0.11"` (this project's real, manually-bumped Android release
+number — NOT the stale old "bypass hack" `pending_work.md` used to describe with real values
+`21`/`"21.0.1"`, which predates dozens of real releases since). `pubspec.yaml`'s `version: 1.0.7+7`
+is iOS's separate TestFlight number and must not be conflated with Android's. **Before actually
+publishing this fix to Android Open Testing**: bump `versionCode`/`versionName` to the next real
+number (currently 59 → 60) — deliberately deferred, not done this session.
+
+---
+
 ### 2026-08-20 (Windows session, later still) — Closed Testing Alpha correction; TestFlight Apple ID loop fixed via External Testing migration; build 1.0.7(7) promoted; public join links created for both platforms
 
 **1. Correction to prior session notes: Closed Testing - Alpha's build 52 is not stale, it's live.**

@@ -9,39 +9,26 @@
 
 ## Open / needs attention (as of 2026-08-25, Windows session — New Booking Service Provider search)
 
-- **Added a Unit ID search field to New Booking's Service Provider step** (`sq_appt_app_2/lib/
-  view/home/request_new_booking.dart`'s `_ProviderStep`), in anticipation of the unit list
-  growing long enough that scrolling/reading it becomes impractical. First attempt used a fixed
-  "SP-" prefix + digits-only input on the assumption all Unit IDs follow CareConnect's `SP-####`
-  scheme. Device-tested by typing "CH1909" on the emulator (`API36_EdgeToEdge`) against NKTI's
-  units — confirmed live that non-`SP-####` units exist (`In-coming`, `chair 1`, `Regular
-  Patient`, `Dra. Cecilia Montalban`, etc.) and the digits-only field silently mangled such input.
-  Briefly changed this to a plain-text substring-match field to cover both cases, but **per the
-  user: those non-`SP-####` units are legacy entries that pre-date CareConnect's Service Provider
-  registration/approval system and aren't real bookable providers** — so the quick-entry field
-  reverted to the original "SP-" prefix + digits-only design, which is correct for its actual
-  purpose (finding an approved registered provider by number). Legacy units remain reachable by
-  scrolling the plain list below, just not through this search field.
-  **Re-confirmed live against a real multi-item list** (DLSU Taft, Education industry, which by
-  this point in testing had grown to 10+ real `SP-####` units, `SP-0006`..`SP-0028`, including
-  inconsistent `SP_0007`/`SP_0009` underscore-vs-hyphen formatting in the raw data — the digit-
-  extraction regex handles both the same way): typing `8` correctly narrowed to the 2 real
-  matches (`SP-0008`, `SP-0028`); typing the full `0008` narrowed to exactly one; a
-  non-existent number correctly showed "No matching Unit ID". `flutter analyze` clean.
-  **Not committed.**
-- **Live-tested via a fake-login SharedPreferences push** (`adb shell run-as ... shared_prefs/
-  FlutterSharedPreferences.xml`), since the real test account (`vicdlr@gmail.com`) is still
-  logged out with no password available (see older entries below). Used this repo's own
-  `_fake_prefs.xml` fixture — **found and fixed a bug in the fixture itself**: its `city` was
-  `"Manila"`, but `home_provider.dart` filters Industries/Units by an *exact* match against
-  `SharedPref.getUserData().city`, and the real `/get-cities` list only has `"Metro Manila"` —
-  the mismatch silently produced an empty Industry list. Fixed the fixture to `"Metro Manila"`.
-  Emulator's `FlutterSharedPreferences.xml` was reset back to empty (logged-out) afterward so it
-  doesn't mislead a future session into thinking there's a real logged-in account.
-- **Also hit and worked around, unrelated to the above**: the Sign In screen renders solid black
-  on this `API36_EdgeToEdge` emulator with Impeller enabled (Sign Up renders fine) — worked
-  around with `flutter run --no-enable-impeller`. Not investigated further/root-caused; worth
-  knowing if a future session hits the same blank-screen symptom on Sign In specifically.
+> New Booking's Service Provider step now has a "SP-" prefix + digits-only Unit ID search field
+> (`sq_appt_app_2/lib/view/home/request_new_booking.dart`), confirmed live on real device data.
+> Committed and pushed: `sq_appt_app_2`'s `fix/android-15-compliance` (`8ed8fbe`), this docs
+> workspace's `mobile-redesign` (`f9ddbb1`, also folded in the previously-uncommitted 2026-08-20
+> session log below). Fully folded into `DEVLOG.md`'s 2026-08-25 entry. Still open:
+
+- **⚠️ Before publishing this fix to Android Open Testing: `sq_appt_app_2/android/app/
+  build.gradle` needs its hardcoded `versionCode 59` / `versionName "48.0.11"` bumped to the next
+  real number (60).** Deliberately left untouched this session — user asked to handle it right
+  before the actual publish step, not now. Do **not** revert to the commented-out
+  `flutterVersionCode.toInteger()`/`flutterVersionName` lines — those read `pubspec.yaml`'s
+  `version: 1.0.7+7`, which is iOS's separate TestFlight number (versionCode 7), and would regress
+  Android's real version below 59.
+- **Sign In screen renders solid black on the `API36_EdgeToEdge` emulator with Impeller enabled**
+  (Sign Up renders fine) — worked around with `flutter run --no-enable-impeller` this session, not
+  root-caused. Worth knowing if a future session hits the same blank-screen symptom.
+- **`_fake_prefs.xml` fixture's `city` was fixed** (`"Manila"` → `"Metro Manila"`, matching the
+  real `/get-cities` list) — `home_provider.dart` filters Industries/Units by exact city match, so
+  the old value silently produced an empty Industry list for anyone using this fixture to fake a
+  login for testing.
 
 ## Open / needs attention (as of 2026-08-20, Windows session — TestFlight/Play Console follow-up)
 
