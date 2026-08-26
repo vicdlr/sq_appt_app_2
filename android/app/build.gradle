@@ -56,8 +56,8 @@ android {
         // firebase_messaging 16.5.0's Android manifest requires minSdk 23 -- Flutter's own
         // default (flutter.minSdkVersion) is lower, so this must be pinned explicitly.
         minSdkVersion 23
-        versionCode  60
-        versionName "48.0.12"
+        versionCode  61
+        versionName "48.0.13"
         targetSdkVersion 36
 //        versionCode flutterVersionCode.toInteger()
 //        versionName flutterVersionName
