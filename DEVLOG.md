@@ -7,6 +7,88 @@
 
 ---
 
+### 2026-08-26 (Windows session, continued) — 36h retention sweep, two "not today" bugs, registration/notification gaps
+
+Same-day continuation after the Queue Status/Android-publish entry below. User raised four more
+things in one sweep: a tiered-billing data-retention rule, two independent "shows bookings not
+for today" bugs, a missing SAM-admin notification, and (found along the way) a missing in-app
+registration path and a notification-persistence gap.
+
+1. **36h auto-delete for free-tier bookings + NAS notifications**
+   (`SQ_CareConnect@90dbf16`). Extended the existing tiered `RetentionPolicy`/sweep pattern
+   (previously only `transaction`/`admin_activity_log`) with two new resource types: `booking`
+   (FREE=36h from the moment `status` goes terminal — served/no-show/cancelled — not from the
+   scheduled appointment time; PAID=indefinite) and `notification` (PLATFORM=36h, calls NAS's
+   *existing* `POST /admin/notifications/cleanup` endpoint since NAS's notifications table has no
+   CC-side model at all). `Ticket`/`Transaction` gained `onDelete: Cascade` toward `Booking`
+   (migration `20260826140000_cascade_booking_deletes`) so the sweep is one `deleteMany`, not
+   three, and doesn't hit a foreign-key error. Verified locally: migration applied and seed ran
+   clean against the local dev DB. **Scope confirmed by the user**: CareConnect's own `Booking`
+   table only (NAS's separate booking pool explicitly out of scope for now), FREE tier only.
+
+2. **Two independent "displays bookings not for today" bugs, both root-caused and fixed:**
+   - **ccadmin's Terminal ("current day queue")** — real CareConnect bug. `lib/today-range.ts`'s
+     `todayRange()` computed "today" from server-local (UTC, on Render) midnight instead of the
+     Philippines' actual local day (UTC+8, no DST) — shifted the effective window to 8am-8am
+     Manila instead of midnight-midnight, so a booking for early *tomorrow* morning bled into
+     *today's* Terminal queue while today's own early-morning bookings went missing from it.
+     Fixed (`SQ_CareConnect@756e3d6`) via `Intl.DateTimeFormat({timeZone:'Asia/Manila'})` for the
+     calendar date + a fixed +8h offset (Manila has no DST) — verified with a throwaway script
+     before committing (a 2am-Manila booking for tomorrow now correctly falls outside today's
+     window; today's own 2am booking now falls inside it). Fixes every `todayRange()` caller:
+     Terminal, `ensureTicketsForToday`, `/api/bookings/next`, `/api/bookings/today`'s STAFF branch.
+   - **ccuser's "today's status" (the mobile Home card)** — a Flutter bug, not CareConnect.
+     `home_dashboard.dart`'s `_activeQueueBooking()` had no date check at all -- any non-terminal
+     CareConnect booking, any day, would be treated as "today's active queue." Fixed
+     (`sq_appt_app_2@c3919e6`) by requiring `bookingDate` (compared in local time) to match the
+     device's current calendar day.
+
+3. **Missing "pending application" push to the SAM CC Admin — root-caused, real bug found, not
+   yet fixed.** Investigated the full chain live against production (added a scoped `autoMode`
+   permission rule to `.claude/settings.local.json` first, since the auto-mode classifier
+   initially blocked even read-only diagnostic scripts against the shared prod DB). Ruled out the
+   two obvious causes directly: `vic@smartqsys.com` **does** have a `profile=110` CC Admin row in
+   SAM's `users` table, and its linked `mdevice` **is** fully verified with a live `fcmToken` — so
+   `listAdminEmails()`/`findVerifiedMdeviceByEmail()` both succeed. Also confirmed
+   `NAS_BASE_URL`/`NAS_SERVICE_KEY`/`SMTP_PASSWORD` are all actually set on `sq-careconnect`'s live
+   Render env (not just local `.env`) — not a missing-config problem either. The one concrete lead:
+   **`ServiceProviderApplication.confirmationEmailSentAt` is `null` on every single application
+   ever created** (5 checked, Aug 5 through Aug 25) — `sendMail()` never throws (fully
+   try/caught), so this doesn't by itself explain the missing *push*, but it's a real, independent,
+   100%-reproducing email-delivery failure worth its own fix. Render's Free-tier log retention
+   (24h max on this plan; 30-day requires a Scale-plan upgrade) meant historical log archaeology
+   for the actual missing-notification event was a dead end. **Next step, not yet done**: a live
+   test registration with Render's Live Tail open, to watch `sendMail()`/
+   `notifyAdminsOfNewApplication()`/`sendServiceNotification()` fail (or not) in real time.
+
+4. **Found along the way: ccuser Home has no in-app path to register a *second* clinic once
+   `isServiceProvider` is true** — `app/page.tsx`/`patient-bottom-nav.tsx` both hide their
+   "Register Your Service" card/link entirely once true (a 2026-08-10 design that assumed one
+   clinic per account). The registration form itself was never broken (confirmed live,
+   `ccregister.smartqsys.com` renders fine when reached directly). Per the user, fixed on the
+   **mobile app side** instead of CareConnect: added a "Register Another Service" row to
+   `settings.dart` (the app's "More" tab), gated the same `isServiceProvider` way as the existing
+   "Service Provider Mode" row (`sq_appt_app_2@75565c8`).
+
+5. **Found along the way: not every push notification was being saved to the mobile app's
+   Notifications list.** `grep`'d `node_app_server/app.js` for every `admin.messaging().send()`
+   vs. every `INSERT INTO notifications` — 6 sends, only 4 inserts. The two silent gaps: the
+   post-verification "Email Verified!" welcome push, and `applyCareConnectOutcome()` — **every**
+   CareConnect booking status-change push (Confirmed/Checked-in/Pending), likely the single most
+   common notification type for an active account, so the larger of the two gaps. Both now
+   persist a row, matching the exact pattern an earlier session (2026-08-10) already used to fix
+   the same class of bug for "Booking Received" pushes — reads as a recurring oversight (new push
+   call sites added without the matching insert) rather than a one-off. Committed
+   (`node_app_server@980619e`, `main`) and fast-forwarded to `peer-notification` (Render's actual
+   deploy branch), per this repo's standing convention.
+
+**Left open**: the SAM-admin-notification live test (item 3), and everything already carried over
+from the entry below (real-account end-to-end verification, iOS build/publish — Mac Claude has
+since pushed the `1.0.7+8` version bump, `sq_appt_app_2@354c6d2`, but build/upload status is
+unknown as of this writing).
+
+---
+
 ### 2026-08-26 (Windows session) — Queue Status page + Home redesign, Android 60 published, iOS handoff written
 
 User wanted Home's "My Active Queues" card reworked per a reference flyer

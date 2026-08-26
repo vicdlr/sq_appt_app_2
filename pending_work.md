@@ -7,19 +7,25 @@
 
 ---
 
-## Open / needs attention (as of 2026-08-26, Windows session — Queue Status page + Home redesign)
+## Open / needs attention (as of 2026-08-26, Windows session — retention sweep, today-bugs, registration/notification gaps)
 
-> Queue Status page (`SQ_CareConnect@6ec24d1`) + Home redesign (`sq_appt_app_2@496c21c`) +
-> Android 60/48.0.12 version bump (`1370580`). Fully folded into `DEVLOG.md`'s 2026-08-26 entry.
-> Still open:
+> 36h retention sweep, both "not today" bugs, "Register Another Service", and the two missing
+> push-notification-persistence call sites — all fully folded into `DEVLOG.md`'s 2026-08-26
+> (continued) entry. Still open:
 
-- **Android 60 (48.0.12) submitted to Open Testing 2026-08-26 — awaiting Google's review.**
-  Check Play Console next session; the pre-existing "57 (48.0.9)" entry in "Changes ready to
-  publish" is a separate, still-unpublished thing, deliberately untouched.
-- **iOS not built this session.** `IOS_PUBLISH_2026-08-26.md` (this repo) is a ready-to-paste
-  handoff script for a Mac Claude session — pull to `1370580`, bump `pubspec.yaml` to `1.0.7+8`
-  (7 is already live on TestFlight, can't reuse), build, upload, distribute to "External
-  Testers". Not yet executed.
+- **Missing SAM-admin "pending application" push — root-caused as far as possible without a live
+  test, not yet fixed.** Config/DB-level causes ruled out (profile=110 ✓, mdevice verified ✓,
+  `NAS_BASE_URL`/`NAS_SERVICE_KEY`/`SMTP_PASSWORD` all set on Render ✓). One real, independent,
+  100%-reproducing lead found instead: `ServiceProviderApplication.confirmationEmailSentAt` is
+  `null` on every application ever created — `sendMail()` itself never throws, so this doesn't
+  fully explain the missing push, but is worth its own fix regardless. **Next step**: a live test
+  registration with Render's Live Tail open on `sq-careconnect` (Free-tier log retention is only
+  24h, so historical log archaeology for the actual event that prompted this was a dead end).
+- **Android 60 (48.0.12) still awaiting Google's review** in Open Testing — check Play Console
+  next session. The pre-existing "57 (48.0.9)" entry in "Changes ready to publish" is a separate,
+  still-unpublished thing, deliberately untouched.
+- **iOS: Mac Claude has pushed the version bump** (`sq_appt_app_2@354c6d2`, `1.0.7+8`) but build/
+  upload/TestFlight-distribution status is unknown as of this writing — check next session.
 - **Not verified end-to-end with a real account.** This session's emulator test used a fake-JWT
   fixture, which confirmed the Home card's empty-state UI and button-tap wiring but couldn't
   authenticate, so the real path (active booking → "View Status" → `/queue-status?focus=<id>` →
