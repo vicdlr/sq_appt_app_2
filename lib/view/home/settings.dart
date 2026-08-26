@@ -399,9 +399,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                // Was showing version alone (e.g. "1.0.7"), missing the build number
+                // (PackageInfo.buildNumber) entirely -- on iOS that's the difference between
+                // "1.0.7" and the real "1.0.7 (8)" TestFlight shows, making it impossible to
+                // tell which build is actually installed from in-app alone.
                 return Center(
                   child: Text(
-                    'Version: ${snapshot.data!.version}',
+                    'Version: ${snapshot.data!.version} (${snapshot.data!.buildNumber})',
                     style: Theme.of(context).textTheme.labelSmall,
                   ),
                 );
