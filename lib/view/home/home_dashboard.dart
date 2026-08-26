@@ -43,6 +43,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   BookingModel? _activeQueueBooking(List<BookingModel> bookings) {
+    final now = DateTime.now();
     for (final booking in bookings) {
       // Substring-based, matching my_booking.dart's _statusKind -- a literal-equality check
       // against "cancelled"/"completed" missed statuses like "Request to Cancel" (set by
@@ -54,7 +55,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
           status.contains("reject") ||
           status.contains("complet") ||
           status.contains("served");
-      if (booking.handledBy == "CARECONNECT" && !isTerminal) {
+      // Root-caused 2026-08-26: this had no date check at all, so a Confirmed/Pending booking
+      // for *any* day -- not just today -- would surface as "today's active queue" on Home,
+      // sending "View Status" to the wrong booking's Queue Status page. `.toLocal()` before
+      // comparing calendar dates so a bookingDate parsed from a UTC ISO string still lands on
+      // the right day in the device's own timezone (real users are physically in the
+      // Philippines, so this is the device's actual local day).
+      final bookingDay = booking.bookingDate?.toLocal();
+      final isToday = bookingDay != null &&
+          bookingDay.year == now.year &&
+          bookingDay.month == now.month &&
+          bookingDay.day == now.day;
+      if (booking.handledBy == "CARECONNECT" && !isTerminal && isToday) {
         return booking;
       }
     }
