@@ -187,8 +187,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            if (activeBooking != null) _ActiveQueueCard(booking: activeBooking),
-            if (activeBooking != null) const SizedBox(height: 20),
+            _ActiveQueueCard(booking: activeBooking),
+            const SizedBox(height: 20),
             Text("Quick Actions",
                 style: Theme.of(context)
                     .textTheme
@@ -210,7 +210,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
 }
 
 class _ActiveQueueCard extends StatefulWidget {
-  final BookingModel booking;
+  // Null when there's no active-today booking to show -- the card still renders (a
+  // "No Active Queue Today" state) rather than disappearing, so there's always a way to reach
+  // CareConnect's Queue Status page and its entertainment section underneath (2026-08-26).
+  final BookingModel? booking;
 
   const _ActiveQueueCard({required this.booking});
 
@@ -221,16 +224,30 @@ class _ActiveQueueCard extends StatefulWidget {
 class _ActiveQueueCardState extends State<_ActiveQueueCard> {
   bool _isLoadingStatus = false;
 
-  // "View Status" is about *this* booking specifically, so it mints a focused
-  // queue-access token (same bridge as my_booking.dart's _viewQueue -- lands
-  // on /bookings?focus=<id>) rather than the generic Manage Bookings link
+  // With a booking: "View Status" is about *this* booking specifically, so it mints a focused
+  // queue-access token (same bridge as my_booking.dart's _viewQueue -- lands on CareConnect's
+  // Queue Status page focused on this booking) rather than the generic Manage Bookings link
   // "View all" uses, which has no concept of which booking to highlight.
+  // Without a booking: there's no booking id to scope a queue-access token to, so this falls
+  // back to the same session-token bridge "View all"/"Manage Bookings" use, tagged
+  // source: 'queue_status' so CareConnect's consume route lands on Queue Status (with its own
+  // "No Active Queue Today" empty state) instead of the full Manage Bookings list.
   Future<void> _viewStatus() async {
     setState(() => _isLoadingStatus = true);
 
+    final booking = widget.booking;
+    if (booking == null) {
+      await _openManageBookings(context,
+          source: 'queue_status',
+          title: 'Queue Status',
+          onLoaded: () {
+        if (mounted) setState(() => _isLoadingStatus = false);
+      });
+      return;
+    }
+
     final result = await DioApi.post(
-        path: ConfigUrl.queueAccessUrl(widget.booking.id.toString()),
-        data: {});
+        path: ConfigUrl.queueAccessUrl(booking.id.toString()), data: {});
 
     if (!mounted) return;
     setState(() => _isLoadingStatus = false);
@@ -264,7 +281,7 @@ class _ActiveQueueCardState extends State<_ActiveQueueCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("My Active Queues",
+              const Text("Queue Status",
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: kSmartQGreen)),
               TextButton(
@@ -275,16 +292,23 @@ class _ActiveQueueCardState extends State<_ActiveQueueCard> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-              booking.organisation.isNotEmpty
-                  ? booking.organisation
-                  : booking.unit,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 2),
-          Text(booking.status, style: Theme.of(context).textTheme.bodySmall),
+          if (booking != null) ...[
+            Text(
+                booking.organisation.isNotEmpty
+                    ? booking.organisation
+                    : booking.unit,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(booking.status, style: Theme.of(context).textTheme.bodySmall),
+          ] else
+            Text("No Active Queue Today",
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -301,7 +325,7 @@ class _ActiveQueueCardState extends State<_ActiveQueueCard> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text("View Status"),
+                  : Text(booking != null ? "View Status" : "Queue Status"),
             ),
           ),
         ],
@@ -594,7 +618,7 @@ class _ServiceProviderPanel extends StatelessWidget {
 // `onLoaded` fires once the network call resolves, before navigation/toast, so callers with their
 // own loading UI (a button spinner, a blocking dialog) can dismiss it at the right time.
 Future<void> _openManageBookings(BuildContext context,
-    {VoidCallback? onLoaded, String? source}) async {
+    {VoidCallback? onLoaded, String? source, String title = 'Manage Bookings'}) async {
   final result = await DioApi.post(
       path: ConfigUrl.manageBookingsLinkUrl,
       data: source != null ? {"source": source} : {});
@@ -607,12 +631,12 @@ Future<void> _openManageBookings(BuildContext context,
   if (result.response != null && careConnectUrl != null) {
     if (context.mounted) {
       Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-        return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
+        return WebViewPage(url: careConnectUrl, title: title);
       }));
     }
   } else {
     Fluttertoast.showToast(
-        msg: "Couldn't open Manage Bookings right now. Please try again.");
+        msg: "Couldn't open $title right now. Please try again.");
   }
 }
 
