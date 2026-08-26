@@ -270,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
               ),
-              if (userData.isServiceProvider)
+              if (userData.isServiceProvider) ...[
                 _SettingsRow(
                   icon: Icons.storefront_outlined,
                   title: "Service Provider Mode",
@@ -281,6 +281,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     }));
                   },
                 ),
+                // CareConnect's ccuser Home hides its own "Register Your Service" card/nav link
+                // entirely once isServiceProvider is true (2026-08-10 design, assumed one clinic
+                // per account) -- left an existing provider with no in-app way to register an
+                // *additional* one. Added here instead (2026-08-26, per the user): the mobile
+                // app's "More" tab (bottom_nav_bar.dart embeds this screen as that tab's body)
+                // is the surface an existing provider already lands on.
+                _SettingsRow(
+                  icon: Icons.add_business_outlined,
+                  title: "Register Another Service",
+                  subtitle: "Add another clinic or service provider",
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                      return WebView(
+                        url: 'https://ccregister.smartqsys.com/register-clinic',
+                        title: 'Register Your Service',
+                      );
+                    }));
+                  },
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
