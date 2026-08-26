@@ -9,18 +9,15 @@
 
 ## Open / needs attention (as of 2026-08-26, Windows session — retention sweep, today-bugs, registration/notification gaps)
 
-> 36h retention sweep, both "not today" bugs, "Register Another Service", and the two missing
-> push-notification-persistence call sites — all fully folded into `DEVLOG.md`'s 2026-08-26
-> (continued) entry. Still open:
+> 36h retention sweep, both "not today" bugs, "Register Another Service", the SAM-admin push
+> notification-persistence bug (root cause: `/send-notification` hardcoded `user_id: null`, fixed
+> across all 12 `sendServiceNotification()` call sites), and two other push-persistence gaps — all
+> fully folded into `DEVLOG.md`'s 2026-08-26 (continued) entry. Still open:
 
-- **Missing SAM-admin "pending application" push — root-caused as far as possible without a live
-  test, not yet fixed.** Config/DB-level causes ruled out (profile=110 ✓, mdevice verified ✓,
-  `NAS_BASE_URL`/`NAS_SERVICE_KEY`/`SMTP_PASSWORD` all set on Render ✓). One real, independent,
-  100%-reproducing lead found instead: `ServiceProviderApplication.confirmationEmailSentAt` is
-  `null` on every application ever created — `sendMail()` itself never throws, so this doesn't
-  fully explain the missing push, but is worth its own fix regardless. **Next step**: a live test
-  registration with Render's Live Tail open on `sq-careconnect` (Free-tier log retention is only
-  24h, so historical log archaeology for the actual event that prompted this was a dead end).
+- **`ServiceProviderApplication.confirmationEmailSentAt` is `null` on every application ever
+  created** — a real, independent, 100%-reproducing email-delivery failure (`sendMail()`/ZeptoMail
+  side), confirmed still true on the live-test registration too. Separate from the
+  now-fixed push-notification issue. Not yet investigated further or fixed.
 - **Android 60 (48.0.12) still awaiting Google's review** in Open Testing — check Play Console
   next session. The pre-existing "57 (48.0.9)" entry in "Changes ready to publish" is a separate,
   still-unpublished thing, deliberately untouched.

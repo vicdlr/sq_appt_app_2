@@ -82,10 +82,27 @@ registration path and a notification-persistence gap.
    (`node_app_server@980619e`, `main`) and fast-forwarded to `peer-notification` (Render's actual
    deploy branch), per this repo's standing convention.
 
-**Left open**: the SAM-admin-notification live test (item 3), and everything already carried over
-from the entry below (real-account end-to-end verification, iOS build/publish — Mac Claude has
-since pushed the `1.0.7+8` version bump, `sq_appt_app_2@354c6d2`, but build/upload status is
-unknown as of this writing).
+6. **Item 3's live test, done — found the real root cause, bigger than one notification type.**
+   User submitted a real registration ("Dra Charito") and confirmed the SAM-admin push *did*
+   arrive this time. Checked the DB directly (createdAt vs. current time) to make sure the
+   arriving push actually corresponded to that submission — it did. But the user then reported it
+   still never showed up in the mobile app's in-app Notifications list, despite item 5's fixes.
+   Root cause: NAS's `POST /send-notification` — the one generic route every
+   `sendServiceNotification()` call in CareConnect goes through — hardcoded
+   `notifications.user_id` to `null` ("CareConnect is the caller, not a logged-in mobile user"),
+   and `/notifications/user`'s `WHERE user_id = $1` can never match a `null` row for any user.
+   This is a different, larger bug than item 5's two gaps (those were about a row never being
+   *inserted* at all; this one inserts every time, just permanently unmatchable). Fixed
+   end-to-end: `sendServiceNotification()` gained an optional `mdeviceId` param
+   (`SQ_CareConnect@dbdfbef`, threaded through all **12 call sites across 11 files** — every
+   booking status-change push, Terminal action, and the webhook's two doctor/patient pushes, not
+   just the SAM-admin one), and NAS's route now uses it instead of the hardcoded `null`
+   (`node_app_server@f093d61`, `main`, fast-forwarded to `peer-notification`).
+
+**Left open**: the confirmation-email-never-sent finding from item 3 (still unfixed, separate from
+the push issue), and everything already carried over from the entry below (real-account
+end-to-end verification, iOS build/publish — Mac Claude has since pushed the `1.0.7+8` version
+bump, `sq_appt_app_2@354c6d2`, but build/upload status is unknown as of this writing).
 
 ---
 
