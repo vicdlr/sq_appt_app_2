@@ -7,6 +7,82 @@
 
 ---
 
+### 2026-08-26 (Windows session) — Queue Status page + Home redesign, Android 60 published, iOS handoff written
+
+User wanted Home's "My Active Queues" card reworked per a reference flyer
+(`SQ_CareConnect/How do you wish entertained flyer.png`): "View Status" should focus on today's
+booking specifically instead of sharing "View all"'s generic Manage Bookings list, show
+"No Active Queue Today" when there's nothing active, and always show an entertainment section
+underneath.
+
+1. **Investigated the existing architecture first** rather than assuming: found "View Status"
+   already minted a booking-scoped `queue-access-token` (`home_dashboard.dart`'s `_viewStatus()`),
+   but it landed on CareConnect's full `/bookings` list with the target row merely auto-expanded
+   (`?focus=<id>`) — not a real focused view. The flyer's "Queue Status" hero section (queue
+   number, progress stepper, wait estimate) already exists too, as `QueuePanel` inside that same
+   list page, just never rendered standalone.
+2. **Built CareConnect's new `/queue-status` page** (`SQ_CareConnect@6ec24d1`, `master`):
+   extracted `QueuePanel`/`MyProgressStepper` out of `app/bookings/page.tsx` into a shared
+   `app/components/queue-status-panel.tsx` so both pages use one implementation; new
+   `app/api/bookings/[id]/route.ts` for the single-booking summary the standalone page needs;
+   both `queue-access-token` and `session-token` consume routes gained a redirect branch so the
+   mobile app's existing booking-scoped and general session bridges can both land here (the
+   general one tagged `source: 'queue_status'`, landing with no `?focus=`, rendering the page's
+   own "No Active Queue Today" empty state).
+3. **Entertainment section redesigned mid-build, per the user.** Original plan (matching the
+   flyer literally) was a 5-option "pick your preference, we'll show it later" radio list with a
+   `PatientEntertainmentPreference` DB table — built, then discarded after the user pasted a
+   concrete alternative: 3 direct-action buttons (Health Tips / Play a Game / Listen to Music)
+   linking straight to real external resources, no preference to save. Removed the migration,
+   Prisma model, and API route; replaced with `lib/entertainment.ts` (a static link list) and
+   `app/components/entertainment-links.tsx`. **Click-tested all three destinations** (not just
+   trusted the URLs): medlineplus.gov, wayline-engage.com's "Calm the Queue" waiting-room puzzle
+   game, and open.spotify.com's Relaxation genre page all load correctly. `?utm_source=chatgpt.com`
+   tracking params the user's links carried were stripped before use.
+4. **Home page (`sq_appt_app_2@496c21c`, `fix/android-15-compliance`)**: `_ActiveQueueCard` no
+   longer disappears when there's no active booking — always renders, with a null-booking branch
+   showing "No Active Queue Today" and a "Queue Status" button that calls the general
+   `source: 'queue_status'` bridge instead of the booking-scoped one (which has no booking to
+   scope to). `_openManageBookings` gained a `title` param so its WebView title/error toast match
+   whichever entry point called it. Card header renamed "My Active Queues" → "Queue Status" to
+   match the destination page.
+5. **Tested on the `API36_EdgeToEdge` emulator** using the fake-JWT `_fake_prefs.xml` fixture
+   (`bookingList` comes back empty since `node_app_server` correctly rejects the fake token) —
+   confirmed the empty-state UI and button-tap wiring render/fire correctly. **Not verified**:
+   the real authenticated path (active booking → focused `/queue-status?focus=<id>` → live data)
+   needs a real account, not attempted this session. Also confirmed via local `next dev` +
+   direct browser that `/queue-status` and the untouched `/bookings` page both render — the
+   near-black rendering seen in screenshots is a pre-existing Chrome forced-dark-mode quirk in
+   this environment, not a regression.
+6. **Committed and pushed all three repos** narrowly — each commit staged only this session's
+   own files, leaving substantial pre-existing uncommitted work in each repo (`app/api/bookings/
+   mine/route.ts` and various untracked marketing images in CareConnect; `android/gradle.properties`
+   and build artifacts in `sq_appt_app_2`) untouched, not swept in.
+7. **Android: bumped to 60 (48.0.12)** (`sq_appt_app_2@1370580`), built a signed release AAB
+   (`flutter build appbundle --release`, 38.6MB, `jarsigner -verify` confirmed), then hit a real
+   tool limit trying to publish it: the browser extension's `file_upload` caps at 10MB from
+   session-local paths, so a 38.6MB AAB from an arbitrary path is a hard rejection, not a
+   permissions issue. Drove Play Console (logged in as `Vic10809`, since the browser's default
+   session was `vic@smartqsys.com`, which has no Play Console access) all the way to the "Create
+   open testing release" screen with the upload dropzone ready, then handed off — **user did the
+   actual file upload and clicked "Submit 1 change for review" themselves**. Confirmed submitted:
+   Publishing overview showed "60 (48.0.12) — Start full rollout" running Google's automated
+   quick-checks, counting down consistently across repeated checks (13min → 7min → 6min) —
+   **awaiting Google's review** as of this writing. Deliberately untouched, per standing
+   convention: the pre-existing "57 (48.0.9) — Start full rollout" entry still sitting in
+   "Changes ready to publish" (Google-approved from an earlier session, never manually published).
+8. **iOS not built this session** (Windows has no Xcode). Wrote `IOS_PUBLISH_2026-08-26.md`, a
+   self-contained handoff script for a Mac Claude session: pull to `1370580`, bump `pubspec.yaml`
+   to `1.0.7+8` (build 7 is already live on TestFlight External Testing, can't reuse the number),
+   `flutter build ipa --release`, upload via Transporter, distribute to the "External Testers"
+   group. Not yet executed — the user intends to hand this to a Mac session separately.
+
+**Left open**: real-account end-to-end verification of the focused `/queue-status?focus=<id>`
+path (Android), the entire iOS build/publish (script written, not run), and Google's review
+outcome for Android 60 (48.0.12).
+
+---
+
 ### 2026-08-25 (Windows session) — New Booking Service Provider Unit ID search, committed and pushed
 
 User asked to add a Unit ID search field to New Booking's Service Provider step, anticipating the

@@ -9,44 +9,22 @@
 
 ## Open / needs attention (as of 2026-08-26, Windows session — Queue Status page + Home redesign)
 
-> Home's "My Active Queues" card redesign, driven by the reference flyer
-> (`SQ_CareConnect/How do you wish entertained flyer.png`). Committed and pushed:
-> `SQ_CareConnect@6ec24d1` (master) adds `/queue-status` (booking-focused live queue view via a
-> shared `QueueStatusPanel`, "No Active Queue Today" empty state, and a Health Tips/Play a
-> Game/Listen to Music entertainment section — no save-a-preference step, each button links out
-> directly); `sq_appt_app_2@496c21c` (`fix/android-15-compliance`) makes `_ActiveQueueCard` on
-> Home always render (was hidden entirely with no active booking), with a "Queue Status" button
-> in the empty case that opens the new page via the `source: 'queue_status'` bridge. Still open:
+> Queue Status page (`SQ_CareConnect@6ec24d1`) + Home redesign (`sq_appt_app_2@496c21c`) +
+> Android 60/48.0.12 version bump (`1370580`). Fully folded into `DEVLOG.md`'s 2026-08-26 entry.
+> Still open:
 
-- ~~Entertainment links point to real external sites the user sourced -- never load-tested.~~
-  **Resolved 2026-08-26: click-tested all three, all load correctly** -- medlineplus.gov (NIH's
-  real homepage), wayline-engage.com's "Calm the Queue" (a real branded waiting-room puzzle game,
-  on-theme), open.spotify.com's Relaxation genre page (real playlists). No further action needed
-  unless one of these third-party pages moves/breaks later.
-- **Not verified end-to-end with a real account.** Testing this session used a fake-JWT
-  SharedPreferences fixture on the `API36_EdgeToEdge` emulator, which confirmed the Home card's
-  empty-state UI and the button-tap wiring, but `node_app_server` correctly rejects the fake
-  token, so the full authenticated path (real active booking -> "View Status" ->
-  `/queue-status?focus=<id>` -> live `QueueStatusPanel` with real queue data) has not actually
-  been clicked through on a device. Needs a real logged-in account with a live CareConnect-routed
-  booking to close this out.
-- **iOS side untouched/unverified.** All work this session was Android-emulator-only; the Dart
-  change is shared code so it should carry over, but hasn't been built or run on iOS.
-- ~~`sq_appt_app_2`'s `fix/android-15-compliance` still needs `versionCode`/`versionName` bumped~~
-  **Done 2026-08-26: bumped to 60 (48.0.12), committed (`1370580`), pushed. Release AAB built
-  clean** (`flutter build appbundle --release`, 38.6MB, `jarsigner -verify` confirms it's properly
-  signed with `keystore.jks`) **at `build/app/outputs/bundle/release/app-release.aab`.**
-  **⚠️ Not actually uploaded to Play Console — blocked, not just skipped.** Tried via browser
-  automation (`vic@smartqsys.com` was the logged-in account, no Play Console access there per the
-  known account split — needs `vic10809@gmail.com`) but hit a hard tool limit before that even
-  mattered: the browser extension's file-upload path only accepts files under 10MB from the
-  session's own folders, and this AAB is 38.6MB from an arbitrary local path. **Needs a human to
-  do the actual Play Console upload+submit** (Open Testing track, matching every prior release) —
-  the AAB itself is ready and verified, this is purely the last manual step.
-- **iOS: wrote `IOS_PUBLISH_2026-08-26.md` (this repo) as a self-contained handoff script for Mac
-  Claude** — pull to `1370580`, bump `pubspec.yaml` to `1.0.7+8` (7 is already live on TestFlight,
-  can't reuse), `flutter build ipa --release`, upload via Transporter, distribute to "External
-  Testers". Not yet executed — waiting on the user to actually hand this to a Mac session.
+- **Android 60 (48.0.12) submitted to Open Testing 2026-08-26 — awaiting Google's review.**
+  Check Play Console next session; the pre-existing "57 (48.0.9)" entry in "Changes ready to
+  publish" is a separate, still-unpublished thing, deliberately untouched.
+- **iOS not built this session.** `IOS_PUBLISH_2026-08-26.md` (this repo) is a ready-to-paste
+  handoff script for a Mac Claude session — pull to `1370580`, bump `pubspec.yaml` to `1.0.7+8`
+  (7 is already live on TestFlight, can't reuse), build, upload, distribute to "External
+  Testers". Not yet executed.
+- **Not verified end-to-end with a real account.** This session's emulator test used a fake-JWT
+  fixture, which confirmed the Home card's empty-state UI and button-tap wiring but couldn't
+  authenticate, so the real path (active booking → "View Status" → `/queue-status?focus=<id>` →
+  live `QueueStatusPanel` with real queue data) hasn't actually been clicked through. Needs a
+  real logged-in account with a live CareConnect-routed booking.
 
 ## Open / needs attention (as of 2026-08-25, Windows session — New Booking Service Provider search)
 
