@@ -33,12 +33,6 @@ abstract class ConfigUrl {
   // (2026-08-19), not directly, so Service Provider Mode never hits ccadmin's own login wall.
   static String careConnectAdminBaseUrl = "https://ccadmin.smartqsys.com";
 
-  // Mints a token-bridged SSO link into CareConnect's own "More" page (PATIENT session), same
-  // pattern as manageBookingsLinkUrl -- seed of moving Settings' CareConnect-related rows onto a
-  // page that can grow without an app release (2026-08-28). See settings.dart's "Register Another
-  // Service" row, the first thing to move onto it.
-  static String moreLinkUrl = "/careconnect/more-link";
-
   static String deleteUserUrl(String userId) => "/users/$userId";
   static String forgotPasswordUrl = "/forgot-password";
 }
