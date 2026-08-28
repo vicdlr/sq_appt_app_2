@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
+import 'package:sq_notification/api/dio.dart';
 import 'package:sq_notification/constant/app_colors.dart';
 import 'package:sq_notification/utils/utils.dart';
 import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
 import 'package:sq_notification/view/home/contact_us.dart';
+import 'package:sq_notification/view/home/get_ticket.dart';
 import 'package:sq_notification/view/home/service_provider_mode.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -159,6 +162,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // Mint-then-open pattern, mirroring service_provider_mode.dart's _openCareConnect -- opens
+  // CareConnect's own "More" page (2026-08-28) via the token-bridged SSO link instead of a bare
+  // WebView on a public URL, so it never hits a login wall and picks up WebViewPage's real
+  // loading/crash/retry handling for free.
+  Future<void> _openMore(BuildContext context) async {
+    final result = await DioApi.post(path: ConfigUrl.moreLinkUrl, data: {});
+
+    if (!context.mounted) return;
+    if (DioConfig.maybeBlockForForceUpdate(context)) return;
+
+    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
+    if (result.response != null && careConnectUrl != null) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+        return WebViewPage(url: careConnectUrl, title: 'Register Your Service');
+      }));
+    } else {
+      Fluttertoast.showToast(msg: "Couldn't open this right now. Please try again.");
+    }
+  }
+
   Future<void> _logout() async {
     final bool isLogout = await Utils.logoutDialog(context) ?? false;
     if (isLogout) {
@@ -286,19 +309,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // per account) -- left an existing provider with no in-app way to register an
                 // *additional* one. Added here instead (2026-08-26, per the user): the mobile
                 // app's "More" tab (bottom_nav_bar.dart embeds this screen as that tab's body)
-                // is the surface an existing provider already lands on.
+                // is the surface an existing provider already lands on. 2026-08-28: now opens via
+                // CareConnect's own "More" page (see _openMore) instead of a bare WebView on a
+                // public URL -- the seed of moving this row (and future ones) onto a page that can
+                // grow without an app release.
                 _SettingsRow(
                   icon: Icons.add_business_outlined,
                   title: "Register Another Service",
                   subtitle: "Add another clinic or service provider",
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-                      return WebView(
-                        url: 'https://ccregister.smartqsys.com/register-clinic',
-                        title: 'Register Your Service',
-                      );
-                    }));
-                  },
+                  onTap: () => _openMore(context),
                 ),
               ],
             ],
