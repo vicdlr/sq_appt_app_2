@@ -7,6 +7,40 @@
 
 ---
 
+### 2026-08-28 (Mac session) — iOS 1.0.7+10 built, staged in Transporter; build-parity confirmed
+
+Picked up from the previous iOS build (`1.0.7+9`, `sq_appt_app_2@75c481c`). Pulled
+`fix/android-15-compliance` to `e6c1350` (Android's 62/48.0.14 bump). The only real client-side
+change since `+9`: the bottom-nav "More" tab now mints a CareConnect SSO session and opens it in a
+WebView instead of the native Settings screen (final state `078315b`, "Reapply..." — the
+revert/reapply churn in between (`899eb94`/`e6342ef`/`078315b`) nets out to just that one change).
+
+1. **`flutter pub get` + `pod install`** — ran both per standing convention even though
+   `pubspec.yaml`'s dependencies didn't change. `pub get` bumped 10 transitive packages (routine
+   lockfile churn, not committed — same as every prior session, `pubspec.lock`/`ios/Podfile.lock`
+   stay local noise). `pod install` succeeded clean, no Podfile changes needed.
+2. **Bumped `pubspec.yaml` to `1.0.7+10`** (`sq_appt_app_2@b2b5028`), committed alone per
+   convention (pubspec.yaml only, no lockfiles).
+3. **`flutter build ipa --release` succeeded clean** — `Runner.xcarchive` (260.3MB), IPA at
+   `build/ios/ipa/sqapptapp.ipa` (35.4MB). App Settings Validation confirmed Version 1.0.7 / Build
+   10 / bundle `com.smartqsys.sqapptapp` / deployment target 15.5.
+4. **Build-parity check (standing convention):** `git merge-base --is-ancestor e6c1350 b2b5028` →
+   **true** — iOS `1.0.7+10` (`b2b5028`) is a strict descendant of Android 62/48.0.14's bump
+   commit (`e6c1350`), with only the version-bump commit on top. Confirmed at parity, not just
+   adjacent version numbers.
+5. **Staged in Transporter** (`open -a Transporter build/ios/ipa/sqapptapp.ipa`) but **not
+   delivered** — no App Store Connect API key/credentials available to this session for a
+   CLI (`xcrun altool`) upload, and actually clicking "Deliver" plus promoting to the "External
+   Testers" group both need the user's Apple ID/2FA. **Left open for the user**: click Deliver in
+   Transporter (already open, `vic@smartqsys.com`), confirm the build shows `Complete` in App
+   Store Connect's TestFlight tab, then promote `1.0.7 (10)` to the "External Testers" group (same
+   group used for `1.0.7(6)`/`(9)`) — existing testers get it automatically, no re-invite needed.
+
+**Left open**: the actual TestFlight delivery + External Testers promotion (session-blocked on
+Apple credentials, see item 5).
+
+---
+
 ### 2026-08-26 (Windows session, continued) — 36h retention sweep, two "not today" bugs, registration/notification gaps
 
 Same-day continuation after the Queue Status/Android-publish entry below. User raised four more
