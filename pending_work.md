@@ -7,22 +7,56 @@
 
 ---
 
-## Open / needs attention (as of 2026-08-26, Windows session — retention sweep, today-bugs, registration/notification gaps)
+## Open / needs attention (as of 2026-08-28, Windows session — "More" tab shipped, Android 62 submitted)
 
-> 36h retention sweep, both "not today" bugs, "Register Another Service", the SAM-admin push
-> notification-persistence bug (root cause: `/send-notification` hardcoded `user_id: null`, fixed
-> across all 12 `sendServiceNotification()` call sites), and two other push-persistence gaps — all
-> fully folded into `DEVLOG.md`'s 2026-08-26 (continued) entry. Still open:
+> "More" tab redesign re-applied and verified live with a real account, booking-push provider name
+> confirmed by the user, Android 62 (48.0.14) compiled and submitted to Open Testing, and a
+> KDE-Connect knowledge-base note added — all fully folded into `DEVLOG.md`'s 2026-08-28
+> "(continued past the multi-round revert saga)" entry. Still open:
 
-- **`ServiceProviderApplication.confirmationEmailSentAt` is `null` on every application ever
-  created** — a real, independent, 100%-reproducing email-delivery failure (`sendMail()`/ZeptoMail
-  side), confirmed still true on the live-test registration too. Separate from the
-  now-fixed push-notification issue. Not yet investigated further or fixed.
-- **Android 60 (48.0.12) still awaiting Google's review** in Open Testing — check Play Console
-  next session. The pre-existing "57 (48.0.9)" entry in "Changes ready to publish" is a separate,
-  still-unpublished thing, deliberately untouched.
-- **iOS: Mac Claude has pushed the version bump** (`sq_appt_app_2@354c6d2`, `1.0.7+8`) but build/
-  upload/TestFlight-distribution status is unknown as of this writing — check next session.
+- **Android 62 (48.0.14) in review on Open Testing — check Play Console next session for the
+  outcome.**
+- **iOS TestFlight build not yet started.** A paste-ready handoff message was drafted for the Mac
+  session (pull `fix/android-15-compliance`, bump `pubspec.yaml` to `1.0.7+10`, build/archive/
+  upload, promote to the "External Testers" group) but not yet sent/acted on — the only
+  iOS-relevant change since the last build (1.0.7+9) is the "More" tab redesign itself.
+- **"More" tab: tile tap-through not yet confirmed on a real account**, and the provider-account
+  heading variant ("Register another Service Provider") is still only confirmed via the earlier
+  local dev-DB test, not live on a real device.
+
+## Open / needs attention (as of 2026-08-28, Windows session — ccadmin "Register Another Service" link)
+
+> Added a "Register another service provider" link to ccadmin's own Settings page
+> (`SQ_CareConnect@bd56765`) for browser-only ccadmin users the 2026-08-26 mobile-app fix
+> couldn't reach — a deliberate, user-confirmed exception to the mobile-first preference, not a
+> reversal of it (see [[sq_appt_app_mobile_first_fix_preference]] memory). Fully folded into
+> `DEVLOG.md`'s 2026-08-28 entry. Still open:
+
+- **Not yet visually confirmed live** — the deploy went out but nobody's clicked through
+  ccadmin's Settings page on `ccregister.smartqsys.com` to confirm the link actually renders and
+  goes to the right place.
+
+## Open / needs attention (as of 2026-08-26, Windows session — email fix, Android 61, iOS parity, booking-push provider names)
+
+> Registration confirmation-email bug (root cause: ZeptoMail token double-prefixed, plus an
+> earlier Render-blocks-SMTP layer), Android 61 (48.0.13) built and submitted to Open Testing, iOS
+> 1.0.7(9) confirmed at full build parity with it, and booking push notifications now naming the
+> service provider — all fully folded into `DEVLOG.md`'s 2026-08-26 "(Windows session, later
+> still)" entry. Still open:
+
+- **Superseded (2026-08-28): Android 61 was approved and left "Ready to publish" untouched;
+  Android 62 (48.0.14) is the build actually submitted for review** — see the entry above.
+- **Resolved (2026-08-27): "Register Another Service" confirmed working correctly on the
+  emulator** with a fixture flagged `isServiceProvider: true` — row renders, WebView opens,
+  real registration form loads. See `DEVLOG.md`'s 2026-08-27 entry. One loose thread noted but
+  not chased: Home's own "For Service Providers" section didn't hide itself the way `75565c8`'s
+  commit message says ccuser's Home card does — likely a live-API-vs-cached-value quirk specific
+  to this fake-token test, worth a glance with a real account rather than assumed broken.
+- **Resolved (2026-08-28): booking push notifications naming the provider, confirmed by the user.**
+  `node_app_server@ac474fb` (deployed on `main`+`peer-notification`) and `SQ_CareConnect@f239911`
+  (deployed on `master`) re-checked and confirmed still present at current HEAD on both. User
+  confirmed the provider name shows correctly on real push notifications — closing this out without
+  a fresh live re-test (offered, user declined as unnecessary given the existing confirmation).
 - **Not verified end-to-end with a real account.** This session's emulator test used a fake-JWT
   fixture, which confirmed the Home card's empty-state UI and button-tap wiring but couldn't
   authenticate, so the real path (active booking → "View Status" → `/queue-status?focus=<id>` →
@@ -37,13 +71,11 @@
 > workspace's `mobile-redesign` (`f9ddbb1`, also folded in the previously-uncommitted 2026-08-20
 > session log below). Fully folded into `DEVLOG.md`'s 2026-08-25 entry. Still open:
 
-- **⚠️ Before publishing this fix to Android Open Testing: `sq_appt_app_2/android/app/
-  build.gradle` needs its hardcoded `versionCode 59` / `versionName "48.0.11"` bumped to the next
-  real number (60).** Deliberately left untouched this session — user asked to handle it right
-  before the actual publish step, not now. Do **not** revert to the commented-out
-  `flutterVersionCode.toInteger()`/`flutterVersionName` lines — those read `pubspec.yaml`'s
-  `version: 1.0.7+7`, which is iOS's separate TestFlight number (versionCode 7), and would regress
-  Android's real version below 59.
+- **Resolved (long since superseded): `versionCode` has been bumped through several releases
+  since this note — currently 62 (48.0.14), see the entry at the top of this file. Do **not**
+  revert to the commented-out `flutterVersionCode.toInteger()`/`flutterVersionName` lines in
+  `build.gradle`** — those read `pubspec.yaml`'s separate iOS TestFlight number and would regress
+  Android's real version.
 - **Sign In screen renders solid black on the `API36_EdgeToEdge` emulator with Impeller enabled**
   (Sign Up renders fine) — worked around with `flutter run --no-enable-impeller` this session, not
   root-caused. Worth knowing if a future session hits the same blank-screen symptom.

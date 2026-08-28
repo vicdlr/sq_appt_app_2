@@ -7,6 +7,374 @@
 
 ---
 
+### 2026-08-28 (Windows session, continued past the multi-round revert saga) — "More" tab re-applied and verified live; booking-push provider name confirmed; Android 62 shipped to Open Testing
+
+Picks up right after the entry below ("Reverted... again"), same day. Three real outcomes landed
+this time, no further reverts.
+
+**1. "More" tab redesign re-applied, verified live with a real account.** User asked again for
+bottom-nav "More" to open a CareConnect WebView instead of native `SettingsScreen()` — the exact
+spec already built and verified earlier that day (`node_app_server@371f08a`/
+`SQ_CareConnect@d106180`/`sq_appt_app_2@899eb94`) before the unrelated-confusion revert covered in
+the entry below. User raised a real concern before any more churn: that prior rounds "kept
+touching the Manage your booking card instead of the More button." Checked the actual reverted
+diffs rather than asserting reassurance — confirmed all three rounds only ever touched
+`bottom_nav_bar.dart`/`configurl.dart` (client), `app/more/page.tsx`/`consume/route.ts`
+(CareConnect), and the new backend endpoint; nothing in `home_dashboard.dart`'s
+`_ManageBookingsCard`/`_openManageBookings` was ever part of this change, in any round. Re-applied
+via `git revert --no-edit <revert-commit>` on each repo (revert of a revert = restore original):
+`node_app_server@0ec985a`, `SQ_CareConnect@62effc5`, `sq_appt_app_2@078315b`. `node -c`,
+`tsc --noEmit`, `flutter analyze` (scoped to touched files) all clean. All three pushed
+(`node_app_server` to both `main` and `peer-notification`).
+
+**Verified live on the emulator with a real logged-in account (`vicdlr@gmail.com`)** — first
+real-account confirmation of this feature; prior rounds only had a fake-JWT fixture that couldn't
+authenticate. Built and installed a fresh debug APK (`flutter run -d emulator-5554
+--no-enable-impeller`), tapped "More": correctly opens the CareConnect WebView, heading renders
+"Register as a Service Provider" (account isn't a provider yet), CareConnect's own
+`<PatientBottomNav>` shows at the bottom. Not tapped through to confirm the tile itself navigates
+correctly on this account; the provider-account heading variant ("Register another...") is still
+only confirmed via the earlier local dev-DB test, not live.
+
+**2. Booking push notifications naming the service provider — confirmed by the user.** Re-checked
+both halves of the 2026-08-26 fix are still present at current HEAD: `node_app_server@ac474fb`
+(deployed on `main`+`peer-notification`) prefixes "Booking Received" and the CareConnect
+status-sync push with the provider name; `SQ_CareConnect@f239911` (deployed on `master`) supplies
+`clinicName` in the webhook response for NAS to use. Offered a live re-test via a real submitted
+booking; user declined as unnecessary and confirmed directly that provider names are showing
+correctly on real push notifications. Closed out without a fresh live test.
+
+**3. Android 62 (48.0.14) compiled and submitted to Open Testing.** Bumped `versionCode` 61→62 /
+`versionName` 48.0.13→48.0.14 in `sq_appt_app_2/android/app/build.gradle` (Play requires a unique
+code across tracks; 61/48.0.13 was already sitting "Ready to publish," approved from the
+2026-08-26 session, and deliberately left untouched this round — same standing convention as every
+prior submission). `flutter build appbundle --release` succeeded (38.6MB AAB). Ships both of
+today's changes: the "More" tab redesign and the (already-deployed, backend-only) booking-push
+provider-name fix.
+
+Uploaded to Play Console via browser automation, with one real limitation hit: the 38.6MB AAB
+exceeded the browser tool's 10MB file-upload cap, so the user did the drag-and-drop upload
+manually while the browser session stayed on the right page; release notes, warnings review, and
+submission were all done via browser automation from there. Build 61's pending "Start full
+rollout" was correctly left alone in "Changes ready to publish" — only the new 62 change was sent
+under "Changes not yet submitted for review." **Submitted 2026-08-28 — awaiting Google's review**
+(typically up to 7 days). Committed as `sq_appt_app_2@e6c1350`, pushed to
+`fix/android-15-compliance`.
+
+**4. Drafted (not yet sent) a Mac-Claude handoff message for the matching iOS TestFlight build.**
+Checked actual git ancestry rather than assuming from version numbers per `IOS_HANDOFF.md`'s
+standing convention: the only iOS-relevant change since the last iOS build (1.0.7+9, commit
+`75c481c`) is the "More" tab redesign itself (`git log 75c481c..e6c1350 -- . ':!android'` shows
+only the More-tab commits and their revert/reapply churn, net one real change); `pubspec.yaml`
+dependencies didn't change, so `pod install` isn't strictly required this time, but still
+recommended per convention. Gave the user a paste-ready message for the Mac session: pull
+`fix/android-15-compliance`, bump `pubspec.yaml` to `1.0.7+10`, build/archive/upload to
+TestFlight, promote to the existing "External Testers" group, and log the build-parity check in
+`DEVLOG.md` once done. **Not yet acted on** — the Mac-side build hasn't happened yet as of this
+writing.
+
+**5. Cross-machine workflow note added to the shared knowledge base** (not project-specific, no
+code change here): the Mac↔PC clipboard-sharing tool is **KDE Connect**, not the file-transfer
+method (Zoho WorkDrive) used for the keystore handoff. Recorded in
+`D:\Claude\.claude\DEV_GOTCHAS.md`'s new "Cross-Machine Workflow" section and referenced from
+`KNOWLEDGE_BASE.md`'s Quick Reference, since neither doc had it and it's exactly the kind of
+cross-session fact that's easy to lose.
+
+---
+
+### 2026-08-28 (Windows session, continued once more) — Reverted the "More"-opens-CareConnect-directly change again
+
+The redesign from the previous entry got reverted too. What actually happened: while testing on
+the emulator, the user flagged "the Switch to Service Provider button is back" — but that button
+turned out to belong to a completely different, untouched widget
+(`home_dashboard.dart`'s `_ServiceProviderPanel`, a **Home**-screen card shown for provider
+accounts, predating this entire session and never touched by any of today's commits — its sibling
+for non-providers was already removed back on 2026-08-09 per an earlier, separate user decision).
+Surfaced that distinction, then the user asked to revert anyway rather than continue iterating in
+this direction right now.
+
+**Reverted, all three repos, `git revert --no-edit` on each**: `node_app_server@b01fb7d` (revert of
+`371f08a`), `SQ_CareConnect@7dce057` (revert of `d106180` — cleared a stale `.next` cache file
+again before re-typechecking), `sq_appt_app_2@e6342ef` (revert of `899eb94`). All clean (`node -c`,
+`tsc --noEmit`, `flutter analyze` back to the same single pre-existing `prefer_const_constructors`
+hint as before any of this round's changes). All pushed.
+
+**Net effect of this whole "More" tab saga**: back to exactly the state after the very first
+ccadmin-link entry today (`SQ_CareConnect@bd56765`, which stayed untouched through all of this) —
+bottom-nav "More" still opens native `SettingsScreen()`, "Register Another Service" still opens a
+bare public-URL WebView from Settings, Service Provider Mode's native screen and Home's own
+`_ServiceProviderPanel` are both exactly as they've always been. **No net code change from this
+entire multi-round "More" redesign exploration** — the only surviving change from today is the
+ccadmin Settings link. Worth deciding fresh next session, with clearer scope up front, rather than
+resuming mid-iteration.
+
+---
+
+### 2026-08-28 (Windows session, continued yet further) — Rebuilt "More" per exact spec: bottom-nav tab now opens CareConnect directly
+
+Follow-up to the revert two entries below. User gave a concrete, narrower spec than the earlier
+"fold everything in" direction: tapping the bottom-nav "More" tab should open a CareConnect
+WebView directly (no native Settings screen in between), landing on one dynamic entry point —
+**"Register as a Service Provider"** if the account isn't one yet, **"Register another Service
+Provider"** if it already is. Service Provider Mode's own three cards weren't mentioned this time
+and were left untouched.
+
+**Checked first**: `SettingsScreen()` has two other entry points besides the bottom nav —
+`home_dashboard.dart:172` and `home_page.dart:177`, both a "Settings" item in Home's own profile
+popup menu. Confirmed Appearance/Location/Notifications/Language/Service Provider Mode/Account
+actions all stay fully reachable once "More" stops embedding Settings — nothing is stranded.
+
+**Shipped, three repos:**
+1. `node_app_server@371f08a` (`main` + `peer-notification`) — re-added `/careconnect/more-link`
+   (same shape as before the revert).
+2. `SQ_CareConnect@d106180` (`master`) — new `app/more/page.tsx` (rebuilt from scratch; simpler
+   than yesterday's seed — one link, no `isServiceProvider`-gated section wrapper, just the
+   heading text itself switches) and the `source === 'more'` branch back in `consume/route.ts`.
+3. `sq_appt_app_2@899eb94` (`fix/android-15-compliance`) — `bottom_nav_bar.dart`'s
+   `NavigationBar.onDestinationSelected` now special-cases index 3 ("More"): instead of
+   `setState(() => currentPageIndex = 3)` swapping to `SettingsScreen()`, it calls a new
+   `_openMore()` (mirrors `service_provider_mode.dart`'s mint-then-open pattern exactly) and pushes
+   the result as a `WebViewPage` route, leaving `currentPageIndex` untouched (so the tab never
+   shows as "selected", consistent with how every other WebView-push row in this app already
+   behaves). `pages` list dropped from 4 entries to 3; `SettingsScreen` import removed from this
+   file (the class itself is untouched, still used by its two other entry points).
+
+`node -c`, `tsc --noEmit`, `flutter analyze` all clean (one pre-existing, unrelated
+`prefer_const_constructors` hint on `RequestNewBooking()`, not introduced by this change).
+
+**Verified the CareConnect half against the local dev server** — minted two real test tokens
+(a non-provider "Test Patient" account and the provider "E2E Test User" fixture already in the
+local dev DB) and hit `consume` directly for each: confirmed both headings render correctly
+("Register as a Service Provider" / "Register another Service Provider"). Cleaned up both test
+tokens and stopped the dev server afterward. **Verified the mobile-client half on the emulator**:
+fresh debug build installed, tapping "More" correctly triggers the mint call and (with the
+fake-JWT test fixture, which can't authenticate against the real production API) fails gracefully
+with the expected toast — confirms the tap-to-mint-to-WebView wiring is correct even though the
+success path itself needs a real account to confirm. **Not yet confirmed against production with
+a real account.**
+
+---
+
+### 2026-08-28 (Windows session, continued further) — Reverted the "More" page seed; corrected direction for next session
+
+The `/more` page seed (previous entry) turned out to misread what the user actually wanted, caught
+via a live check on the emulator: user asked why "Service Provider Mode" existed at all, then
+clarified two things once asked directly —
+
+1. **"Register Another Service" was only ever meant to live in ccadmin's own Settings page**
+   (`SQ_CareConnect@bd56765`, added earlier today), not in the mobile app's Settings screen at all
+   — the mobile-app version (added 2026-08-26, enhanced this session) was a misunderstanding, not
+   a deliberate mobile-first choice to preserve.
+2. **The bottom-nav "More" tab itself should become a direct CareConnect WebView** — no native
+   Settings screen in between (native Settings currently double-serves as both a standalone route,
+   reachable via a gear icon elsewhere, and the "More" tab's embedded body; the user wants the
+   tab itself to stop being "another mobile settings gateway"). Service Provider Mode's three cards
+   (View Queues/Now Serving/Queue History) should fold into that same CareConnect page too, rather
+   than staying a separate native sub-screen.
+
+**Reverted, not left half-built, before redesigning**: `node_app_server@28ec9b7` (revert of
+`8a28f69`), `SQ_CareConnect@5a77149` (revert of `4906be7` — `bd56765` untouched, that one's
+correct), `sq_appt_app_2@276371b` (revert of `37794e8`). All three `git revert --no-edit`, verified
+clean (`node -c`, `tsc --noEmit` after clearing a stale `.next` type-validator cache file the local
+dev-server test had left behind, `flutter analyze` back to the original 3 pre-existing hints).
+Pushed all three.
+
+**Next session**: design the "More" tab as a direct-to-CareConnect WebView (needs to figure out
+where Appearance/Location/Notifications/Language/Account-actions go, since `bottom_nav_bar.dart`
+currently index-swaps straight to `SettingsScreen()` with no async step — opening a WebView needs
+an async mint-then-navigate, which the current tab architecture doesn't support as-is), and build a
+real CareConnect "More" page hosting Register Another Service (ccuser side only — ccadmin already
+has its own link) plus Service Provider Mode's three quick-links.
+
+---
+
+### 2026-08-28 (Windows session, continued) — Seeded a CareConnect-hosted "More" page, moved Register Another Service onto it
+
+Follow-up to this same day's ccadmin-link entry below. User asked to future-proof the mobile app's
+"More" tab (`settings.dart`, embedded as `bottom_nav_bar.dart`'s "More" tab body) against needing
+an app release for every future addition — referencing a `more.jpeg` mockup (a fintech app's
+grouped-tile "More" screen) as the eventual look.
+
+**Investigated first, before designing anything** (two parallel Explore agents, one per repo):
+Dark Mode and Font Size are `ThemeData` set at the `MaterialApp` root
+(`lib/provider/theme_provider.dart`, `lib/main.dart`) — genuinely native-only, no WebView can touch
+them. Location/Region already calls NAS's real `PUT /profile`; Notifications and Language are
+currently inert local toggles with no real behavior yet (`_supportedLanguages` is just
+`["English"]`) — no pressing reason to move either now. `get_ticket.dart`'s `WebViewPage` (the
+shared wrapper) has no JS bridge at all, confirming a hosted page can't call back into native state
+anyway. Conclusion: the whole "More" tab can't move, but there's a real, already-proven pattern
+(mint an SSO-bridged session, land on a CareConnect page, no `ccadmin`/`ccuser` login wall) used
+three times already — Service Provider Mode, Manage Bookings, Queue Status — that "Register
+Another Service" wasn't using yet; it was the only WebView-opened row still just hardcoding a
+public URL through the simpler `lib/view/home/WebView.dart` widget (no crash/retry handling).
+
+**Scope, confirmed with the user**: migrate only that one row for v1 — build genuine plumbing (not
+a one-off) so future tiles are a CareConnect-only change. Leave Service Provider Mode's own
+STAFF-session bridge untouched (bringing it in too would mean a new client-triggerable
+PATIENT→STAFF session upgrade, real new trust-model work, not just reuse).
+
+**Shipped, three repos:**
+1. `node_app_server@8a28f69` (`main` + `peer-notification`) — new `POST /careconnect/more-link`,
+   sibling of `/careconnect/manage-bookings-link`/`/careconnect/service-provider-link`, mints a
+   PATIENT session with `source: "more"`.
+2. `SQ_CareConnect@4906be7` (`master`) — new `app/more/page.tsx` (client component, fetches
+   `/api/auth/me` for `isServiceProvider`, renders a "Clinic & Services" section with a
+   "Register Another Service" tile using the existing `app/icons.tsx` kit and Tailwind card idiom,
+   `<PatientBottomNav>` at the bottom, matching `/bookings`/`/queue-status`'s exact convention — no
+   dedicated layout, no server-side auth gate, not in `proxy.ts`'s protected-paths list); and a new
+   `source === 'more'` branch in `app/api/mobile/session-token/consume/route.ts` (mirrors the
+   existing `'queue_status'` branch), redirecting to `/more`.
+3. `sq_appt_app_2@37794e8` (`fix/android-15-compliance`) — `configurl.dart` gains `moreLinkUrl`;
+   `settings.dart`'s "Register Another Service" row now mints via that endpoint and opens the
+   result in `get_ticket.dart`'s `WebViewPage` (upgrading off the simpler `WebView.dart`), mirroring
+   `service_provider_mode.dart`'s `_openCareConnect` pattern exactly.
+
+`node -c`, `tsc --noEmit`, `flutter analyze` all clean (the 3 analyzer hits on `settings.dart` are
+pre-existing, unrelated to this change).
+
+**Verified end-to-end locally** (not against production — no real login credentials available to
+call the new endpoint's JWT-gated route for real): started CareConnect's local dev server, used the
+local dev DB's pre-existing "E2E Test User" fixture (`isServiceProvider: true`) to manually insert
+a `MobileSessionToken` row with `source: "more"` (simulating what node_app_server's new endpoint
+would produce), then hit the `consume` URL directly in a browser. Confirmed the full chain: redirect
+landed on `/more`, the gated tile rendered correctly, `<PatientBottomNav>` showed "My Clinic" (role
+detected correctly), and clicking the tile navigated to `/register-clinic`. Cleaned up the test
+token and stopped the dev server afterward. **Not yet confirmed against production** — needs a real
+device tap-through once deployed, or a direct call to `/careconnect/more-link` with a real
+`mdevice` id.
+
+---
+
+### 2026-08-28 (Windows session) — Added a ccadmin-side "Register Another Service" link for browser-only admins
+
+Follow-up to 2026-08-26 item #4/2026-08-27's confirmation. Asked to verify where the "additional
+service provider registration" link is for a ccadmin who already has at least one clinic
+registered — searched every ccadmin page (`app/admin/clinic/layout.tsx`'s nav, `page.tsx`,
+`settings/page.tsx`, `bookings/page.tsx`, `calendar/page.tsx`, `docs/page.tsx`) for anything
+matching "Register"/"register-clinic"/"Add Another" — nothing. The only place this link exists at
+all is the mobile app's ccuser Settings row added 2026-08-26 (`sq_appt_app_2@75565c8`).
+
+**Flagged before acting**: the 2026-08-26 entry below (item #4) explicitly records that this class
+of fix was kept mobile-app-only *per the user at the time*, specifically instead of touching
+CareConnect. Surfaced that tension rather than silently either following or overriding it.
+**User confirmed (2026-08-28)** this is a considered exception, not a reversal: a ccadmin reached
+purely via browser — or via the mobile app's own Service Provider Mode WebView, without ever
+backing out to Settings — has no mobile-app fallback to reach that link at all, which the
+2026-08-26 fix structurally can't cover.
+
+Added a "Register another service provider" link to ccadmin's own Settings page
+(`app/admin/clinic/settings/page.tsx`, links to `/register-clinic`), next to the existing "Docs →
+Notes to Clients" note. `tsc --noEmit` clean. Committed and pushed (`SQ_CareConnect@bd56765`,
+`master`, auto-deploys `sq-careconnect`). Saved this nuance to memory
+(`sq_appt_app_mobile_first_fix_preference`) so a future session proposes the mobile-app fix first
+by default but knows when the browser-only-access exception applies. **Not yet visually confirmed
+live** — worth a real click-through on `ccregister.smartqsys.com`'s ccadmin Settings page next
+session.
+
+---
+
+### 2026-08-27 (Windows session) — Confirmed "Register Another Service" renders correctly on a service-provider account
+
+Quick follow-up to the previous entry's open item #4. Built a fresh debug APK from
+`fix/android-15-compliance` HEAD (includes commit `75565c8`) and installed it on the running
+`emulator-5554`. Reused the existing fake-JWT fixture (`sq_appt_app/_fake_prefs.xml`, from the
+2026-08-26 Queue Status testing session) but flipped `is_service_provider` to `true` and pushed it
+into the app's `FlutterSharedPreferences.xml` via `adb run-as` (the fixture can't authenticate
+against the real API — `POST` calls fail with "Failed to connect to sq servers" — but Settings'
+row visibility only reads the locally-cached `UserDataModel`, not a live call, so this is enough to
+test the actual condition).
+
+**Confirmed both pieces working:**
+- Settings → "Register Another Service" row renders correctly, right below "Service Provider
+  Mode", when `isServiceProvider: true` — not shown otherwise. Gate works as coded.
+- Tapping it opens the `WebView` to `ccregister.smartqsys.com/register-clinic` and the real
+  "Register your Service Provider" form loads correctly (Industry/Organisation/Service Provider
+  Name/Specialty fields all present). Took ~15s to render past a blank white page on this
+  emulator — a slow WebView cold-start, not a bug (same class of behavior as the physical-device
+  WebView-load issue documented 2026-08-18, just less severe here).
+
+Noted but not investigated further: Home's own "For Service Providers" card/section did *not*
+disappear despite `isServiceProvider: true` in the fixture, even though `75565c8`'s commit message
+says CareConnect's ccuser Home already hides its own "Register Your Service" card once that flag
+is true. Likely reads a live API value rather than the cached one and fell back to showing it once
+that call failed — worth a real-account check rather than assuming it's broken from this
+fake-token test alone.
+
+---
+
+### 2026-08-26 (Windows session, later still) — Registration email fixed, Android 61 shipped, iOS parity confirmed at 1.0.7(9), booking pushes now name the provider
+
+Continuation after the retention-sweep/registration-gap entry below. Picked up mid-investigation
+(a prior session crash cut off the confirmation-email root-cause work) and closed it, then handled
+an Android release, an iOS parity check, and a small feature request.
+
+1. **Root-caused and fixed: `ServiceProviderApplication.confirmationEmailSentAt` was `null` on
+   every application ever created.** Two stacked bugs, both in `SQ_CareConnect`, both specific to
+   Render's `sq-careconnect` free-tier service:
+   - Outbound SMTP is blocked entirely on Render (587 and 465 both time out identically, 100%
+     reproducing) — fixed by switching `lib/email.ts`'s `sendMail()` from nodemailer/SMTP to
+     ZeptoMail's HTTP API (plain HTTPS POST, port 443, not blocked). Commit `90f1a0e`.
+   - Even after that deploy, real sends still failed (`sendMail failed: 500`) — root cause:
+     Render's `ZEPTOMAIL_TOKEN` env var had the `Zoho-enczapikey ` scheme prefix baked into the
+     stored value itself, but the code *also* prepends that prefix, producing a double-prefixed,
+     malformed `Authorization` header. A manual direct test against ZeptoMail's API (prefix
+     included, as ZeptoMail's own sample code shows it) had worked fine — correct as a *complete
+     header value*, wrong as the *env var* once the code adds its own prefix. User edited the env
+     var on Render to strip the leading text (Claude doesn't edit API-key/token fields itself,
+     authorization or not — same rule as passwords). Redeployed, confirmed live: submitted a real
+     test registration (`registeringEmail: vicdlr@gmail.com`) after the fix, no `sendMail failed`
+     in Render's logs (previously 100% reproducing), and the user confirmed the confirmation email
+     actually arrived. Fully closed.
+
+2. **Android 61 (48.0.13) built, signed, and submitted to Open Testing.** Turned out 60 (48.0.12)
+   had never actually been sent for review (Play Console showed it "Not yet sent for review"), and
+   three real commits had landed on `fix/android-15-compliance` since that bump — Queue Status
+   Home card, an active-queue-card "today only" fix, "Register Another Service", Settings
+   build-number display — so bumped to 61 instead of shipping 60 as-is. Also fixed a real,
+   previously-uncommitted build bug: `android/gradle.properties` needed `kotlin.incremental=false`
+   — Kotlin's incremental compiler can't relativize paths across drive letters on Windows (pub
+   cache on `C:`, project on `D:`), causing an `IllegalArgumentException` ("different roots")
+   during `compileDebugKotlin`. Committed separately (`4df9abf`) from the version bump (`93f6987`).
+   `flutter build appbundle --release` succeeded clean (38.6MB, `jarsigner -verify` → "jar
+   verified"). **Claude could not upload the `.aab` itself** — browser automation's file-upload
+   tool caps at 10MB, the bundle is 38.6MB — user drag-dropped it into Play Console's upload
+   dropzone; Claude staged the release name/notes and submitted only that one change for review via
+   `vicsq10809@gmail.com`'s account, leaving the pre-existing "57 (48.0.9)" ready-to-publish entry
+   untouched (same standing pattern as every prior submission). In review as of this writing.
+
+3. **iOS 1.0.7(9) published by Mac Claude, confirmed at full build parity with Android 61.**
+   Relayed a briefing to Mac Claude covering what needed to change (the same three commits Android
+   61 picked up, since Mac's earlier `354c6d2` bump to 1.0.7+8 predated them) and to bump to +9
+   rather than assuming +8 was still un-shipped. Mac Claude's `75c481c` (bump to 1.0.7+9) landed
+   directly on top of Android's own `93f6987` bump commit — `git merge-base --is-ancestor` confirms
+   iOS 1.0.7(9) is at full parity with Android 61 (48.0.13), no commits missing on either side. Per
+   `IOS_HANDOFF.md`'s standing build-parity convention.
+
+4. **Investigated: "Register Another Service" not visible in Settings on a live device.** Not a
+   bug — two independent, unrelated explanations depending on which platform/build was checked:
+   Android's build 61 (the one carrying this feature) is still "In review" on Google's side, so
+   Open Testing was still serving the previous build; and on any build that *does* have the
+   commit, the row (`lib/view/home/settings.dart`, next to "Service Provider Mode") only renders
+   when the logged-in account's `isServiceProvider` flag is `true` — same gate on both platforms.
+   Not yet confirmed against a real account's actual flag value.
+
+5. **Booking push notifications now name the service provider.** Checked every booking-related
+   push first: CareConnect's own (Declined, Cancelled, New Appointment-to-doctor, "Your Turn")
+   already led with the clinic name via an existing `clinicDisplayName()` helper — the actual gaps
+   were two NAS-side (`node_app_server`) pushes that didn't.
+   - The immediate **"Booking Received"** push (fired right at submission) now prefixes with
+     `booking.organisation` (falling back to `.unit`) — same convention `my_booking.dart`'s own
+     card title already uses to label which provider a booking belongs to.
+   - The **CareConnect status-sync push** (Confirmed/Checked-in/Pending) now prefixes with a new
+     `clinicName` field added to CareConnect's webhook response
+     (`app/api/webhook/booking/route.ts`, commit `f239911`) and threaded through
+     `pushCopyForCareConnectOutcome()`/`applyCareConnectOutcome()` in `app.js` (commit `ac474fb`,
+     pushed to both `main` and `peer-notification` — Render's `node_app_server` deploys from the
+     latter). `node -c`/`tsc --noEmit` both clean. Not yet visually confirmed on a real device —
+     worth a real booking end-to-end next session.
+
+---
+
 ### 2026-08-26 (Windows session, continued) — 36h retention sweep, two "not today" bugs, registration/notification gaps
 
 Same-day continuation after the Queue Status/Android-publish entry below. User raised four more
