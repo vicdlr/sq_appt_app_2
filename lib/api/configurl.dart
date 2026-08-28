@@ -35,8 +35,4 @@ abstract class ConfigUrl {
 
   static String deleteUserUrl(String userId) => "/users/$userId";
   static String forgotPasswordUrl = "/forgot-password";
-
-  // Mints a token-bridged SSO link into CareConnect's own "More" page (PATIENT session) -- the
-  // bottom-nav "More" tab's destination (2026-08-28), see bottom_nav_bar.dart's _openMore.
-  static String moreLinkUrl = "/careconnect/more-link";
 }

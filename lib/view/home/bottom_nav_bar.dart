@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:sq_notification/api/api.dart';
-import 'package:sq_notification/api/configurl.dart';
-import 'package:sq_notification/api/dio.dart';
-import 'package:sq_notification/view/home/get_ticket.dart';
 import 'package:sq_notification/view/home/home_dashboard.dart';
 import 'package:sq_notification/view/home/notification.dart';
 import 'package:sq_notification/view/home/request_new_booking.dart';
+import 'package:sq_notification/view/home/settings.dart';
 
 class BottomNavBar extends StatefulWidget {
   const BottomNavBar({super.key});
@@ -21,39 +17,14 @@ class _BottomNavBarState extends State<BottomNavBar> {
     const HomeDashboard(),
     const NotificationsScreen(),
     RequestNewBooking(),
+    const SettingsScreen(),
   ];
-
-  // "More" (2026-08-28) no longer embeds a native screen -- it mints a token-bridged SSO link
-  // (mirroring service_provider_mode.dart's _openCareConnect) into CareConnect's own "More" page
-  // instead, so its content can grow without an app release. Settings (Appearance, Location,
-  // Notifications, Language, Service Provider Mode, Account actions) is still fully reachable via
-  // the Home screen's own profile menu -- see home_dashboard.dart/home_page.dart's "Settings" menu
-  // item -- this just removes the redundant second gateway into it.
-  Future<void> _openMore(BuildContext context) async {
-    final result = await DioApi.post(path: ConfigUrl.moreLinkUrl, data: {});
-
-    if (!context.mounted) return;
-    if (DioConfig.maybeBlockForForceUpdate(context)) return;
-
-    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
-    if (result.response != null && careConnectUrl != null) {
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-        return WebViewPage(url: careConnectUrl, title: 'More');
-      }));
-    } else {
-      Fluttertoast.showToast(msg: "Couldn't open this right now. Please try again.");
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
-          if (index == 3) {
-            _openMore(context);
-            return;
-          }
           setState(() {
             currentPageIndex = index;
           });
