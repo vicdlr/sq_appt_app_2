@@ -7,6 +7,45 @@
 
 ---
 
+### 2026-08-31 (Mac session) — iOS 1.0.7+11 ships the email-trim fix, live on External Testing
+
+Pulled `fix/android-15-compliance` to `16e2b3f` (Android's 63/48.0.15 bump, itself shipping the
+fix below). One relevant commit since the last iOS build (`1.0.7+10`, `b2b5028`): `ec433f0`,
+"Trim email before validating/submitting on Sign Up and Sign In" — both screens' email field used
+raw controller text with no `.trim()`, so a leading space (easy to introduce via mobile keyboard
+autocomplete) broke the format regex's `^` anchor and blocked the form's `validate()` before any
+network call, surfacing as "Enter a valid email address" with no way to proceed. This is what was
+blocking testers from registering. **Note**: both the user's handoff and Android's own bump commit
+message cite `a019c55` for this fix — no such commit exists in this repo; `ec433f0` is the actual
+commit and its diff matches the described fix exactly (flagged, not chased further).
+
+1. **`flutter pub get` + `pod install`** — both clean, no dependency changes, routine lockfile
+   churn only (not committed, same as every prior session).
+2. **Bumped `pubspec.yaml` to `1.0.7+11`** (`sq_appt_app_2@d2fdd05`), committed alone per
+   convention, pushed.
+3. **`flutter build ipa --release` succeeded clean** — IPA at `build/ios/ipa/sqapptapp.ipa`
+   (35.4MB). App Settings Validation confirmed Version 1.0.7 / Build 11.
+4. **Build-parity check:** `git merge-base --is-ancestor 16e2b3f d2fdd05` → **true** — iOS
+   `1.0.7+11` is a strict descendant of Android 63/48.0.15's bump commit, with only the
+   version-bump commit on top. Confirmed at parity.
+5. **Delivered via Transporter and promoted, this time actually completed end-to-end** (unlike
+   `+10`, see entry below): user clicked Deliver in Transporter themselves (still no App Store
+   Connect API key/CLI credentials available to this session); once App Store Connect showed
+   `1.0.7 (11)` as `Complete`, drove the External Testers promotion via Chrome browser automation
+   (App Store Connect, already-authenticated session) — TestFlight > External Testers > Builds >
+   `+` > selected build 11 > What to Test note ("Fixes an issue where a stray space in the email
+   field could block Sign Up/Sign In with 'Enter a valid email address.'") > left "Automatically
+   notify testers" checked > Submit for Review. Confirmed: went straight to `Testing` status, no
+   Apple review wait (External Testers group now shows 4 builds, `1.0.7(11)` `Testing`) — same
+   straight-through pattern as every build since `1.0.7(6)`.
+
+**Resolved, closing the loop from the entry below**: `1.0.7+10` (staged 2026-08-28, never confirmed
+delivered at the time) was already sitting in the External Testers group as `Testing` when this
+session checked the Builds tab (before adding `11`) — the user's "I already delivered it" covered
+both `+10` and `+11`. External Testers group is now at 4 builds: `11`/`10`/`7`/`6`, all `Testing`.
+
+---
+
 ### 2026-08-28 (Mac session) — iOS 1.0.7+10 built, staged in Transporter; build-parity confirmed
 
 Picked up from the previous iOS build (`1.0.7+9`, `sq_appt_app_2@75c481c`). Pulled
