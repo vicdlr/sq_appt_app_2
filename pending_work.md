@@ -12,7 +12,7 @@
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
-- **⚠️ Email-trim fix (`a019c55`, root-caused why testers couldn't register) not yet confirmed live
+- **⚠️ Email-trim fix (`ec433f0`, root-caused why testers couldn't register) not yet confirmed live
   on a device.** Logic verified directly (regex test) and `flutter analyze` clean, but the emulator
   session couldn't render past a black screen to actually tap through Sign Up — same known Sign-In
   rendering quirk as before, this time compounded by the emulator having no network access at all.

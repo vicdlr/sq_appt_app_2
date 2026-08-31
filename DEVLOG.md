@@ -22,7 +22,7 @@ Up's had the identical bug.
 **Fixed both screens' main email field** (`SignUp.dart`: field validator + `_submit()`'s payload;
 `SignIn.dart`: field validator + login payload) to trim before validating/submitting, matching the
 pattern already correct in the forgot-password dialog. `flutter analyze` clean on both files (only
-pre-existing style hints). Committed `a019c55` on `fix/android-15-compliance`.
+pre-existing style hints). Committed `ec433f0` on `fix/android-15-compliance`.
 
 **Verification, partial — logic confirmed, live UI blocked by unrelated environment issues.**
 Confirmed the fix's logic directly (regex test matches with/without a simulated leading space,
