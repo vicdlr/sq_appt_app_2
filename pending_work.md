@@ -12,6 +12,12 @@
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
+- **⚠️ Email-trim fix (`a019c55`, root-caused why testers couldn't register) not yet confirmed live
+  on a device.** Logic verified directly (regex test) and `flutter analyze` clean, but the emulator
+  session couldn't render past a black screen to actually tap through Sign Up — same known Sign-In
+  rendering quirk as before, this time compounded by the emulator having no network access at all.
+  **Do a real click-through (enter an email with a leading space, confirm it now submits) before
+  the next release build.**
 - **iOS External Testers: 4 of 7 testers never accepted their invite** (`charitodlr@icloud.com`,
   `wmajsa2@icloud.com`, `joeapp6942@gmail.com`, `joeydlr@gmail.com`) — reinvited 2026-08-31, not
   yet confirmed whether any accepted. `haliverp@gmail.com` accepted but has zero sessions (never

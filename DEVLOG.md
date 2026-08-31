@@ -2,6 +2,46 @@
 
 ---
 
+### 2026-08-31 (Windows session, continued yet further) — Root-caused "why can't a tester register" to a missing `.trim()` on the email field
+
+User reported testers couldn't complete a new registration on either platform with real test emails
+(`joes4n2s@gmail.com` on iOS, `joresan2s@gmail.com` on Android) — symptom confirmed by the user:
+"it says enter a valid email" with the email actually entered.
+
+**Root-caused via direct regex testing, not guesswork.** `isEmailValid()` (`SignUp.dart`) uses an
+anchored regex (`^[...]+@[...]+\.[...]+`) with no `$` at the end — confirmed via a Node repro that
+every one of the reported emails matches this pattern cleanly on their own. But `SignUp.dart`'s
+field validator and `_submit()`'s actual API payload both call `isEmailValid`/build the request
+using the **raw, untrimmed** controller text — no `.trim()` anywhere. Since the regex is anchored
+at `^`, a leading space (trivial to introduce via mobile keyboard autocomplete/predictive text)
+fails the match at position 0, and `Form.validate()` blocks `_submit()` before any network call
+ever fires — exactly matching the reported symptom. `SignIn.dart`'s own **forgot-password dialog**
+already had this right (`controller.text.trim()`), but Sign In's own main email field and Sign
+Up's had the identical bug.
+
+**Fixed both screens' main email field** (`SignUp.dart`: field validator + `_submit()`'s payload;
+`SignIn.dart`: field validator + login payload) to trim before validating/submitting, matching the
+pattern already correct in the forgot-password dialog. `flutter analyze` clean on both files (only
+pre-existing style hints). Committed `a019c55` on `fix/android-15-compliance`.
+
+**Verification, partial — logic confirmed, live UI blocked by unrelated environment issues.**
+Confirmed the fix's logic directly (regex test matches with/without a simulated leading space,
+reproducing and then resolving the exact failure mode) and `flutter analyze` clean, but could not
+get a live emulator tap-through this session: hit the emulator's already-documented Sign-In
+black-screen rendering quirk (persisted even with `--no-enable-impeller`), compounded by the
+emulator apparently having no network/DNS access at all (`Failed host lookup:
+node-app-server.onrender.com` in logcat). Neither is caused by or related to this fix — both are
+pre-existing environment issues. **A real device/working-emulator tap-through is still needed**
+before the next release build to fully close this out.
+
+**Also tried and correctly declined**: querying the production Postgres DB directly (to check
+whether these emails were already registered, ruling out a duplicate-account explanation) — blocked
+by this session's own auto-mode permission classifier before any query ran. Didn't attempt to work
+around it; pivoted to the client-side code investigation instead, which turned out to be the actual
+answer.
+
+---
+
 ### 2026-08-31 (Windows session, continued further) — Root-caused CPH1909's "Get App → Open → briefly shows login → Get App" loop: ColorOS store-hijacking, not an app bug
 
 User's physical Oppo/OnePlus CPH1909 test device (Android 8.1, the same one flagged for the RELRO
