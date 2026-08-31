@@ -2,6 +2,38 @@
 
 ---
 
+### 2026-08-31 (Windows session, continued once more) — Android 64 (48.0.16) submitted to Open Testing; Mac handoff sent for iOS
+
+Shipped the email-trim fix to Open Testing. Bumped `versionCode` 62→63 (48.0.15) first — Play
+Console rejected it: **"Version code 63 has already been used. Try another version code"**
+(likely an old abandoned draft on another track from earlier in this project's history; not
+investigated further, just moved on). Discarded that stuck draft, bumped to **64 (48.0.16)**,
+rebuilt, and that one went through cleanly.
+
+**Also had to reconcile a real branch divergence before pushing**: origin had gained
+`b2b5028` ("Bump iOS build number to 1.0.7+10") from the Mac session, which this Windows
+checkout didn't have locally — discovered via `git fetch` + `log HEAD..origin`/`origin..HEAD`
+before pushing, not by force-pushing blind. `git rebase origin/fix/android-15-compliance`
+replayed cleanly, no conflicts (Android version bump + Dart fix vs. an iOS-only pubspec bump —
+disjoint files). **Rebasing rewrote the email-trim fix's local commit hash** (`a019c55` →
+`ec433f0`) since it had never been pushed before the rebase — corrected the reference in this
+file and in `pending_work.md` (`sed` in place) after the fact; flagged to the user in case the
+stale hash had already gone out in the Mac handoff message.
+
+**Uploaded via browser automation** (same pattern as build 62/63 — AAB exceeds the browser tool's
+10MB limit, user did the drag-and-drop, everything after that automated): release notes filled
+("Fixed an issue that could prevent registration when the email field had a leading space."),
+single pre-existing debug-symbols warning (same as every prior release), confirmed via Publishing
+overview that exactly one item was queued (`64 (48.0.16) — Start full rollout`, no leftover
+61/63 draft) before submitting. **Submitted 2026-08-31 — awaiting Google's review.**
+
+**iOS**: sent the Mac-session handoff message — pull `fix/android-15-compliance`, bump
+`pubspec.yaml` from `1.0.7+10` to `1.0.7+11` (only new commit since the Mac's last build is the
+email-trim fix, shared Dart code so it affects iOS too), build/archive/upload, add to "External
+Testers," log the build-parity check. **Not yet confirmed acted on.**
+
+---
+
 ### 2026-08-31 (Windows session, continued yet further) — Root-caused "why can't a tester register" to a missing `.trim()` on the email field
 
 User reported testers couldn't complete a new registration on either platform with real test emails

@@ -12,12 +12,17 @@
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
-- **⚠️ Email-trim fix (`ec433f0`, root-caused why testers couldn't register) not yet confirmed live
-  on a device.** Logic verified directly (regex test) and `flutter analyze` clean, but the emulator
-  session couldn't render past a black screen to actually tap through Sign Up — same known Sign-In
+- **Android 64 (48.0.16) submitted to Open Testing 2026-08-31 — awaiting Google's review.** Ships
+  the email-trim fix (`ec433f0`). versionCode 63 was rejected by Play Console as already-used
+  (stuck old draft, not investigated) — 64 is the real submission.
+- **iOS: Mac handoff sent for `1.0.7+11`** (pull, bump, build/archive/upload, add to External
+  Testers) — ships the same email-trim fix, shared Dart code. **Not yet confirmed acted on.**
+- **⚠️ Email-trim fix (`ec433f0`) still not confirmed live on an actual device/emulator tap-through.**
+  Logic verified directly (regex test) and `flutter analyze` clean, but the emulator session
+  couldn't render past a black screen to actually tap through Sign Up — same known Sign-In
   rendering quirk as before, this time compounded by the emulator having no network access at all.
-  **Do a real click-through (enter an email with a leading space, confirm it now submits) before
-  the next release build.**
+  **Do a real click-through (enter an email with a leading space, confirm it now submits) once a
+  working device/emulator is available.**
 - **iOS External Testers: 4 of 7 testers never accepted their invite** (`charitodlr@icloud.com`,
   `wmajsa2@icloud.com`, `joeapp6942@gmail.com`, `joeydlr@gmail.com`) — reinvited 2026-08-31, not
   yet confirmed whether any accepted. `haliverp@gmail.com` accepted but has zero sessions (never
