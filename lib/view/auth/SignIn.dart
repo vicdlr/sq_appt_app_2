@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     var data = {
-      "email": emailTextEditingController.text.toLowerCase(),
+      "email": emailTextEditingController.text.trim().toLowerCase(),
       "password": passwordTextEditingController.text,
     };
 
@@ -194,7 +194,7 @@ class _LoginPageState extends State<LoginPage> {
                       prefix: Icon(Icons.email_outlined, color: kSmartQGreen),
                       borderDecoration: _fieldBorder(),
                       validator: (val) {
-                        if (isEmailValid(emailTextEditingController.text) == false) {
+                        if (isEmailValid(emailTextEditingController.text.trim()) == false) {
                           return "Enter a valid email address";
                         }
                         return null;

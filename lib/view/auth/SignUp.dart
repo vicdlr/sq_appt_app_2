@@ -75,7 +75,7 @@ class _SignupPageState extends State<SignupPage> {
         "deviceId": _identifier,
         "username": nameTextEditingController.text,
         "password": passwordTextEditingController.text,
-        "email": emailTextEditingController.text.toLowerCase(),
+        "email": emailTextEditingController.text.trim().toLowerCase(),
         "fcm_token": fcmToken,
         "phoneNo": phoneTextEditingController.text,
         "platForm": Platform.isAndroid ? "android" : "ios",
@@ -221,7 +221,7 @@ class _SignupPageState extends State<SignupPage> {
                         prefix: const Icon(Icons.email_outlined, color: kSmartQGreen),
                         borderDecoration: _fieldBorder(),
                         validator: (val) {
-                          if (isEmailValid(emailTextEditingController.text) == false) {
+                          if (isEmailValid(emailTextEditingController.text.trim()) == false) {
                             return "Enter a valid email address";
                           }
                           return null;
