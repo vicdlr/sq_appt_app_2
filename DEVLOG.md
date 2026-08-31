@@ -1,5 +1,50 @@
 # sq_appt_app — Development Log
 
+---
+
+### 2026-08-31 (Windows session, continued) — Tester audit: Play Console + TestFlight
+
+User asked to make sure Closed/Internal testers are notified and qualified for Open/External
+testing. Checked both platforms directly rather than assuming from old notes.
+
+**Android (Play Console) — no gaps found:**
+- Open Testing: "Unlimited testers," public join link, build 62 confirmed live.
+- Internal testing, Closed testing - BetaTest, Closed testing - Alpha: all three tracks share the
+  exact same "Testers" email list (16 people) — nothing stranded on an old/different list.
+
+**iOS (TestFlight) — two real gaps found and fixed:**
+1. **Internal group "SmartqDev"** — 1 tester (`vic@smartqsys.com`), already on the newest build
+   1.0.7 (10) (uploaded 2026-08-28 6:02 PM — this build existed already, ahead of what
+   `pending_work.md` expected; the Mac-side iOS handoff drafted 2026-08-28 was apparently already
+   acted on). 71 sessions, no crashes. Fine as-is.
+2. **External Testers group (7 people) only had builds 1.0.7 (6)/(7) available — the current build
+   (10) was never added.** Added it via TestFlight's "Select a Build to Test" flow (release notes:
+   the "More" tab redesign + general stability, "Automatically notify testers" checked). Went
+   straight to "Testing" status, no Beta App Review wait — matches the precedent that a compatible
+   build for an already-approved external group skips review.
+3. **Of the 7 external testers, only 2 anonymous public-link joiners had actually installed/used
+   the app** (builds 6/7). The 5 named invites: `charitodlr@icloud.com`, `wmajsa2@icloud.com`,
+   `joeapp6942@gmail.com`, `joeydlr@gmail.com` were stuck at "Invited" (never accepted);
+   `haliverp@gmail.com` was "Accepted" (2026-08-20) but showed zero sessions (accepted the invite,
+   never actually opened the app). **Resent the invite to the 4 still-"Invited" testers** via
+   TestFlight's bulk Reinvite action (confirmed the resend dialog named exactly those 4 before
+   confirming). `haliverp@gmail.com` left alone — already accepted, nothing to resend; whether they
+   ever launch it isn't something a reinvite fixes.
+
+**Not done — no code/action needed, just noted:** whether the 4 re-invited testers actually accept
+this time isn't verifiable from this session; worth a follow-up check next time TestFlight is
+touched.
+
+---
+
+### 2026-08-31 (Windows session) — Android 62 published to Open Testing
+
+Checked Play Console: build 62 (48.0.14), submitted 2026-08-28, had cleared Google's review and
+was sitting "Ready to publish." Confirmed via Publishing overview that the only queued change was
+`Open testing: 62 (48.0.14) — Start full rollout` (no Production-track item alongside it), then
+published on the user's explicit go-ahead. Live as of "Last published on August 31, 2026." Ships
+the "More" tab → CareConnect redesign and the booking-push provider-name fix.
+
 > **Bumping Android's or iOS's version?** Read `IOS_HANDOFF.md`'s "Standing convention:
 > build-parity check" section first and log the actual git-ancestry result in your entry below —
 > not just the version number. The two platforms' version numbers have no automatic relationship

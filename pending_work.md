@@ -14,12 +14,18 @@
 > KDE-Connect knowledge-base note added — all fully folded into `DEVLOG.md`'s 2026-08-28
 > "(continued past the multi-round revert saga)" entry. Still open:
 
-- **Android 62 (48.0.14) in review on Open Testing — check Play Console next session for the
-  outcome.**
-- **iOS TestFlight build not yet started.** A paste-ready handoff message was drafted for the Mac
-  session (pull `fix/android-15-compliance`, bump `pubspec.yaml` to `1.0.7+10`, build/archive/
-  upload, promote to the "External Testers" group) but not yet sent/acted on — the only
-  iOS-relevant change since the last build (1.0.7+9) is the "More" tab redesign itself.
+- **Resolved (2026-08-31): Android 62 (48.0.14) approved by Google and published live to Open
+  Testing** ("Start full rollout," confirmed via Publishing overview — "Last published on
+  August 31, 2026"). Ships the "More" tab redesign and booking-push provider-name fix.
+- **Resolved (2026-08-31): iOS build 1.0.7 (10) already existed** (uploaded 2026-08-28 6:02 PM —
+  the Mac handoff was apparently acted on, this file just hadn't been updated) — confirmed via
+  App Store Connect. Installed and working on the Internal group. Added to the External Testers
+  group this session (was missing — that group was stuck on builds 6/7); see the 2026-08-31
+  tester-audit `DEVLOG.md` entry.
+- **iOS External Testers: 4 of 7 testers never accepted their invite** (`charitodlr@icloud.com`,
+  `wmajsa2@icloud.com`, `joeapp6942@gmail.com`, `joeydlr@gmail.com`) — reinvited 2026-08-31, not
+  yet confirmed whether any accepted. `haliverp@gmail.com` accepted but has zero sessions (never
+  opened the app) — no action taken, a reinvite doesn't fix that.
 - **"More" tab: tile tap-through not yet confirmed on a real account**, and the provider-account
   heading variant ("Register another Service Provider") is still only confirmed via the earlier
   local dev-DB test, not live on a real device.
