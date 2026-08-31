@@ -2,6 +2,56 @@
 
 ---
 
+### 2026-08-31 (Windows session, continued further) — Root-caused CPH1909's "Get App → Open → briefly shows login → Get App" loop: ColorOS store-hijacking, not an app bug
+
+User's physical Oppo/OnePlus CPH1909 test device (Android 8.1, the same one flagged for the RELRO
+WebView issue in earlier sessions) got stuck looping instead of opening the app. Root-caused live
+via `adb logcat` while reproducing, not guessed from code.
+
+**Full mechanism, traced end to end:**
+1. Tapping the Play Store link doesn't reach real Google Play — ColorOS intercepts it inside
+   `system_server` itself (`CII_AMS start intent intercept activity`, visible in every attempt)
+   and silently substitutes the **Oppo/Heytap App Market** (`startOppoStore`,
+   `userChoice = oppo_store`).
+2. Oppo Market serves a stale mirrored listing — **versionCode 46** (current live build is 62),
+   confirmed via `getDownloadBundle:...base#46#46` on every install.
+3. That old build launches, immediately starts an embedded `com.pairip.licensecheck.LicenseActivity`
+   — an anti-piracy/license-verification check baked into the compiled APK. **Confirmed not present
+   anywhere in `sq_appt_app_2`'s source** (`grep -ri pairip` — no matches) — this was injected by a
+   build/signing tool at some point in the original contractor's release pipeline, not anything a
+   Claude session added.
+4. That check calls Play's `LAUNCH_PLAY_PASS_PAYWALL_PAGE` to verify a Play-licensed install exists.
+   Since the actual install came from Oppo Market, the check fails and **the app deliberately kills
+   itself** (`VM exiting with result code 0` — a clean, intentional exit, not a crash), landing back
+   on the Play Store screen, which ColorOS immediately re-intercepts to Oppo Market again.
+
+**Every fix attempted still redirected to Oppo Market — confirmed this is not link/intent-level:**
+- `https://play.google.com/...` link — intercepted.
+- `market://details?id=...` scheme via `adb shell am start` — intercepted identically (rules out a
+  scheme-specific "open by default" association).
+- Launching the real Play Store app directly (`monkey -p com.android.vending -c LAUNCHER`) and
+  searching/installing from inside it, after a full `adb uninstall` first (to clear any stale local
+  state) — **still ended up with `installerPackageName=com.oppo.market` and versionCode 46
+  afterward.** This confirms ColorOS substitutes the install at the OS level regardless of entry
+  point — not something `adb`-level intent tricks, or even a genuine in-Play-Store tap, can route
+  around.
+
+**Did not attempt**: disabling ColorOS's intercept component (`com.daemon.shelper`) via
+`pm disable-user` — that's a system-settings change on the user's real device, out of scope for
+adb automation regardless of technical feasibility. Also did not sideload a locally-built APK to
+test whether the pairip check kills a non-Play-licensed install identically (would have answered
+whether current code is affected independent of Oppo Market's stale mirror, but likely reproduces
+the same self-kill for a different reason) — **user decided to stop troubleshooting this device
+and rely on normal Play Store distribution for real users instead**, rather than chase a
+ColorOS-specific quirk on one test unit further.
+
+**Treat as a known limitation of this specific physical device**, same category as the earlier
+RELRO WebView issue on the same unit — not expected to affect real users installing normally via
+Play Store search (which is how virtually everyone actually installs apps, not via a shared
+listing link). Nothing to fix in the app; nothing changed this session for this issue.
+
+---
+
 ### 2026-08-31 (Windows session, continued) — Tester audit: Play Console + TestFlight
 
 User asked to make sure Closed/Internal testers are notified and qualified for Open/External

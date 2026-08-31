@@ -7,6 +7,23 @@
 
 ---
 
+## Open / needs attention (as of 2026-08-31, continued — CPH1909 install loop root-caused, not an app bug)
+
+> User's physical Oppo CPH1909 test device was stuck in a "Get App → Open → briefly shows login →
+> Get App" loop. Root-caused live via `adb logcat`: ColorOS silently redirects every install path
+> (link, `market://` scheme, even a genuine in-Play-Store search+install after a clean uninstall)
+> to Oppo Market's own stale mirror (versionCode 46 vs. current 62) at the OS level
+> (`system_server`'s `CII_AMS`), which then self-kills via an embedded `com.pairip.licensecheck`
+> anti-piracy check (not in `sq_appt_app_2`'s source — baked in by a build/signing tool, likely
+> from the original contractor's pipeline) since the install isn't Play-licensed. Fully folded
+> into `DEVLOG.md`'s 2026-08-31 "(continued further)" entry. **Not a code bug, no fix applied —
+> user decided to treat this as a known limitation of this one device** rather than keep chasing a
+> ColorOS-specific quirk (same category as the device's earlier RELRO WebView issue). Still open,
+> not urgent:
+> - Whether the `com.pairip.licensecheck` wrapper is intentional (anti-piracy, added deliberately
+>   by the original contractor) or an artifact worth removing is unconfirmed — worth asking the
+>   user if it ever comes up again, since it's baked into the shipped APK but absent from source.
+
 ## Open / needs attention (as of 2026-08-28, Windows session — "More" tab shipped, Android 62 submitted)
 
 > "More" tab redesign re-applied and verified live with a real account, booking-push provider name
