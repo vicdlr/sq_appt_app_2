@@ -12,9 +12,9 @@
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
-- **Android 64 (48.0.16) submitted to Open Testing 2026-08-31 — awaiting Google's review.** Ships
-  the email-trim fix (`ec433f0`). versionCode 63 was rejected by Play Console as already-used
-  (stuck old draft, not investigated) — 64 is the real submission.
+- **Resolved (2026-09-01): Android 64 (48.0.16) approved and live on Open Testing** ("Available to
+  unlimited testers," released Sep 1 11:10 AM — auto-published, no manual publish step needed this
+  time). Ships the email-trim fix (`ec433f0`).
 - **iOS: Mac handoff sent for `1.0.7+11`** (pull, bump, build/archive/upload, add to External
   Testers) — ships the same email-trim fix, shared Dart code. **Not yet confirmed acted on.**
 - **⚠️ Email-trim fix (`ec433f0`) still not confirmed live on an actual device/emulator tap-through.**

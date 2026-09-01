@@ -2,6 +2,17 @@
 
 ---
 
+### 2026-09-01 (Windows session) — Android 64 confirmed live
+
+Checked Play Console before switching projects: build 64 (48.0.16) cleared Google's review
+overnight and auto-published — "Available to unlimited testers," released Sep 1 11:10 AM, no
+manual publish step needed this round (unlike 62, which sat "Ready to publish" until manually
+confirmed). Also noticed two Play Console notifications while checking: a "policy violation...
+has been addressed" (already resolved, no action) and a stale "update your target API level by
+Aug 31" deadline notice — moot, every build uploaded this week already targets SDK 36.
+
+---
+
 ### 2026-08-31 (Windows session, continued once more) — Android 64 (48.0.16) submitted to Open Testing; Mac handoff sent for iOS
 
 Shipped the email-trim fix to Open Testing. Bumped `versionCode` 62→63 (48.0.15) first — Play
