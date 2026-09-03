@@ -42,10 +42,50 @@ been updated — they hadn't: the 3 attached ("Booking System"/"Scan QR code"/"B
 were the unchanged carry-over from the year-old `1.0.4` draft, not representative of the app's
 actual current UI after this repo's redesigns since Sep 2025. Removed the version from review
 ("remove this version from review" → confirm; App Store Connect now shows "1.0.7 Developer
-Rejected," screenshots editable again). **Not resubmitted** — needs a real device/emulator
-screenshot session first (blocked, same as the standing edge-to-edge audit gap), then reattach
-build 11 (unaffected, still `Testing` in TestFlight) and resubmit. Android's promotion (below)
-was unaffected by this — separate track, separate decision, left live in review.
+Rejected," screenshots editable again).
+
+**Resubmitted with real, current screenshots — reused existing assets instead of a fresh emulator
+session.** User pointed out 3 already-current-UI screenshots existed from the 2026-08-24
+CareConnect-flyer session (`sq_appt_app_2/screenshots/`), taken after this repo's redesigns —
+no need to boot an emulator fresh. Picked `01_current_state.png` (Home), `04_organisation.png`
+(Book a Service), `08_after_start_time.png` (date/time picker); resized from their native
+1080×2400 (Android emulator resolution) to Apple's required 1284×2778px via a PowerShell/
+`System.Drawing` script (`HighQualityBicubic` interpolation, direct scale — the ~3% aspect-ratio
+difference between 0.45 and 0.4622 is imperceptible on flat-color UI screenshots).
+
+**Real bug hit during upload, root cause not fully confirmed but resolved by elimination:**
+first attempt (default 32bpp ARGB PNG export) uploaded and rendered fine client-side, but failed
+Apple's server-side asset validation — thumbnails came back as red error icons even after a full
+page reload (ruled out "still processing"). Re-exported as flat 24bpp RGB (`Format24bppRgb`, no
+alpha channel, white background) and re-uploaded — succeeded. Also hit a **file-input targeting
+bug**: `find`'s first match for the upload dropzone (a "Choose File" button) turned out to be a
+`type=submit` wrapper, not the actual `type=file` input nested inside it — uploading to the wrong
+ref produced a tool error with no page-visible symptom, easy to miss. And a **timing issue**:
+clicking "Add for Review" immediately after "Save" produced "there are still screenshot uploads
+in progress" even when Save looked instant and successful in the UI — waiting ~10s after upload
+and ~8s after Save before proceeding avoided it on the successful attempt. Verified the save
+genuinely persisted (not just client-side state) via a hard page reload before resubmitting.
+
+Resubmitted for review — **"1 Item Submitted," status "Waiting for Review," up to 48 hours** per
+Apple's estimate. Android's promotion (below) was unaffected throughout — separate track,
+separate decision, left live in review the whole time.
+
+**Checked whether Android needed the same fix — it didn't.** Unlike App Store Connect, Google
+Play's screenshots live in a persistent "Store listing" (Grow → Store presence), not attached to
+a specific release/version — promoting 48.0.16 to Production never touched them at all, so there
+was no equivalent stale-carryover risk. Checked anyway: the live listing's 5 (of 8) phone
+screenshots (registration flow, My Bookings, Settings, Badge/QR) are already current, matching
+recent redesigns — no action needed.
+
+**Android 64 (48.0.16) approved and published, same session.** A Play Console notification
+("Your recent app update has been approved and is ready for you to publish") turned up while
+checking the Store listing — Google's review had cleared same-day, far faster than the up-to-7-
+days estimate from the original submission. Publishing overview confirmed "Changes ready to
+publish" (Production, 64 (48.0.16)). Confirmed with the user before publishing (managed publishing
+means approval alone doesn't go live) — clicked "Publish 1 change," confirmed "This can't be
+undone," done. "Last published on September 3, 2026," no pending changes. **This is Production's
+first real update on either platform in over a year** — Android is now fully live; iOS is one
+review cycle away, pending the resubmission above.
 
 ---
 

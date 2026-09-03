@@ -12,25 +12,29 @@
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
-- **iOS build 1.0.7 (11) submission pulled from review — needs fresh screenshots before
-  resubmitting.** Submitted 2026-09-03, then withdrawn same session ("remove this version from
-  review", now shows "Developer Rejected") once the user noticed the 3 App Store screenshots
-  carried over unchanged from the year-old `1.0.4` draft ("Booking System"/"Scan QR code"/"Booking
-  History") and don't reflect the app's actual current UI after this repo's redesigns since Sep
-  2025. **Needs a real device/emulator screenshot session before resubmitting** — same blocker
-  `pending_work.md` already flags for the edge-to-edge audit (no working emulator session this
-  round). Once new screenshots are in, redo: Distribution → 1.0.7 → attach build 11 (still on
-  TestFlight, untouched) → Save → Add for Review → Submit for Review.
+- **iOS build 1.0.7 (11) resubmitted to App Store review with current screenshots, status
+  "Waiting for Review."** Original submission (2026-09-03) used stale `1.0.4`-carryover
+  screenshots, was pulled ("remove this version from review"), then reused 3 already-existing
+  current-UI screenshots from the 2026-08-24 CareConnect-flyer session
+  (`sq_appt_app_2/screenshots/01_current_state.png`/`04_organisation.png`/`08_after_start_time.png`
+  — Home, Book a Service, Request New Booking date/time) instead of a fresh emulator session,
+  resized to Apple's required 1284×2778px via PowerShell/System.Drawing. **First resize attempt
+  (default 32bpp ARGB) uploaded but failed Apple's server-side asset validation** (red error icons
+  persisted after reload) — root cause not confirmed, but re-exporting as flat 24bpp RGB (no alpha
+  channel) and re-uploading via the correct file-input element resolved it; also needed a longer
+  wait after upload before Save (rushing straight to "Add for Review" after Save produced "uploads
+  in progress" errors even though Save appeared to succeed). Resubmitted 2026-09-03; Apple's
+  estimate is up to 48 hours, email notification on completion.
 - **⚠️ iOS age rating: calculated 9+ but a manual override still forces 18+.** Found while
   answering Apple's newly-required Age Ratings questionnaire — deliberately left the override
   untouched (wasn't asked to change it, might have an undocumented reason). **Worth asking the
   user whether the 18+ override should be lowered** now that the underlying answers say 9+.
-- **Android build 64 (48.0.16) submitted to Production, awaiting Google review.** Play Console's
-  Production track was stuck on a year-old release (`version47`, Sep 2025, 19 installs) — promoted
-  64 (48.0.16) over it, confirmed intentional with the user first. Sent for review 2026-09-03;
-  Google's automated checks + full review can take up to 7 days. **Check back to confirm it
-  actually published** — this is Production's first real update in over a year, worth a deliberate
-  verification once it clears rather than assuming it went smoothly.
+- **Android build 64 (48.0.16) approved and published to Production** — cleared Google's review
+  same-day (much faster than the 7-day estimate), confirmed via Publishing overview showing
+  "Changes ready to publish" → clicked "Publish 1 change" (user confirmed first) → "Last published
+  on September 3, 2026," no pending changes. Play Store's screenshots (Store listing, separate
+  from the release/promotion flow entirely) were checked and already current — no stale-asset
+  issue like iOS had, since Play screenshots aren't attached per-version.
 - **`mdevice.id=133` city bug confirmed but not fixed** — `vicdlr@gmail.com`'s account still has
   `city='Cebu ph'` in production (breaks New Booking's Industry/Organisation/Unit filtering). The
   UPDATE itself was blocked by the auto-mode classifier (production data mutation); user has the
