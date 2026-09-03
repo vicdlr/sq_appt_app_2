@@ -12,12 +12,15 @@
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
-- **iOS build 1.0.7 (11) submitted to App Store review, status "Waiting for Review."** App Store
-  Connect's Production was similarly stuck on a year-old release (`1.0.4`, Sep 2025). Submitted
-  2026-09-03; Apple's own estimate is up to 48 hours, email notification on completion. **Check
-  back to confirm it clears review and actually publishes** (manual release is selected, so it'll
-  sit "Pending Developer Release" after approval — will need a deliberate release click, it won't
-  auto-publish).
+- **iOS build 1.0.7 (11) submission pulled from review — needs fresh screenshots before
+  resubmitting.** Submitted 2026-09-03, then withdrawn same session ("remove this version from
+  review", now shows "Developer Rejected") once the user noticed the 3 App Store screenshots
+  carried over unchanged from the year-old `1.0.4` draft ("Booking System"/"Scan QR code"/"Booking
+  History") and don't reflect the app's actual current UI after this repo's redesigns since Sep
+  2025. **Needs a real device/emulator screenshot session before resubmitting** — same blocker
+  `pending_work.md` already flags for the edge-to-edge audit (no working emulator session this
+  round). Once new screenshots are in, redo: Distribution → 1.0.7 → attach build 11 (still on
+  TestFlight, untouched) → Save → Add for Review → Submit for Review.
 - **⚠️ iOS age rating: calculated 9+ but a manual override still forces 18+.** Found while
   answering Apple's newly-required Age Ratings questionnaire — deliberately left the override
   untouched (wasn't asked to change it, might have an undocumented reason). **Worth asking the

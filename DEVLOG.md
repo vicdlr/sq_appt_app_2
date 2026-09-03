@@ -34,10 +34,18 @@ the "18+ for 173 countries" shown before this session). Left the override as-is 
 existing age-rating decision wasn't asked for and might have a reason not visible from this
 session; flagged it to the user instead of changing it unilaterally.
 
-Submitted for review — **"1 Item Submitted," status now "Waiting for Review," up to 48 hours**
-per Apple's own estimate, email notification on completion. This is the first real Production
-update for this app on either platform in over a year (see the Android entry below, same
-session).
+Submitted for review — **"1 Item Submitted," status "Waiting for Review," up to 48 hours** per
+Apple's own estimate, email notification on completion.
+
+**Pulled back out of review the same session.** User asked directly whether the screenshots had
+been updated — they hadn't: the 3 attached ("Booking System"/"Scan QR code"/"Booking History")
+were the unchanged carry-over from the year-old `1.0.4` draft, not representative of the app's
+actual current UI after this repo's redesigns since Sep 2025. Removed the version from review
+("remove this version from review" → confirm; App Store Connect now shows "1.0.7 Developer
+Rejected," screenshots editable again). **Not resubmitted** — needs a real device/emulator
+screenshot session first (blocked, same as the standing edge-to-edge audit gap), then reattach
+build 11 (unaffected, still `Testing` in TestFlight) and resubmit. Android's promotion (below)
+was unaffected by this — separate track, separate decision, left live in review.
 
 ---
 
@@ -248,6 +256,45 @@ the "More" tab → CareConnect redesign and the booking-push provider-name fix.
 > build-parity check" section first and log the actual git-ancestry result in your entry below —
 > not just the version number. The two platforms' version numbers have no automatic relationship
 > to each other.
+
+---
+
+### 2026-08-31 (Mac session) — iOS 1.0.7+11 ships the email-trim fix, live on External Testing
+
+Pulled `fix/android-15-compliance` to `16e2b3f` (Android's 63/48.0.15 bump, itself shipping the
+fix below). One relevant commit since the last iOS build (`1.0.7+10`, `b2b5028`): `ec433f0`,
+"Trim email before validating/submitting on Sign Up and Sign In" — both screens' email field used
+raw controller text with no `.trim()`, so a leading space (easy to introduce via mobile keyboard
+autocomplete) broke the format regex's `^` anchor and blocked the form's `validate()` before any
+network call, surfacing as "Enter a valid email address" with no way to proceed. This is what was
+blocking testers from registering. **Note**: both the user's handoff and Android's own bump commit
+message cite `a019c55` for this fix — no such commit exists in this repo; `ec433f0` is the actual
+commit and its diff matches the described fix exactly (flagged, not chased further).
+
+1. **`flutter pub get` + `pod install`** — both clean, no dependency changes, routine lockfile
+   churn only (not committed, same as every prior session).
+2. **Bumped `pubspec.yaml` to `1.0.7+11`** (`sq_appt_app_2@d2fdd05`), committed alone per
+   convention, pushed.
+3. **`flutter build ipa --release` succeeded clean** — IPA at `build/ios/ipa/sqapptapp.ipa`
+   (35.4MB). App Settings Validation confirmed Version 1.0.7 / Build 11.
+4. **Build-parity check:** `git merge-base --is-ancestor 16e2b3f d2fdd05` → **true** — iOS
+   `1.0.7+11` is a strict descendant of Android 63/48.0.15's bump commit, with only the
+   version-bump commit on top. Confirmed at parity.
+5. **Delivered via Transporter and promoted, this time actually completed end-to-end** (unlike
+   `+10`, see entry below): user clicked Deliver in Transporter themselves (still no App Store
+   Connect API key/CLI credentials available to this session); once App Store Connect showed
+   `1.0.7 (11)` as `Complete`, drove the External Testers promotion via Chrome browser automation
+   (App Store Connect, already-authenticated session) — TestFlight > External Testers > Builds >
+   `+` > selected build 11 > What to Test note ("Fixes an issue where a stray space in the email
+   field could block Sign Up/Sign In with 'Enter a valid email address.'") > left "Automatically
+   notify testers" checked > Submit for Review. Confirmed: went straight to `Testing` status, no
+   Apple review wait (External Testers group now shows 4 builds, `1.0.7(11)` `Testing`) — same
+   straight-through pattern as every build since `1.0.7(6)`.
+
+**Resolved, closing the loop from the entry below**: `1.0.7+10` (staged 2026-08-28, never confirmed
+delivered at the time) was already sitting in the External Testers group as `Testing` when this
+session checked the Builds tab (before adding `11`) — the user's "I already delivered it" covered
+both `+10` and `+11`. External Testers group is now at 4 builds: `11`/`10`/`7`/`6`, all `Testing`.
 
 ---
 
@@ -616,6 +663,40 @@ an Android release, an iOS parity check, and a small feature request.
      pushed to both `main` and `peer-notification` — Render's `node_app_server` deploys from the
      latter). `node -c`/`tsc --noEmit` both clean. Not yet visually confirmed on a real device —
      worth a real booking end-to-end next session.
+
+---
+
+### 2026-08-28 (Mac session) — iOS 1.0.7+10 built, staged in Transporter; build-parity confirmed
+
+Picked up from the previous iOS build (`1.0.7+9`, `sq_appt_app_2@75c481c`). Pulled
+`fix/android-15-compliance` to `e6c1350` (Android's 62/48.0.14 bump). The only real client-side
+change since `+9`: the bottom-nav "More" tab now mints a CareConnect SSO session and opens it in a
+WebView instead of the native Settings screen (final state `078315b`, "Reapply..." — the
+revert/reapply churn in between (`899eb94`/`e6342ef`/`078315b`) nets out to just that one change).
+
+1. **`flutter pub get` + `pod install`** — ran both per standing convention even though
+   `pubspec.yaml`'s dependencies didn't change. `pub get` bumped 10 transitive packages (routine
+   lockfile churn, not committed — same as every prior session, `pubspec.lock`/`ios/Podfile.lock`
+   stay local noise). `pod install` succeeded clean, no Podfile changes needed.
+2. **Bumped `pubspec.yaml` to `1.0.7+10`** (`sq_appt_app_2@b2b5028`), committed alone per
+   convention (pubspec.yaml only, no lockfiles).
+3. **`flutter build ipa --release` succeeded clean** — `Runner.xcarchive` (260.3MB), IPA at
+   `build/ios/ipa/sqapptapp.ipa` (35.4MB). App Settings Validation confirmed Version 1.0.7 / Build
+   10 / bundle `com.smartqsys.sqapptapp` / deployment target 15.5.
+4. **Build-parity check (standing convention):** `git merge-base --is-ancestor e6c1350 b2b5028` →
+   **true** — iOS `1.0.7+10` (`b2b5028`) is a strict descendant of Android 62/48.0.14's bump
+   commit (`e6c1350`), with only the version-bump commit on top. Confirmed at parity, not just
+   adjacent version numbers.
+5. **Staged in Transporter** (`open -a Transporter build/ios/ipa/sqapptapp.ipa`) but **not
+   delivered** — no App Store Connect API key/credentials available to this session for a
+   CLI (`xcrun altool`) upload, and actually clicking "Deliver" plus promoting to the "External
+   Testers" group both need the user's Apple ID/2FA. **Left open for the user**: click Deliver in
+   Transporter (already open, `vic@smartqsys.com`), confirm the build shows `Complete` in App
+   Store Connect's TestFlight tab, then promote `1.0.7 (10)` to the "External Testers" group (same
+   group used for `1.0.7(6)`/`(9)`) — existing testers get it automatically, no re-invite needed.
+
+**Left open**: the actual TestFlight delivery + External Testers promotion (session-blocked on
+Apple credentials, see item 5).
 
 ---
 
