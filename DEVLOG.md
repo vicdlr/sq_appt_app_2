@@ -2,6 +2,72 @@
 
 ---
 
+### 2026-09-03 (Windows session, continued) — iOS build 1.0.7 (11) submitted to App Store review
+
+Confirmed via App Store Connect that build 1.0.7 (11) — the Mac handoff from `pending_work.md` —
+had actually been uploaded and finished processing in TestFlight ("Testing" status, 3 installs).
+Production itself was on the same kind of stale baseline as Android: version `1.0.4`, approved
+Sep 3, 2025, over a year old, still on the `versionNN` naming scheme instead of `1.0.x`.
+
+Created a new App Store version `1.0.7` (Distribution → `+` next to "iOS App"), which carried
+over screenshots/description/metadata from the `1.0.4` draft automatically. Attached build 11,
+wrote "What's New in This Version" (generic "Bug fixes and stability improvements" — accurate
+without itemizing internal fixes), left rollout settings at their existing defaults (manual
+release, matching this app's established pattern of not auto-releasing; "release update to all
+users immediately" for phased release, not staged).
+
+**Real submission blocker hit and resolved**: Apple now requires a newer, more detailed Age
+Ratings questionnaire (7 steps: Features, Mature Themes, Medical or Wellness, Sexuality or
+Nudity, Violence, Chance-Based Activities, Additional Information) before any version can be
+added for review — the in-app banner claiming this "isn't required until September 7, 2026"
+turned out not to apply to submitting an existing app's new version. Answered based on the app's
+actual real functionality (a queue/appointment booking app, no social feed, no UGC, no chat, no
+gambling, no violence/mature content) — all "No"/"None" **except one deliberate "Yes": Health or
+Wellness Topics**, since the app's Queue Status page (built into CareConnect, opened from the
+mobile Home's "View Status" action, per the 2026-08-26 CareConnect DEVLOG entry) genuinely shows
+a "Health Tips" section — answering "No" there would have been factually wrong, not just
+conservative.
+
+**Found, deliberately not touched**: the app's calculated rating from these honest answers is
+**9+**, but a pre-existing manual "Override to Higher Age Rating → 18+" was already set (explains
+the "18+ for 173 countries" shown before this session). Left the override as-is — changing an
+existing age-rating decision wasn't asked for and might have a reason not visible from this
+session; flagged it to the user instead of changing it unilaterally.
+
+Submitted for review — **"1 Item Submitted," status now "Waiting for Review," up to 48 hours**
+per Apple's own estimate, email notification on completion. This is the first real Production
+update for this app on either platform in over a year (see the Android entry below, same
+session).
+
+---
+
+### 2026-09-03 (Windows session) — Android build 64 (48.0.16) promoted to Production; mdevice.id=133 city bug confirmed, fix handed off
+
+**Promoted to Production.** Discovered Play Console's Production track was stuck on a very old
+release (`version47`, released Sep 12, 2025, only 19 installs) — over a year behind Open Testing,
+and on a different version-naming scheme entirely (`versionNN` vs. the current `48.0.x`). Flagged
+this surprising gap to the user before proceeding; confirmed intentional, told to continue.
+Promoted build 64 (48.0.16) via Play Console → Open Testing → Promote release → Production. First
+attempt's "Add from library" bundle picker didn't list build 64 at all (list only went down to 63);
+retried a few minutes later and it appeared correctly — looked like a transient library-index
+lag, not a real blocker. Selected 64, reviewed the 2 warnings Play Console raised (913 devices no
+longer supported vs. the year-old baseline — expected, not a regression; missing native debug
+symbols — routine, non-blocking), left rollout at 100%/all countries (only ~19 installs targeted,
+no reason to stage it down), saved, and submitted via Publishing overview → "Submit 1 change for
+review." **Status: sent for review, not yet published** — Google's automated checks run first (up
+to 14 min), then full review (typically within 7 days per Google's own estimate). Needs a
+follow-up check once that clears.
+
+**mdevice.id=133 city bug — confirmed, fix not yet applied.** Queried production directly
+(read-only, via a throwaway `node_app_server` script): confirmed `mdevice.id=133`
+(`vicdlr@gmail.com`, the user's own account) still has `city='Cebu ph'`. The actual UPDATE was
+blocked by the auto-mode classifier (production data mutation) — handed the user the exact SQL
+(`UPDATE mdevice SET city = 'Metro Manila' WHERE id = 133;`) to run themselves via Database
+Workbench. Diagnostic script deleted after use, per this repo's convention of not leaving ad-hoc
+`_check_*.js` files around. **Not yet confirmed run.**
+
+---
+
 ### 2026-09-01 (Windows session) — Android 64 confirmed live
 
 Checked Play Console before switching projects: build 64 (48.0.16) cleared Google's review

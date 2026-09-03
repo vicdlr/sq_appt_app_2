@@ -7,11 +7,32 @@
 
 ---
 
-## Open / needs attention (as of 2026-08-31)
+## Open / needs attention (as of 2026-09-03, continued)
 
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
+- **iOS build 1.0.7 (11) submitted to App Store review, status "Waiting for Review."** App Store
+  Connect's Production was similarly stuck on a year-old release (`1.0.4`, Sep 2025). Submitted
+  2026-09-03; Apple's own estimate is up to 48 hours, email notification on completion. **Check
+  back to confirm it clears review and actually publishes** (manual release is selected, so it'll
+  sit "Pending Developer Release" after approval — will need a deliberate release click, it won't
+  auto-publish).
+- **⚠️ iOS age rating: calculated 9+ but a manual override still forces 18+.** Found while
+  answering Apple's newly-required Age Ratings questionnaire — deliberately left the override
+  untouched (wasn't asked to change it, might have an undocumented reason). **Worth asking the
+  user whether the 18+ override should be lowered** now that the underlying answers say 9+.
+- **Android build 64 (48.0.16) submitted to Production, awaiting Google review.** Play Console's
+  Production track was stuck on a year-old release (`version47`, Sep 2025, 19 installs) — promoted
+  64 (48.0.16) over it, confirmed intentional with the user first. Sent for review 2026-09-03;
+  Google's automated checks + full review can take up to 7 days. **Check back to confirm it
+  actually published** — this is Production's first real update in over a year, worth a deliberate
+  verification once it clears rather than assuming it went smoothly.
+- **`mdevice.id=133` city bug confirmed but not fixed** — `vicdlr@gmail.com`'s account still has
+  `city='Cebu ph'` in production (breaks New Booking's Industry/Organisation/Unit filtering). The
+  UPDATE itself was blocked by the auto-mode classifier (production data mutation); user has the
+  exact SQL (`UPDATE mdevice SET city = 'Metro Manila' WHERE id = 133;`) to run via Database
+  Workbench. **Not yet confirmed run** — re-verify once done.
 - **Resolved (2026-09-01): Android 64 (48.0.16) approved and live on Open Testing** ("Available to
   unlimited testers," released Sep 1 11:10 AM — auto-published, no manual publish step needed this
   time). Ships the email-trim fix (`ec433f0`).
