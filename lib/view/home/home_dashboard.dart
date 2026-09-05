@@ -58,14 +58,26 @@ class _HomeDashboardState extends State<HomeDashboard> {
       // Root-caused 2026-08-26: this had no date check at all, so a Confirmed/Pending booking
       // for *any* day -- not just today -- would surface as "today's active queue" on Home,
       // sending "View Status" to the wrong booking's Queue Status page. `.toLocal()` before
-      // comparing calendar dates so a bookingDate parsed from a UTC ISO string still lands on
-      // the right day in the device's own timezone (real users are physically in the
-      // Philippines, so this is the device's actual local day).
-      final bookingDay = booking.bookingDate?.toLocal();
-      final isToday = bookingDay != null &&
-          bookingDay.year == now.year &&
-          bookingDay.month == now.month &&
-          bookingDay.day == now.day;
+      // comparing calendar dates so a parsed UTC ISO string still lands on the right day in the
+      // device's own timezone (real users are physically in the Philippines, so this is the
+      // device's actual local day).
+      //
+      // Corrected 2026-09-05, per the user: this used to compare `bookingDate` (this table's
+      // `booking_date` column, populated from whatever the client sent at /create-booking --
+      // request_new_booking.dart's Data Capture flow, form_page.dart, never sends it at all, so
+      // it's permanently null there), not `apptTime` (`appt_time`, the actual CareConnect-
+      // confirmed appointment date, populated server-side once the booking is confirmed --
+      // node_app_server's applyCareConnectOutcome). Only ever meaningful once handledBy ==
+      // "CARECONNECT" is true (checked below), by which point appt_time is always already set --
+      // same guarantee my_booking.dart's own `DateTime.parse(booking.apptTime.toString())`
+      // already relies on.
+      final apptDay = booking.apptTime != null
+          ? DateTime.tryParse(booking.apptTime.toString())?.toLocal()
+          : null;
+      final isToday = apptDay != null &&
+          apptDay.year == now.year &&
+          apptDay.month == now.month &&
+          apptDay.day == now.day;
       if (booking.handledBy == "CARECONNECT" && !isTerminal && isToday) {
         return booking;
       }
