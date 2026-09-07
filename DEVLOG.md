@@ -49,6 +49,18 @@ push notifications now deep-link to the booking itself instead of doing nothing.
    *additional* builds within an already-approved version. Flagged to the user rather than assuming
    it was live.
 
+8. **User asked to add `charitodlr@gmail.com` and `joes4n2s@gmail.com` "to internal tester" —
+   redirected to External Testers instead.** Internal Testing (`SmartqDev` group) only accepts
+   people who already have App Store Connect team access (Users and Access role) — no free-form
+   email invite exists there at all, unlike External Testers. This also matches the 2026-08-20
+   history in this same log: Internal/Users-and-Access invites once trapped testers in an Apple ID
+   account-setup loop (2FA-gated team membership), which is why External Testers became the
+   standard path for regular testers. Flagged this constraint to the user, who agreed to use
+   External Testers. **Turned out to be a no-op**: both emails already existed there, both
+   `Accepted` — `charitodlr@gmail.com` (Charito de la Rosa, accepted Aug 17) and `joes4n2s@gmail.com`
+   (Jojo Santos, accepted Sep 7, today). Left the separate, still-`Invited` `charitodlr@icloud.com`
+   entry untouched (same person, different address, not asked to remove it).
+
 **Left open**: whether/when `1.0.8 (1)` clears Beta App Review — check TestFlight status next
 session rather than assuming it went through.
 
