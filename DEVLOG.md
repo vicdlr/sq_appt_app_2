@@ -2,6 +2,58 @@
 
 ---
 
+### 2026-09-07 (Mac session) — iOS 1.0.8+1 ships Queue Status/auto-confirm/notification-deeplink; hit the closed-1.0.7-train wall
+
+Pulled `fix/android-15-compliance` to `5b76249` (Android's 64/48.0.16 baseline plus the Queue
+Status card fix, `aaa318b`). Three relevant client-side changes since the last iOS build
+(`1.0.7+11`, `d2fdd05`): (a) Home's Queue Status card
+now recognizes same-day Data Capture bookings (compares `appt_time` not `booking_date`), (b)
+auto-confirm bookings land straight in Manage Bookings instead of a toast+Home, (c) booking-related
+push notifications now deep-link to the booking itself instead of doing nothing.
+
+1. **`flutter pub get` + `pod install`** — both clean, routine lockfile churn only.
+2. **First attempt: bumped to `1.0.7+12`** (`b5d94f1`) per the original ask ("same version, new
+   build"), built clean, staged in Transporter — **delivery failed with two 409s**:
+   `CFBundleShortVersionString [1.0.7]... must contain a higher version than that of the previously
+   approved version [1.0.7]` and `Invalid Pre-Release Train... '1.0.7' is closed for new build
+   submissions`. Root cause, confirmed via the public App Store listing (`apps.apple.com/us/app/
+   id6499111118`, no auth needed): **iOS 1.0.7 is now live in production** — the 2026-09-03 Windows
+   session (see entries below) submitted build 11 for full App Store review and it was approved
+   ~2026-09-05. Once a version is approved/shipped, Apple permanently closes that train to *any*
+   further build, TestFlight included — this wasn't in this repo's own notes yet (every earlier
+   entry describes iOS staying TestFlight-only, deliberately mirroring Android's Closed→Open
+   pattern), so this session didn't know until the 409 forced the discovery. Flagged to the user;
+   confirmed known/intentional, asked to bump to a new marketing version instead.
+3. **Corrected to `1.0.8+1`** (`a7cf6e9`), rebuilt clean — Version 1.0.8 / Build 1.
+4. **Build-parity check:** `git merge-base --is-ancestor d73ecce a7cf6e9` → **true** — iOS
+   `1.0.8+1` is a strict descendant of Android 64/48.0.16's bump commit (`d73ecce`). At parity.
+5. **Browser automation hit a wrong-device snag while checking App Store Connect.** The only
+   `claude-in-chrome` browser connected this session was a **remote Windows Chrome**
+   (`b9a80ca0-c650-4823-9e5d-0200e5e249ff`), not this Mac's own — contradicts this session's stored
+   memory of a specific local-Mac deviceId, which didn't show up in `list_connected_browsers` at
+   all. A `switch_browser` broadcast found no other reachable extension. User confirmed the
+   Windows browser was fine to use anyway (App Store Connect promotion is a pure web action, no
+   Xcode needed) and signed in on it directly (session had expired, needed fresh Apple
+   ID/2FA — not something this session touches). **Worth a memory update**: the remembered local-Mac
+   deviceId may be stale/no-longer-connected; the Windows browser is apparently the reachable one
+   for App Store Connect work now, at least this session.
+6. **User delivered via Transporter** (native app, no CLI credentials available to this session
+   either build). Confirmed `1.0.8 (1)` `Complete` in TestFlight, then promoted to External
+   Testers via the now-working Windows browser session: Builds > `+` > selected build 1 > What to
+   Test note covering all three fixes > left "Automatically notify testers" checked > Submit for
+   Review.
+7. **Unlike every `1.0.7.x` build, this one shows `Waiting for Review`, not straight to `Testing`.**
+   Expected, not a bug: `1.0.8` is a brand-new marketing version with no prior Beta App Review
+   approval, so its first external-testing build needs Apple's review (~24-48h) the same way
+   `1.0.7`'s very first external build once did — the "straight through" pattern only applies to
+   *additional* builds within an already-approved version. Flagged to the user rather than assuming
+   it was live.
+
+**Left open**: whether/when `1.0.8 (1)` clears Beta App Review — check TestFlight status next
+session rather than assuming it went through.
+
+---
+
 ### 2026-09-03 (Windows session, continued) — iOS build 1.0.7 (11) submitted to App Store review
 
 Confirmed via App Store Connect that build 1.0.7 (11) — the Mac handoff from `pending_work.md` —
