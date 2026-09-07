@@ -24,6 +24,10 @@ abstract class ConfigUrl {
   static String updateFcmTokenUrl = "/update-fcm-token";
   static String queueAccessUrl(String bookingId) =>
       "/bookings/$bookingId/queue-access";
+  // Whether a unit auto-confirms instantly or needs manual review -- CareConnect-only concept,
+  // checked at unit-select time so createBooking() knows whether to land the client straight in
+  // Manage Bookings once submitted (2026-09-07, per the user).
+  static String confirmModeUrl(String unit) => "/units/$unit/confirm-mode";
   static String manageBookingsLinkUrl = "/careconnect/manage-bookings-link";
   // Mints a token-bridged SSO link into ccadmin (STAFF session), same pattern as
   // manageBookingsLinkUrl above but for Service Provider Mode -- see service_provider_mode.dart.

@@ -7,9 +7,11 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
+import 'package:sq_notification/provider/home_provider.dart';
 
 
 
@@ -237,6 +239,31 @@ class NotificationServices {
 
     String type = message.data["type"]?.toString() ?? "";
     String typeId = message.data["_id"]?.toString() ?? "";
+
+    // Booking-related push tap -> open the related booking directly (2026-09-07, per the user)
+    // instead of just opening the app to wherever it already was. Patient-facing types carry NAS's
+    // own numeric booking id (externalBookingId on newer sends, bookingId on the pre-existing
+    // booking_confirmed/booking_checked_in/booking_processing sends from applyCareConnectOutcome --
+    // both mean the same id, just added under two different keys over time); staff-facing types
+    // carry CareConnect's own uuid instead, a different id-space entirely.
+    const patientBookingTypes = {"booking_confirmed", "booking_checked_in", "booking_processing", "your_turn"};
+    const staffBookingTypes = {"new_booking", "support_ticket"};
+    if (patientBookingTypes.contains(type)) {
+      final id = message.data["externalBookingId"] ?? message.data["bookingId"];
+      if (id != null && context.mounted) {
+        await Provider.of<HomeProvider>(context, listen: false)
+            .openPatientBookingFromNotification(context, id.toString());
+      }
+      return;
+    }
+    if (staffBookingTypes.contains(type)) {
+      final id = message.data["bookingId"];
+      if (id != null && context.mounted) {
+        await Provider.of<HomeProvider>(context, listen: false)
+            .openStaffBookingFromNotification(context, id.toString());
+      }
+      return;
+    }
 
     // if(message.notification!.title.toString() == "Group added"){}
 

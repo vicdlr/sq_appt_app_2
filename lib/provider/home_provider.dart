@@ -15,12 +15,18 @@ import 'package:sq_notification/api/configurl.dart';
 import '../Model/ServiceOptionModel.dart';
 import '../Model/UnitModel.dart';
 import '../view/home/bottom_nav_bar.dart';
+import '../view/home/get_ticket.dart';
 
 class HomeProvider extends ChangeNotifier {
   String selectedIndusty = "";
   String selectedCompanies = "";
   String selectedUnit = "";
   String serviceType = "Service type";
+  // "AUTO" | "MANUAL" | null -- null means either not yet fetched or this unit isn't a
+  // CareConnect-managed one at all (legacy Site-routed booking). Only ever meaningful for
+  // deciding whether createBooking() can land the client straight in Manage Bookings afterward
+  // (2026-09-07, per the user) -- never shown in the UI itself.
+  String? confirmMode;
 
   int selectedIndex = 0;
   bool isLoading = false;
@@ -116,12 +122,27 @@ class HomeProvider extends ChangeNotifier {
   void setUnitList(String value) {
     print("value $value");
     selectedUnit = value;
+    confirmMode = null;
     for (var unitData in unitDataList) {
       if (unitData.unit.toLowerCase() == value.toLowerCase()) {
         serviceType = unitData.servicetype;
       }
     }
+    fetchConfirmMode(value);
 
+    notifyListeners();
+  }
+
+  // Best-effort -- a failed/absent lookup just means createBooking() falls back to today's plain
+  // toast+Home behavior, same as a genuinely MANUAL unit. Fire-and-forget from setUnitList rather
+  // than awaited there, so picking a unit never blocks on this network call.
+  Future<void> fetchConfirmMode(String unit) async {
+    final result = await DioApi.get(path: ConfigUrl.confirmModeUrl(unit));
+    if (result.response?.data?["success"] == true) {
+      confirmMode = result.response?.data?["data"]?["confirmMode"];
+    } else {
+      confirmMode = null;
+    }
     notifyListeners();
   }
 
@@ -173,6 +194,14 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
       await Fluttertoast.showToast(msg: "Successfully created booking");
       setIndustriesEmpty();
+
+      final newBookingId = result.response?.data?["bookingData"]?["id"];
+      if (confirmMode == "AUTO" && newBookingId != null && context.mounted) {
+        final opened = await _openIfAutoConfirmed(context, newBookingId.toString());
+        if (opened) return;
+      }
+
+      if (!context.mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) {
         return BottomNavBar();
@@ -182,6 +211,84 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
       result.handleError(context);
     }
+  }
+
+  // AUTO-confirm bookings -> land the client straight in Manage Bookings, focused, Support Hub
+  // included, instead of the plain toast+Home (2026-09-07, per the user, "one continuous flow").
+  // /create-booking fires the actual CareConnect confirmation asynchronously (deliberately, so a
+  // slow/down CareConnect never blocks booking creation) -- polls this device's own booking list
+  // for handled_by to flip to "CARECONNECT" before minting the queue-access token, since NAS's
+  // own /bookings/:bookingId/queue-access hard-requires that first. Returns false (falls back to
+  // the caller's plain toast+Home) on any failure -- nothing about the booking itself is at risk
+  // either way, this only affects where the client lands afterward.
+  Future<bool> _openIfAutoConfirmed(BuildContext context, String bookingId) async {
+    const pollInterval = Duration(seconds: 1);
+    const maxAttempts = 8;
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      final result = await DioApi.get(
+        path: ConfigUrl.getBookingUrl + SharedPref.getUserData().id,
+      );
+      final bookings = result.response?.data?["bookings"] as List<dynamic>?;
+      final match = bookings?.firstWhere(
+        (b) => b["id"].toString() == bookingId,
+        orElse: () => null,
+      );
+      if (match != null && match["handled_by"] == "CARECONNECT") break;
+      if (attempt == maxAttempts - 1) return false;
+      await Future.delayed(pollInterval);
+    }
+
+    final access = await DioApi.post(
+      path: ConfigUrl.queueAccessUrl(bookingId),
+      data: {"dest": "bookings"},
+    );
+    final careConnectUrl = access.response?.data?["data"]?["careConnectUrl"];
+    if (access.response == null || careConnectUrl == null) return false;
+
+    if (!context.mounted) return false;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) {
+        return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
+      }),
+      (route) => false,
+    );
+    return true;
+  }
+
+  // Tapping a patient-facing booking notification (confirmed/checked-in/processing/your turn --
+  // 2026-09-07, per the user) -- same queue-access bridge as the "View Status" card and the
+  // auto-confirm flow above, just without the poll loop (the booking is already in whatever state
+  // the notification is reporting by the time it's tapped). Pushes on top of wherever the app
+  // currently is, same convention _ActiveQueueCard._viewStatus() already uses.
+  Future<void> openPatientBookingFromNotification(BuildContext context, String externalBookingId) async {
+    final access = await DioApi.post(
+      path: ConfigUrl.queueAccessUrl(externalBookingId),
+      data: {"dest": "bookings"},
+    );
+    final careConnectUrl = access.response?.data?["data"]?["careConnectUrl"];
+    if (access.response == null || careConnectUrl == null || !context.mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return WebViewPage(url: careConnectUrl, title: 'Booking');
+    }));
+  }
+
+  // Staff-side sibling of the above -- tapping a "new booking"/"support ticket" notification
+  // (2026-09-07, per the user) opens ccadmin/servadmin's Appointments page focused on that exact
+  // booking, via the same Service Provider Mode SSO bridge service_provider_mode.dart already
+  // uses, just with a focusBookingId this time. bookingId here is CareConnect's own uuid (what
+  // these two notification types already carry in their `data`), not NAS's numeric id -- a
+  // different id-space than openPatientBookingFromNotification above.
+  Future<void> openStaffBookingFromNotification(BuildContext context, String bookingId) async {
+    final result = await DioApi.post(
+      path: ConfigUrl.serviceProviderLinkUrl,
+      data: {"next": "bookings", "focusBookingId": bookingId},
+    );
+    final careConnectUrl = result.response?.data?["data"]?["careConnectUrl"];
+    if (result.response == null || careConnectUrl == null || !context.mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return WebViewPage(url: careConnectUrl, title: 'Appointments');
+    }));
   }
 
   setIndustriesEmpty() {

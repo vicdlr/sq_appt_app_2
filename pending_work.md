@@ -7,6 +7,28 @@
 
 ---
 
+## Built, not yet committed (as of 2026-09-07 — auto-confirm flow + notification-tap deep links)
+
+> Two features, built together to minimize separate mobile touches/rebuilds (per the user). Full
+> design/story in `SQ_CareConnect`'s own `pending_work.md` (2026-09-07 entries) and
+> `C:\Users\vic\.claude\plans\mutable-puzzling-hoare.md`.
+
+1. **Auto-confirmed bookings land the client straight in Manage Bookings.**
+   `HomeProvider.confirmMode` fetched at unit-select time (`fetchConfirmMode`); `createBooking()`'s
+   success branch polls this device's own booking list for `handled_by == "CARECONNECT"` (up to
+   ~8s) then opens Manage Bookings via `_openIfAutoConfirmed`, falling back to today's plain
+   toast+Home on any failure.
+2. **Booking-related push notifications now open the related booking directly.**
+   `notification.dart`'s `handleMessage` (previously every navigation branch was dead/commented-out
+   legacy code) recognizes patient-facing types (`booking_confirmed`/`booking_checked_in`/
+   `booking_processing`/`your_turn`, NAS-native id) and staff-facing types (`new_booking`/
+   `support_ticket`, CareConnect-native id) and calls new `HomeProvider
+   .openPatientBookingFromNotification`/`openStaffBookingFromNotification` respectively.
+- **`dart analyze` clean** (only pre-existing info-level lints: `avoid_print`,
+  `use_build_context_synchronously` already guarded by `mounted` checks, matching this file's
+  existing style). **Not committed** -- held pending your explicit go-ahead, same as every other
+  change to this live-published app.
+
 ## Fixed, not yet committed (as of 2026-09-05 — Data Capture bookings missing from Home's Queue Status card)
 
 > Reported: "current day service booking does not appear in App Queue Status Card." Investigated
