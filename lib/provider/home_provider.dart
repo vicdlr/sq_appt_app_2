@@ -247,12 +247,24 @@ class HomeProvider extends ChangeNotifier {
     if (access.response == null || careConnectUrl == null) return false;
 
     if (!context.mounted) return false;
+    // Reset to Home first, *then* push the WebView on top -- found 2026-09-08, per the user: the
+    // previous single pushAndRemoveUntil(..., (route) => false) wiped the entire nav stack before
+    // opening the WebView, leaving nothing for the system/WebView back action to land on. That's
+    // what was actually causing the "screen turns black after tapping back from Manage Bookings"
+    // reports -- a native Flutter navigation bug, not a WKWebView rendering issue in the page
+    // itself (which is why it wouldn't show up in Safari's Web Inspector at all). Every other
+    // WebView-opening call site (_ActiveQueueCard._viewStatus(), Service Provider Mode) uses a
+    // plain .push(), which never wipes the stack -- this one needs the Home reset too (unlike
+    // those, this fires right after a booking submission, so returning to the stale form on back
+    // wouldn't make sense either), just done as two steps instead of one that leaves nothing
+    // underneath.
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) {
-        return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
-      }),
+      MaterialPageRoute(builder: (context) => BottomNavBar()),
       (route) => false,
     );
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return WebViewPage(url: careConnectUrl, title: 'Manage Bookings');
+    }));
     return true;
   }
 
