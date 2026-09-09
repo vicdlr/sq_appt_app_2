@@ -228,6 +228,7 @@ class _WebViewPageState extends State<WebViewPage> {
   bool _isLoading = true;
   bool _rendererCrashed = false;
   int _reloadKey = 0;
+  InAppWebViewController? _controller;
 
   void _retry() {
     setState(() {
@@ -235,6 +236,16 @@ class _WebViewPageState extends State<WebViewPage> {
       _isLoading = true;
       _reloadKey++;
     });
+  }
+
+  // Manual escape hatch for staff/patients hitting a stale cached page after a fix ships
+  // server-side -- cacheEnabled is already off below, but a browser-level reload button is
+  // still worth having for anything else that looks stuck (a slow network, a half-loaded page).
+  Future<void> _refresh() async {
+    final controller = _controller;
+    if (controller == null) return;
+    await InAppWebViewController.clearAllCache();
+    await controller.reload();
   }
 
   @override
@@ -247,6 +258,12 @@ class _WebViewPageState extends State<WebViewPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refresh,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -254,7 +271,17 @@ class _WebViewPageState extends State<WebViewPage> {
             InAppWebView(
               key: ValueKey(_reloadKey),
               initialUrlRequest: URLRequest(url: WebUri(widget.url)),
-              initialSettings: InAppWebViewSettings(useOnRenderProcessGone: true),
+              // cacheEnabled: false -- found 2026-09-09, per the user: iterating on a live-server
+              // fix (SQ_CareConnect's Counter page) repeatedly hit staff/testers seeing a stale
+              // cached bundle from before the fix deployed, on both iOS Safari and this app's own
+              // embedded WebView. This widget is shared by every WebView screen in the app
+              // (patient booking flows included), so always fetching fresh is a deliberate
+              // trade-off of a little load latency for never serving stale content again.
+              initialSettings: InAppWebViewSettings(
+                useOnRenderProcessGone: true,
+                cacheEnabled: false,
+              ),
+              onWebViewCreated: (controller) => _controller = controller,
               onLoadStart: (controller, url) => setState(() => _isLoading = true),
               onLoadStop: (controller, url) => setState(() => _isLoading = false),
               onReceivedError: (controller, request, error) =>

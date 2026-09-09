@@ -186,9 +186,24 @@ class _SignupPageState extends State<SignupPage> {
                       ?.copyWith(color: kSmartQGreen, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  "Join SmartQ and enjoy a faster, smarter way to manage your queue.",
-                  style: Theme.of(context).textTheme.bodyMedium,
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(text: "Already have an account? ", style: TextStyle(color: Colors.black)),
+                      TextSpan(
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) {
+                                return const LoginPage();
+                              }),
+                            );
+                          },
+                        text: "Log in",
+                        style: const TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Form(
@@ -360,27 +375,6 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                         ),
                       ),
-                const SizedBox(height: 20),
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(text: "Already have an account? ", style: TextStyle(color: Colors.black)),
-                      TextSpan(
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (context) {
-                                return const LoginPage();
-                              }),
-                            );
-                          },
-                        text: "Log in",
-                        style: const TextStyle(color: kSmartQGreen, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
