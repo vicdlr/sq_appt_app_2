@@ -309,7 +309,10 @@ class _LoginPageState extends State<LoginPage> {
           TextSpan(
             recognizer: TapGestureRecognizer()
               ..onTap = () {
-                Navigator.of(context).pushReplacement(
+                // push, not pushReplacement -- SignUp has its own back arrow
+                // (Navigator.pop()), which needs this page still on the stack to land on.
+                // pushReplacement here left it with nothing to pop to (black screen).
+                Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) {
                     return SignupPage();
                   }),
