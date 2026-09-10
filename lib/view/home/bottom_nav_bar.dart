@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 import 'package:sq_notification/api/dio.dart';
+import 'package:sq_notification/notification/notification.dart';
 import 'package:sq_notification/view/home/get_ticket.dart';
 import 'package:sq_notification/view/home/home_dashboard.dart';
 import 'package:sq_notification/view/home/notification.dart';
@@ -22,6 +24,44 @@ class _BottomNavBarState extends State<BottomNavBar> {
     const NotificationsScreen(),
     RequestNewBooking(),
   ];
+
+  final NotificationServices _notificationServices = NotificationServices();
+
+  // 2026-09-10, per the user (root-caused by Mac Claude): permission request, foreground
+  // handling, tap-to-open, and token refresh (firebaseInit/setupInteractMessage/isTokenRefresh in
+  // notification/notification.dart) were only ever wired up in lib/view/home/home_page.dart's
+  // initState -- dead code since BottomNavBar switched to HomeDashboard on 2026-08-08 (commit
+  // 2c51b1a). SignUp.dart's own getDeviceToken() call requests permission (so a fresh sign-up
+  // still prompts), but never wires foreground/tap/refresh handling, and Login never requests
+  // permission or a token at all -- so anyone who logs into an existing account (rather than
+  // signing up fresh) never gets prompted, and nobody -- new or returning -- ever gets tap-to-open
+  // (including the staff_reply fix) wired live. This is the actual live entry point after both
+  // login and signup, and on every app relaunch while already authenticated -- porting
+  // home_page.dart's updateFcmToken() logic here (minus its UI-only badge-token fetch, already
+  // handled by HomeDashboard) fixes both gaps at once.
+  Future<void> _initNotifications() async {
+    _notificationServices.firebaseInit(context);
+    _notificationServices.setupInteractMessage(context);
+    _notificationServices.isTokenRefresh();
+    final token = await _notificationServices.getDeviceToken();
+
+    final sharedPrefFcm = SharedPref.getFcmToken();
+    if (sharedPrefFcm != token) {
+      final result = await DioApi.put(
+        path: ConfigUrl.updateProfile,
+        data: {"fcm_token": token},
+      );
+      if (result.response != null) {
+        SharedPref.setFcmToken(token);
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initNotifications();
+  }
 
   // "More" (2026-08-28) no longer embeds a native screen -- it mints a token-bridged SSO link
   // (mirroring service_provider_mode.dart's _openCareConnect) into CareConnect's own "More" page
