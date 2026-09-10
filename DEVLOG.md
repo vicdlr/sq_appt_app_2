@@ -2,6 +2,123 @@
 
 ---
 
+### 2026-09-10 — Real notification-tap/permission root cause found and fixed; Android 66→70, iOS 1.0.8+2→+6
+
+**The actual bug behind "iOS doesn't show notification options" turned out to be much bigger than
+the symptom**: FCM permission request, foreground handling, tap-to-open, and token refresh
+(`firebaseInit`/`setupInteractMessage`/`isTokenRefresh` in `lib/notification/notification.dart`)
+were only ever called from `lib/view/home/home_page.dart`'s `initState` — dead code since
+`BottomNavBar` switched to `HomeDashboard` on 2026-08-08. `SignUp.dart`'s own `getDeviceToken()`
+call requested permission for fresh signups only; Login never requested permission or a token at
+all, and *nobody* — new sign-up or returning login — ever got tap-to-open wired live, including
+the `staff_reply` fix shipped earlier the same day. Root-caused independently in parallel by both
+this session and a Mac Claude session on the iOS side, then fixed here (`5a76341`, `sq_appt_app_2`)
+by porting `home_page.dart`'s `updateFcmToken()` logic into `BottomNavBar`'s `initState` instead —
+the actual live entry point after both login and signup, and on every relaunch while authenticated.
+
+**Also this session**: `notification.dart` gained `"staff_reply"` in `patientBookingTypes`
+(`16d6b7b`) so tapping a servadmin staff-chat-reply push opens the booking/chat instead of just
+Home (see `SQ_CareConnect`'s own DEVLOG for the server-side `staff_reply` notification type this
+depends on). Mac Claude separately changed logged-out launch to default to Login instead of Sign
+Up (`bc142b2`) — unrelated to the notification bug, but it removed an accidental workaround that
+had been masking the permission gap for fresh TestFlight installs (Sign Up's `getDeviceToken()`
+call had been requesting permission "for free" as a side effect of Sign Up being the default
+screen).
+
+**Android**: versionCode bumped 66→70 across this session and the preceding one — 67 (48.0.19,
+black-screen-on-back-navigation fix `bab4f3d` + the Sign Up/Log In link reorder and WebView
+`cacheEnabled: false` change `dfc9eda`), 68 (48.0.20, no functional change logged), 69 (48.0.21,
+the `staff_reply` tap fix — confirmed **live** in Open testing, published this session after
+clearing a "ready to publish" 69 that Google had already approved), 70 (48.0.22, the real
+FCM-wiring fix — **submitted to Open testing review**, not yet confirmed approved). 66/67/68's own
+review outcomes weren't independently re-checked this pass; 68 was already the live release when
+this session started, so all three cleared review at some point before now.
+
+**iOS**: Mac Claude progressed `pubspec.yaml` from 1.0.8+2 (merged earlier) through +4 (skipping
++3, confirmed live on TestFlight External Testing), +5 (the `staff_reply` fix — per the root-cause
+finding above, likely didn't actually work yet since tap-handling wasn't wired live at that point
+either), and **+6** (the real FCM-wiring fix, shipped to TestFlight External Testing this
+session — the build that should actually make tap-to-open and fresh-login permission prompts
+work).
+
+**Still open**: Android 70 not yet confirmed out of Google review; iOS 1.0.8+6 not yet confirmed
+processed on TestFlight; none of this round's fixes have been click-tested on a real device
+(permission prompt on a fresh login, tap-to-open for a `staff_reply` push, tap-to-open for the
+patient-facing booking-status pushes).
+
+---
+
+### 2026-09-08 — Auto-confirm flow, black-screen fix, and Android 66 (48.0.18) submitted with fresh screenshots
+
+**Landed the auto-confirm feature end to end.** When a booking's target provider is AUTO-confirm,
+the client now lands directly in Manage Bookings with that booking already open (Support Hub
+included) instead of just toasting "Successfully created booking" and dropping back on Home. This
+needed new plumbing across all three repos since the app previously had zero visibility into a
+provider's confirm mode and the confirmation itself is asynchronous (NAS fires
+`routeBookingToHandler` without awaiting it): CareConnect gained `GET /api/mobile/units/[unit]/
+confirm-mode` and a `dest` column on `PatientQueueAccessToken` (mint→consume can now land on
+`/bookings?focus=` instead of always `/queue-status?focus=`); node_app_server proxies the new
+confirm-mode lookup and forwards `dest` through the existing queue-access mint; `sq_appt_app_2`
+polls the booking list for `handled_by === 'CARECONNECT'` after creation (falls back to today's
+plain toast+Home behavior on timeout) then opens the mint result. Notification taps also now deep-
+link straight into the relevant booking (`notification.dart`'s `handleMessage`) instead of just
+opening the app.
+
+**Root-caused and fixed a real black-screen-on-back-navigation bug** — the user's own diagnosis,
+not found via live debugging (no iOS device/simulator was available in the Mac session to use Web
+Inspector). `_openIfAutoConfirmed`'s single `pushAndRemoveUntil(WebViewPage, (route) => false)` was
+wiping the *entire* Flutter nav stack, leaving nothing for the back button to land on. Fixed by
+two-stepping it: `pushAndRemoveUntil(BottomNavBar())` first, then `push(WebViewPage(...))` on top —
+back now lands on the bottom nav instead of a blank screen. This was a Flutter-native navigation
+bug, not a WKWebView rendering issue as first suspected.
+
+**Also merged in a separate iOS-side fix from the Mac session**: `1.0.7` train is closed on App
+Store Connect (can't add new builds to it), so `pubspec.yaml` moved to `1.0.8+1`.
+
+**Android: bumped to versionCode 66 (48.0.18)** — 65 (48.0.17) had already been submitted to Open
+Testing *before* the black-screen fix landed, so it would have shipped without it. Built a fresh
+AAB, then in Play Console:
+- Created a **new** Open Testing release (release 13) with the 66 bundle instead of trying to edit
+  the pending 65 release directly (its Release Details page turned out to be read-only once
+  "Ready to publish" — no in-place edit for app bundles at that stage).
+- **Caught a landmine before it shipped**: Publishing overview still had 65's "Start full rollout"
+  sitting in "Changes ready to publish" even after creating release 66 — clicking the very natural-
+  looking "Publish 1 change" button there would have released the *old* build, missing the
+  black-screen fix, ahead of 66. Used "Remove changes" (moves it back to "not yet submitted," does
+  **not** discard the release) to clear it before submitting 66 for review instead.
+- Release notes added for en-US; submitted alongside the screenshot change below — Publishing
+  overview confirmed **"2 changes sent for review."**
+
+**Captured and published 3 fresh Play Store screenshots** (Home, Book a Service, date/time
+selection) on the `API36_EdgeToEdge` emulator, replacing the 5 stale ones from the last
+store-listing update. User explicitly rejected reusing the iOS 1.0.7 App Store screenshots as a
+reference ("those are the old screens") — TestFlight builds don't carry screenshots at all, so
+there was no newer "submitted" set to copy from; captured fresh instead. Needed the test account's
+Settings → Location/Region moved from "Cebu ph" (no seeded orgs) to "Metro Manila" (where the real
+seeded Healthcare/Service Industry test orgs live) to get past an empty Book-a-Service list.
+
+**Play Console upload mechanics worth remembering**: the asset library's "Select" toggle button on
+an *already-uploaded* library asset did not visibly register clicks through browser automation
+(stayed "Deselected" no matter how many times clicked) — re-uploading the same local files via the
+file input instead worked immediately (freshly-uploaded assets auto-select). Also, "Save" on the
+store listing form is a menu item behind a "⋮" button once the viewport doesn't have room for it
+inline, not a standalone visible button — screenshot the real rendered page rather than trusting
+the accessibility tree's button list when a click doesn't seem to do anything.
+
+**iOS 1.0.8+1 External Testing submission still pending** — instructions relayed to the Mac
+session: pull the branch, confirm `1.0.8+1`, archive via Xcode (`flutter build ipa` or Product →
+Archive — does **not** need a physical device, only valid signing; a device is only needed for
+live on-device debugging, which may no longer be necessary now that the black-screen bug turned
+out to be a Flutter nav-stack issue, already fixed), upload, add to External Testing, submit for
+Beta App Review if required. Not yet confirmed done.
+
+**Confirmed via `git merge-base --is-ancestor`**: versionCode 66 includes everything from this
+session — the auto-confirm flow, notification deep links, black-screen fix, and the earlier
+Home Queue Status card fix (`aaa318b`, same-day Data Capture bookings) — and the branch is fully
+pushed with no uncommitted code (only screenshot/build artifacts sitting untracked).
+
+---
+
 ### 2026-09-07 (Mac session) — iOS 1.0.8+1 ships Queue Status/auto-confirm/notification-deeplink; hit the closed-1.0.7-train wall
 
 Pulled `fix/android-15-compliance` to `5b76249` (Android's 64/48.0.16 baseline plus the Queue
@@ -66,6 +183,49 @@ session rather than assuming it went through.
 
 ---
 
+### 2026-09-05 (continued) — Why no publish notification arrived; CPH1909 screenshot report explained; Play Store assets re-verified live
+
+**User asked why they never got notified that Android 64 (48.0.16) passed review and was
+released to production.** Investigated live in Play Console rather than guessing:
+- First hit a real account mix-up while checking — the developer account `devteam@smartqsys`
+  (under Google account `vicdlr@gmail.com`) shows **"Account closed... due to inactivity, and
+  can't be reactivated"** (closed Oct 20, 2021) and is unrelated to this app. The actual listing
+  for `com.smartqsys.sq_notification` lives under a **different** Google account,
+  `vicsq10809@gmail.com` (developer account "Vic10809", ID `7397171470470613499`) — switching
+  required going through `accounts.google.com`'s account chooser, which the browser-automation
+  tooling can't screenshot (domain restriction) but can still navigate/read via page text.
+- Confirmed under the correct account: Production track — Active, **64 (48.0.16), "Available on
+  Google Play," released Sep 3 3:33 PM, 177 countries/regions, no unpublished changes** — matches
+  the 2026-09-03 entry below exactly, now independently re-verified rather than taken on faith.
+  The in-app notification bell did have the "App update published" entry from Sep 3.
+- **Root cause of the missing email**: Settings → Email notifications → Publishing updates →
+  "App publishing updates" was set to **"Emails off"** (emails otherwise go to
+  `vicsq10809@gmail.com`, confirmed at the top of that settings page). Turned it **on** and saved,
+  confirmed via the "Your changes have been saved" toast — future review-passed/released events
+  will now actually email.
+- User separately checked CPH1909 (the physical Oppo test device) and reported it still shows old
+  screenshots. This is **the same already-root-caused ColorOS/Oppo Market store-hijacking** from
+  the 2026-08-31 entry below, re-explained rather than re-investigated: ColorOS silently
+  redirects every Play Store path on that unit (even launching the real Play Store app and
+  installing from inside it) to Oppo/Heytap Market's own stale mirrored listing, so what's shown
+  there was never Google Play's real listing to begin with.
+- User then asked to confirm the real Play Store listing shows the current design (parallel to
+  the iOS screenshot fix). Checked live in Play Console (Store presence → Store listings, Phone
+  screenshots, "Live"): the screenshots genuinely show the redesigned UI — Request New Booking's
+  Industry/Organisation/Department/Groups/Units/Service Type selector chain, My Bookings with a
+  status badge, the Settings rewrite (Dark Mode, Font Size), and a SmartQ Badge QR screen. 8
+  slots filled; no edits made, verification only. **Noted for next store-listing update, not
+  urgent**: two visually-similar "Request new booking" screens appear back-to-back — worth
+  confirming that's intentional (two steps of the flow) rather than an accidental duplicate,
+  and deduping if so.
+- Asked the user whether to delete the closed `devteam@smartqsys` account to clean up — checked
+  first rather than assuming an action was available: a closed developer account's Console UI
+  redirects every nav item (Developer account, Settings, Users and permissions, etc.) back to a
+  single read-only "Policy status" page; there is no self-service delete option. Nothing to do
+  here beyond what Google already did — left as-is.
+
+**Not yet decided by the user**: whether CPH1909 is still worth using to verify Play Store assets
+at all, given the store-hijacking makes anything it shows unreliable for that purpose.
 ### 2026-09-03 (Windows session, continued) — iOS build 1.0.7 (11) submitted to App Store review
 
 Confirmed via App Store Connect that build 1.0.7 (11) — the Mac handoff from `pending_work.md` —

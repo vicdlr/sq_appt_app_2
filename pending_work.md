@@ -7,7 +7,54 @@
 
 ---
 
-## Open / needs attention (as of 2026-09-03, continued)
+## Open / needs attention (as of 2026-09-10 — real notification root cause fixed, Android 66→70, iOS 1.0.8+2→+6)
+
+> Session folded into `DEVLOG.md`'s 2026-09-10 entry — the real root cause behind broken
+> notification permission/tap-to-open found and fixed (`BottomNavBar`'s `initState` now wires up
+> FCM properly; previously only ever wired from dead `home_page.dart`). Android progressed
+> 66→70 (69 live, 70 in review); iOS progressed 1.0.8+2→+6 (+6 live on TestFlight External
+> Testing, carrying the real fix). Supersedes the 2026-09-08 section below's Android-66/iOS-1.0.8+1
+> items — both long since superseded by later builds. Still open:
+
+- **Android 70 (48.0.22) not yet confirmed out of Google review.**
+- **iOS 1.0.8+6 not yet confirmed processed on TestFlight.**
+- **None of this round's fixes have been click-tested on a real device**: permission prompt on a
+  fresh login (not just a fresh sign-up), tap-to-open for a `staff_reply` push, tap-to-open for the
+  patient-facing booking-status pushes (`booking_confirmed`/`booking_checked_in`/
+  `booking_processing`/`your_turn`).
+- **`sq_appt_app_2`'s WebView `cacheEnabled: false` (`get_ticket.dart`) is still an open revert
+  candidate** — the root cause it was defending against (CareConnect's clinic-switcher routing
+  bug) is long since fixed; the user said "not yet, take note of it for later" on 2026-09-10,
+  still not revisited.
+
+## Open / needs attention (as of 2026-09-08)
+
+> Session folded into `DEVLOG.md`'s 2026-09-08 entry (auto-confirm flow across CareConnect/NAS/
+> mobile; black-screen-on-back-navigation fix; iOS moved to 1.0.8+1; Android bumped to versionCode
+> 66/48.0.18, submitted to Open Testing with fresh screenshots — "2 changes sent for review",
+> after removing a stale pending "publish 65" action that would have shipped the pre-fix build).
+> Still open:
+
+- **Android 66 (48.0.18) + updated store-listing screenshots are in Google review**, not yet
+  approved — check Publishing overview / the publish-notification email (now confirmed working,
+  see 2026-09-05 entry) for the outcome.
+- **iOS 1.0.8+1 External Testing submission not yet done.** Instructions relayed to the Mac
+  session (pull branch, confirm version, archive via Xcode — no physical device strictly required
+  for archiving, only for live debugging which the black-screen fix likely made unnecessary —
+  upload, add to External Testing, submit for Beta App Review). Not yet confirmed acted on.
+- **Service Provider Mode SSO bridge and the Android notification-channel fix (see below) — status
+  unchanged, still worth checking** before assuming either landed in 66.
+
+- **Not yet decided**: is CPH1909 still worth using to verify Play Store assets at all, given the
+  store-hijacking makes anything it shows unreliable for that purpose — or should future "stale on
+  CPH1909" reports just be treated as expected noise?
+- **Minor cleanup for next store-listing update, not urgent**: two visually-similar "Request new
+  booking" screenshots appear back-to-back in the Play Store's 8-image sequence — confirm whether
+  intentional (two steps of the flow) or an accidental duplicate, dedupe if so.
+- **Reference for future sessions**: the app's real Play Console listing is under Google account
+  `vicsq10809@gmail.com` (developer account "Vic10809"), **not** `devteam@smartqsys`/
+  `vicdlr@gmail.com` (a separate, closed-since-2021 account, no self-service delete option
+  available for it, left as-is).
 
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
