@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/provider/home_provider.dart';
 import 'package:sq_notification/provider/theme_provider.dart';
-import 'package:sq_notification/view/auth/SignUp.dart';
+import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:sq_notification/view/home/bottom_nav_bar.dart';
 import 'firebase_options.dart';
 
@@ -73,7 +73,7 @@ class _MyAppState extends State<MyApp> {
           theme: value.themeData,
           home: SharedPref.getAuthToken() != null
               ? BottomNavBar()
-              : const SignupPage(),
+              : const LoginPage(),
         );
       },
     );
