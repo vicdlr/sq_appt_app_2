@@ -2,6 +2,108 @@
 
 ---
 
+### 2026-09-11 (continued 3) — Android 71 submitted; found this Flutter SDK's real minSdk floor is 24
+
+**Cut and submitted a new Android release carrying the day's two fixes below.** Bumped
+`versionCode`/`versionName` to 71/48.0.23 (`a03fa62`), built the release AAB
+(`flutter build appbundle --release`), uploaded it to Open Testing via Play Console
+(`vicsq10809@gmail.com`/"Vic10809"), and submitted it for review — "Changes in review" as of this
+writing, not yet confirmed published (build 70 published same-day previously, so a similar
+turnaround is likely but not guaranteed). Play Console's file-upload widget couldn't be automated
+end to end — the browser tool's upload helper caps at 10MB and the AAB is ~65-68MB, and native OS
+file-picker dialogs are outside browser automation's reach entirely — the user manually dragged
+the file into the browser tab for this round; any future release needs the same manual hand-off
+unless a Play Developer API / service-account publish path replaces the web Console UI.
+
+**Real, non-obvious finding surfaced while preparing that release**: `android/app/build.gradle`
+had `minSdkVersion` pinned to a literal `23` (comment: "firebase_messaging 16.5.0 requires it"),
+but the Flutter SDK this project must build with (`C:\flutter_stable_2026`, required for
+`device_info_plus ^11.5.0`'s Dart >=3.7.0 constraint) hardcodes its own floor at **24** and
+silently rewrites any literal <=23 back to `flutter.minSdkVersion` on every single
+`flutter build`, before Gradle even runs. Didn't just trust the source — dumped the actual
+compiled manifest (`build/app/intermediates/.../AndroidManifest.xml`) and confirmed
+`minSdkVersion="24"` was already baked into the artifact regardless of what the file said at
+build time. The *other* Flutter SDK on this machine (`3.24.3-stable`) only enforces a floor of
+21, and build 70 (still API 23+ per Play Console) was almost certainly built with that older SDK
+in an earlier session — meaning this project has quietly been built with two different Flutter
+SDKs enforcing two different real floors across its history, with nobody having verified which
+one actually shipped until now. Fixed `build.gradle` to stop re-fighting the migration and use
+`minSdkVersion flutter.minSdkVersion` directly (`615ec86`), so it tracks whichever floor the SDK
+in use actually enforces instead of drifting stale again.
+
+**Real product consequence, user-confirmed to accept**: Play Console flagged the 71 release as
+dropping support for 1,009 previously-supported devices (the 23→24 floor change). User chose to
+accept and roll out rather than chase keeping 23 — this app has only ~21-22 total installs per
+Play Console's own dashboard, so real-world impact is small, and there's no way to get both the
+required Dart SDK version and a lower minSdk with the current dependency set short of downgrading
+`device_info_plus`. Documented for any future session that needs to build this project.
+
+**Also this pass**: re-ran the documented `mdevice.id=133` city-bug fix
+(`UPDATE mdevice SET city='Metro Manila' WHERE id=133`, user-authorized, run directly against the
+shared Postgres DB via `SQ_CareConnect`'s `SHARED_DATABASE_URL`) and found the row was already
+correct — 0 rows changed in effect, confirms someone/something already applied it. Safe to
+consider closed. Drafted an iOS handoff (`IOS_HANDOFF.md`'s new top section) for today's fixes —
+bump `pubspec.yaml` to `1.0.8+7`, notes on what's Android-only (notification sound) vs.
+cross-platform (caching re-enable, worth a real iOS click-through since the original stale-bundle
+bug it fixed hit iOS Safari too) — not yet acted on, needs an actual Mac/Xcode session.
+
+---
+
+### 2026-09-11 (continued 2) — WebView caching re-enabled; backlog triaged, several items found already resolved
+
+**Re-enabled WebView caching** (`get_ticket.dart`'s shared `WebViewPage`, commit `69e3b64`) — the
+2026-09-09 `cacheEnabled: false` trade-off is reverted now that the stale-bundle root cause it
+defended against has stayed fixed. Manual refresh button (clears cache + reloads) kept as the
+escape hatch for a genuinely stuck load.
+
+**Verified rather than assumed, working through the standing backlog** (the user asked to "fix
+everything that needs fixing"): Android 70 (48.0.22) turned out to already be live on Open
+Testing ("Available to unlimited testers," released Sep 11 11:03 AM, auto-published) — the
+pending "not yet confirmed out of Google review" note was stale. The Service Provider Mode SSO
+bridge is fully live, not just committed — checked both sides directly (`sq_appt_app_2`'s
+`3b653eb` on `origin/fix/android-15-compliance`; `node_app_server`'s `f50edcc` on both `main` and
+`peer-notification`, in sync, no drift). The long-pending "Android notification channel fix
+unmerged" (`4edf223`) turned out superseded, not still needed — this same day's notification-sound
+work (see below) independently built the same pre-create-the-channel-at-startup fix. Google Play
+also flagged two real warnings on the live Production release (64, 48.0.16) unprompted —
+"Edge-to-edge may not display for all users" / "uses deprecated APIs or parameters for
+edge-to-edge" — directly matching the long-stalled edge-to-edge/`SafeArea` audit item; no longer
+just an internal nice-to-have.
+
+**Deferred to the user's explicit call rather than assumed**: the `mdevice.id=133` city-bug SQL
+(a production data mutation), the iOS age-rating 18+→9+ override, and what "publish for open/
+external testing" should actually mean now that 70 already covers everything before today. All
+three resolved in the next session entry above.
+
+---
+
+### 2026-09-11 — Android notification-sound settings (per-app, not per-user; OS-native picker)
+
+**Added the ability to assign a distinct Android notification sound**, after narrowing scope
+through a few rounds of clarification with the user: not backend-synced per-user (a pure
+on-device Settings preference), and no bundled sound assets or in-app picker needed at all —
+Android's own per-channel notification settings screen already lets a user pick any sound on
+their device for a given channel, once that channel is properly pre-created. iOS explicitly out
+of scope (Apple has no equivalent system screen; doing this properly there would need bundled
+sound files, an in-app picker, and a new Notification Service Extension Xcode target — declined).
+
+Fixed the real underlying bug this exposed along the way: `showNotification()`
+(`lib/notification/notification.dart`) was building the Android notification channel
+*dynamically per incoming message* instead of once at startup — since a channel's sound is locked
+the instant it's first created, whatever arrived on a device's first-ever push permanently
+decided that channel's sound, with no way for the user to ever change it. `initNotificationChannel()`
+now pre-creates a fixed `booking_updates` channel (matching `node_app_server`'s
+`FCM_ANDROID_CHANNEL_ID`) at app startup (`main.dart`), and `showNotification()` always displays
+through it. New Settings row ("Notification Sound", Android-only) deep-links to
+`CHANNEL_NOTIFICATION_SETTINGS` via the new `android_intent_plus` dependency, with a toast
+fallback on devices below API 26 where that screen doesn't exist. Commit `6c24771`.
+
+`flutter analyze` clean, debug APK builds successfully end to end — **not yet click-tested on a
+real device**, the Settings row's tap-through and Android's own picker actually taking effect
+haven't been confirmed live.
+
+---
+
 ### 2026-09-10 — Real notification-tap/permission root cause found and fixed; Android 66→70, iOS 1.0.8+2→+6
 
 **The actual bug behind "iOS doesn't show notification options" turned out to be much bigger than

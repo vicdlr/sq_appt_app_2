@@ -1,5 +1,57 @@
 # iOS Testing Handoff — SmartQ Mobile Redesign
 
+## 2026-09-11 handoff — notification-sound settings + caching re-enable
+
+> Supersedes everything below for the purpose of "what do I build right now" — the rest of this
+> file is historical (last touched 2026-08-17/18; Android has since gone 54→71 through many
+> unrelated sessions) and only useful for background on the redesign effort itself. Skip straight
+> to §1 above (repo/branch/Flutter-SDK basics still apply) if you need the mechanics, then come
+> back here for what's actually new today.
+
+**Repo/branch**: `vicdlr/sq_appt_app_2`, `fix/android-15-compliance`, at `a03fa62` as of this
+writing (`git pull` to be sure — nothing else queued behind it for iOS purposes). Two feature
+commits plus a version bump: `6c24771` (notification sound), `69e3b64` (caching re-enable),
+`a03fa62` (Android versionCode 70→71 — **Android-only, does not touch `pubspec.yaml`, iOS needs
+its own bump below**).
+
+### What's in it, iOS relevance
+
+1. **Notification sound settings (`6c24771`) — Android-only by explicit design, nothing to do on
+   iOS.** Lets users assign a distinct notification sound via Android's own per-channel settings
+   screen; the new Settings row is gated `if (Platform.isAndroid)` so it simply doesn't render on
+   iOS. The one iOS-relevant side effect: `main.dart` now calls
+   `NotificationServices().initNotificationChannel()` at startup, but that function itself
+   early-returns on `!Platform.isAndroid` — should be a no-op on iOS, worth confirming the app
+   still launches cleanly (this touches startup sequencing, even if the body doesn't execute).
+2. **WebView caching re-enabled (`69e3b64`) — applies to iOS too, worth a real check.**
+   `get_ticket.dart`'s shared `WebViewPage` (used for every CareConnect/booking WebView
+   navigation, not just Get Ticket despite the filename) had `cacheEnabled: false` forced on
+   2026-09-09 to fight a since-fixed stale-bundle bug; that's reverted now (back to
+   `flutter_inappwebview`'s default, which is cache-enabled on both platforms — this was
+   originally added specifically because staff/testers saw it on **both Android and iOS Safari**,
+   so the revert is a real behavior change on iOS, not just Android). Worth clicking through a
+   couple of WebView-based flows (Manage Bookings, Appointments) to confirm pages still load
+   correctly and the manual refresh button (top-right, clears cache + reloads) still works as the
+   escape hatch if something looks stale.
+
+### To ship this on iOS
+
+1. `git pull` on `fix/android-15-compliance`.
+2. Bump `pubspec.yaml`'s `version:` — currently `1.0.8+6`, bump the build number to `1.0.8+7`
+   (marketing version stays `1.0.8`; only the `+N` build number needs to be new to avoid
+   colliding with anything already in App Store Connect, per this file's own standing
+   convention above).
+3. `flutter pub get`, `pod install` (Podfile hasn't changed, but the new `android_intent_plus`
+   dependency in `pubspec.yaml` — Android-only plugin, has no iOS implementation — shouldn't
+   require any iOS pod, but worth confirming `pod install` doesn't complain).
+4. Archive via Xcode, upload, add to External Testing, submit for Beta App Review — same
+   mechanics as every prior iOS handoff in this file.
+5. Once processed, the two "worth confirming" items above (clean launch, WebView flows still
+   load with caching back on) are the actual verification — this round has **not** been
+   click-tested on iOS at all yet, same as it hasn't on a real Android device either.
+
+---
+
 ## Standing convention: build-parity check (added 2026-08-19)
 
 Android's version (`android/app/build.gradle`'s `versionCode`/`versionName`) and iOS's version
