@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
 import 'package:sq_notification/api/configurl.dart';
 import 'package:sq_notification/constant/app_colors.dart';
+import 'package:sq_notification/notification/notification.dart';
 import 'package:sq_notification/utils/utils.dart';
 import 'package:sq_notification/view/auth/SignIn.dart';
 import 'package:sq_notification/view/auth/SignUp.dart';
@@ -253,6 +256,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: "Manage your notification preferences",
                 onTap: _showNotificationPreferences,
               ),
+              // Android only -- opens the OS's own per-channel notification settings screen,
+              // where the user can pick any sound already on their device for this app's
+              // notifications. iOS has no equivalent system screen (Apple doesn't expose
+              // per-app sound choice), so there's nothing useful for this row to do there.
+              if (Platform.isAndroid)
+                _SettingsRow(
+                  icon: Icons.music_note_outlined,
+                  title: "Notification Sound",
+                  subtitle: "Choose a sound to tell SmartQ apart from other apps",
+                  onTap: () => NotificationServices().openNotificationSoundSettings(),
+                ),
               _SettingsRow(
                 icon: Icons.language_outlined,
                 title: "Language",

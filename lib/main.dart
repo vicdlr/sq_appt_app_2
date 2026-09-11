@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
+import 'package:sq_notification/notification/notification.dart';
 import 'package:sq_notification/provider/home_provider.dart';
 import 'package:sq_notification/provider/theme_provider.dart';
 import 'package:sq_notification/view/auth/SignIn.dart';
@@ -19,6 +20,12 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Pre-create the notification channel before any push can arrive, so its sound is stable and
+  // user-editable via Android's own settings from the very first notification -- see
+  // NotificationServices.initNotificationChannel's doc comment for why this has to happen here,
+  // not lazily inside the message handler.
+  await NotificationServices().initNotificationChannel();
 
   await SharedPref.init();
   runApp(

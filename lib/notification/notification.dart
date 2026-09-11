@@ -1,12 +1,15 @@
 import 'dart:io';
 
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:sq_notification/SharedPrefrence/SharedPrefrence.dart';
 import 'package:sq_notification/api/api.dart';
@@ -22,6 +25,71 @@ class NotificationServices {
   //initialising firebase message plugin
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
+
+  // Fixed channel id/name -- must match node_app_server's FCM_ANDROID_CHANNEL_ID so every push
+  // (foreground-displayed here, and background/killed-app pushes Android auto-displays straight
+  // from the FCM payload) lands on the same channel. Pre-creating this once at app startup (see
+  // initNotificationChannel below) is what lets a user actually customize its sound via Android's
+  // own per-channel notification settings screen -- a channel's sound is locked the moment it's
+  // first created, and showNotification() used to create it on the fly from whatever the very
+  // first push happened to send, so it could never hold a stable, user-changeable sound.
+  static const String bookingUpdatesChannelId = 'booking_updates';
+  static const String _channelName = 'Booking Updates';
+  static const String _channelDescription =
+      'Queue and booking status alerts (confirmations, check-ins, your turn, staff replies)';
+
+  // Pre-creates the app's one notification channel before any push can arrive, so its sound
+  // setting starts out stable and user-editable from the first notification onward. Call once at
+  // startup (main.dart), before runApp -- creating it lazily inside showNotification() is exactly
+  // the bug this replaces.
+  Future<void> initNotificationChannel() async {
+    if (!Platform.isAndroid) return;
+
+    const channel = AndroidNotificationChannel(
+      bookingUpdatesChannelId,
+      _channelName,
+      description: _channelDescription,
+      importance: Importance.max,
+      showBadge: true,
+      playSound: true,
+    );
+
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+  }
+
+  // Opens Android's own per-app-channel notification settings screen (Settings > Apps > SmartQ >
+  // Notifications > Booking Updates), where the user can pick any sound already on their device
+  // for this channel -- no in-app sound picker or bundled sound assets needed. iOS has no
+  // equivalent system screen (Apple doesn't expose per-app sound choice at all), so this is
+  // Android-only by design; callers should guard the UI entry point with Platform.isAndroid too.
+  Future<void> openNotificationSoundSettings() async {
+    if (!Platform.isAndroid) return;
+
+    final packageName = (await PackageInfo.fromPlatform()).packageName;
+    final intent = AndroidIntent(
+      action: 'android.settings.CHANNEL_NOTIFICATION_SETTINGS',
+      arguments: <String, dynamic>{
+        'android.provider.extra.APP_PACKAGE': packageName,
+        'android.provider.extra.CHANNEL_ID': bookingUpdatesChannelId,
+      },
+    );
+    try {
+      await intent.launch();
+    } catch (e) {
+      // This app's minSdkVersion (23) predates notification channels (API 26) -- on those older
+      // devices there's no Settings activity to handle CHANNEL_NOTIFICATION_SETTINGS at all, so
+      // the platform throws rather than silently no-opping. Also covers any OEM Settings-app
+      // quirk that breaks the same way. A toast beats a silent dead tap or an uncaught crash.
+      if (kDebugMode) {
+        print('failed to open notification channel settings: $e');
+      }
+      await Fluttertoast.showToast(
+          msg: "Notification sound settings aren't available on this device.");
+    }
+  }
 
   //function to initialise flutter local notification plugin to show notifications for android when app is active
   void initLocalNotifications(
@@ -103,18 +171,16 @@ class NotificationServices {
 
   Future<void> showNotification(RemoteMessage message) async {
 
-    AndroidNotificationChannel channel = AndroidNotificationChannel(
-      message.notification!.android!.channelId.toString(),
-      message.notification!.android!.channelId.toString(),
-      importance: Importance.max,
-      showBadge: true,
-      playSound: true,
-    );
-
+    // Always uses the fixed, pre-created bookingUpdatesChannelId -- not
+    // message.notification.android.channelId -- so display always goes through the one channel
+    // whose sound the user can actually change (see initNotificationChannel above). The server
+    // already sends this same channel id (FCM_ANDROID_CHANNEL_ID in node_app_server), so this
+    // isn't a behavior change for a correctly-configured backend, just removes the client's own
+    // dependence on trusting/recreating a channel per message.
     AndroidNotificationDetails androidNotificationDetails =
-    AndroidNotificationDetails(
-      channel.id.toString(), channel.name.toString(),
-      channelDescription: 'your channel description',
+    const AndroidNotificationDetails(
+      bookingUpdatesChannelId, _channelName,
+      channelDescription: _channelDescription,
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
