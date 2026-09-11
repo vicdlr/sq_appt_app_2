@@ -53,9 +53,18 @@ android {
         applicationId "com.smartqsys.sq_notification"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        // firebase_messaging 16.5.0's Android manifest requires minSdk 23 -- Flutter's own
-        // default (flutter.minSdkVersion) is lower, so this must be pinned explicitly.
-        minSdkVersion 23
+        // 2026-09-11: was pinned to a literal 23 (firebase_messaging 16.5.0's own floor) on the
+        // assumption Flutter's own default (flutter.minSdkVersion) was lower -- it no longer is.
+        // This Flutter SDK (3.44.x) hardcodes a floor of 24 and its build tooling silently
+        // rewrites any literal <=23 back to flutter.minSdkVersion on every single `flutter
+        // build`, before Gradle even runs -- confirmed via the actual compiled manifest
+        // (build/app/intermediates/.../AndroidManifest.xml) that both of today's release builds
+        // already shipped with minSdkVersion=24 regardless of what this file said, and almost
+        // certainly every build since this Flutter SDK was adopted did too. Pinning a literal
+        // <=23 here was silently ineffective this whole time -- 24 has been the real shipped
+        // floor already; using the variable here (rather than a literal 24) keeps it tracking
+        // Flutter's own floor instead of drifting stale again the next time that floor moves.
+        minSdkVersion flutter.minSdkVersion
         versionCode  71
         versionName "48.0.23"
         targetSdkVersion 36

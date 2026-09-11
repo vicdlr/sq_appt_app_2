@@ -79,10 +79,11 @@ class NotificationServices {
     try {
       await intent.launch();
     } catch (e) {
-      // This app's minSdkVersion (23) predates notification channels (API 26) -- on those older
-      // devices there's no Settings activity to handle CHANNEL_NOTIFICATION_SETTINGS at all, so
-      // the platform throws rather than silently no-opping. Also covers any OEM Settings-app
-      // quirk that breaks the same way. A toast beats a silent dead tap or an uncaught crash.
+      // This app's minSdkVersion (24, per android/app/build.gradle) still predates notification
+      // channels (API 26) -- on API 24/25 devices there's no Settings activity to handle
+      // CHANNEL_NOTIFICATION_SETTINGS at all, so the platform throws rather than silently
+      // no-opping. Also covers any OEM Settings-app quirk that breaks the same way. A toast beats
+      // a silent dead tap or an uncaught crash.
       if (kDebugMode) {
         print('failed to open notification channel settings: $e');
       }
