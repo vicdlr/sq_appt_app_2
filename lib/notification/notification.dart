@@ -317,7 +317,10 @@ class NotificationServices {
     // route.ts, staff replying in the Counter's Client Messages panel) -- was missing here, so
     // tapping that notification fell through to the default (just open the app to Home) instead
     // of opening the actual booking/chat, per the user's bug report.
-    const patientBookingTypes = {"booking_confirmed", "booking_checked_in", "booking_processing", "your_turn", "staff_reply"};
+    // "almost_your_turn" added 2026-09-11 (SQ_CareConnect's new per-clinic look-ahead queue
+    // notification, lib/look-ahead-notify.ts) -- same externalBookingId-keyed shape as
+    // your_turn, just fired earlier (patient is N-th in line, not yet actually called).
+    const patientBookingTypes = {"booking_confirmed", "booking_checked_in", "booking_processing", "your_turn", "almost_your_turn", "staff_reply"};
     const staffBookingTypes = {"new_booking", "support_ticket"};
     if (patientBookingTypes.contains(type)) {
       final id = message.data["externalBookingId"] ?? message.data["bookingId"];
