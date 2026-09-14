@@ -65,8 +65,8 @@ android {
         // floor already; using the variable here (rather than a literal 24) keeps it tracking
         // Flutter's own floor instead of drifting stale again the next time that floor moves.
         minSdkVersion flutter.minSdkVersion
-        versionCode  71
-        versionName "48.0.23"
+        versionCode  72
+        versionName "48.0.24"
         targetSdkVersion 36
 //        versionCode flutterVersionCode.toInteger()
 //        versionName flutterVersionName
