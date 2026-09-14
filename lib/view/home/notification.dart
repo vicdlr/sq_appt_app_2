@@ -6,6 +6,7 @@ import 'package:sq_notification/provider/home_provider.dart';
 import 'package:sq_notification/provider/theme_provider.dart';
 
 import '../../Model/NotificationModel.dart';
+import '../../utils/utils.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -25,6 +26,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
   }
 
+  Future<void> _clearAll(BuildContext context) async {
+    final confirmed = await Utils.clearNotificationsDialog(context) ?? false;
+    if (confirmed && context.mounted) {
+      await Provider.of<HomeProvider>(context, listen: false)
+          .clearNotifications(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final notificationList = Provider.of<HomeProvider>(context);
@@ -33,6 +42,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: themeData.isDarkTheme ? Colors.black : Colors.white,
       appBar: AppBar(
         title: const Text("Notifications"),
+        actions: [
+          if (notificationList.notificationList.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_outlined),
+              tooltip: "Clear all",
+              onPressed: () => _clearAll(context),
+            ),
+        ],
       ),
       // appBar: _buildAppBar(context),
       body: notificationList.isLoading

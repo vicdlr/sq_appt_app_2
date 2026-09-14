@@ -380,6 +380,17 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> clearNotifications(BuildContext context) async {
+    final result = await DioApi.delete(path: ConfigUrl.notificationUrl);
+
+    if (result.response != null) {
+      notificationList = [];
+      notifyListeners();
+      Fluttertoast.showToast(msg: "Notifications cleared");
+    } else {
+      result.handleError(context);
+    }
+  }
 
   // get the servotpions and notes
   Future<void> getServiceOptions(BuildContext context) async {

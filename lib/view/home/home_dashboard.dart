@@ -12,7 +12,6 @@ import '../../constant/app_colors.dart';
 import '../../provider/home_provider.dart';
 import '../../utils/utils.dart';
 import '../auth/SignIn.dart';
-import 'app_drawer.dart';
 import 'get_ticket.dart';
 import 'home_page.dart';
 import 'notification.dart';
@@ -191,7 +190,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
           const SizedBox(width: 12),
         ],
       ),
-      drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () => Provider.of<HomeProvider>(context, listen: false)
             .getAllBooking(context),

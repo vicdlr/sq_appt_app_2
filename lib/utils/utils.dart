@@ -9,6 +9,78 @@ class Utils {
     return newFormat.format(DateTime.fromMillisecondsSinceEpoch(time));
   }
 
+  static Future<bool?> clearNotificationsDialog(BuildContext context) async {
+    return showAdaptiveDialog<bool>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25), color: Colors.white),
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 20.0,
+                right: 20.0,
+                top: 30,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 16.0),
+                  Text(
+                    "Clear all notifications? This can't be undone.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontFamily: 'Nunito Sans',
+                      fontWeight: FontWeight.w700,
+                      height: 0,
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        height: 50,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(false);
+                          },
+                          child: const Text('No',
+                            style: TextStyle(
+                            color: Colors.black,
+                          ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 120,
+                        height: 50,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(true);
+                          }, child: const Text('Yes',style: TextStyle(
+                          color: Colors.black,
+                        ),),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   static Future<bool?> logoutDialog(BuildContext context) async {
 
 
