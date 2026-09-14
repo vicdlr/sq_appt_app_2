@@ -2,6 +2,69 @@
 
 ---
 
+### 2026-09-14 (continued) — Committed, pushed, and published Android 72 (48.0.24) to Open Testing
+
+Per the user's go-ahead ("commit, push and publish for open/external testing"):
+
+- **`node_app_server`**: committed `90e8de1` on `main`, pushed, then fast-forwarded
+  `peer-notification` to match (`main..peer-notification` was a clean fast-forward, no divergent
+  commits) — Render deploys from `peer-notification`, so the new `DELETE /notifications/user` is
+  now live in production.
+- **`sq_appt_app_2`**: `fix/android-15-compliance` had moved on the remote since this session
+  started (`5da74e6`, a Mac session's iOS 1.0.8+7 bump, no file overlap) — rebased cleanly onto it
+  before pushing `077c6ab`.
+- **Android release cut**: bumped `android/app/build.gradle` to versionCode 72/versionName
+  "48.0.24" (`664644d`, following this project's established `versionCode - patch = 48` numbering;
+  the prior build 71 was still only "ready to publish," never actually rolled out, per Play
+  Console — this release supersedes it, nothing lost). Built via
+  `C:\flutter_stable_2026`'s `flutter build appbundle --release` → `app-release.aab` (64.4MB).
+- **Published to Play Console Open Testing** (`vicsq10809@gmail.com`/"Vic10809"): browser
+  automation can't upload a file this size (10MB cap on the automated upload helper, same
+  constraint as every prior release) — the user manually dragged the AAB into the browser tab.
+  Added release notes ("Removed a redundant menu on the Home screen and added the ability to
+  clear your notifications."), then submitted for review via Publishing overview. As of this
+  writing: Google's automated pre-review checks running (~14 min quoted), full review typically
+  within 7 days — not yet confirmed published.
+- **iOS**: drafted a new top section in `IOS_HANDOFF.md` (bump `pubspec.yaml` to `1.0.8+8`, both
+  changes are plain shared Dart/UI with no platform gating) — not buildable from this Windows
+  environment, needs an actual Mac/Xcode session same as every prior iOS round.
+
+### 2026-09-14 — Removed Home's redundant burger menu; added "Clear all" for Notifications
+
+Both changes made in `D:\Claude\sq_appt_app_2` (the real code checkout — this project remains
+docs-only, see `CLAUDE_BRIEFING.md`), branch `fix/android-15-compliance`.
+
+1. **Removed Home's burger-menu drawer.** `home_dashboard.dart`'s `AppDrawer` (every item —
+   Request New Booking, Get a Ticket, My Bookings, Notifications, Service Provider Mode) exactly
+   duplicated something already reachable from Home's own Quick Actions grid/cards, confirmed by
+   reading both files side by side before removing. Dropped the `drawer:` property and its import
+   from `home_dashboard.dart`; deleted the now-fully-unused `app_drawer.dart` (confirmed no other
+   references first). Flutter's `Scaffold` only shows the top-left hamburger icon when a `drawer`
+   is set, so removing the property removes the icon too — no separate icon widget existed to
+   delete.
+2. **Added the ability to clear notifications.** No existing per-user delete endpoint —
+   `node_app_server`'s `/notifications/user` only had `GET`. Added a `DELETE` handler right next
+   to it (`D:\Claude\node_app_server\app.js`), scoped to `req.user.userId` same as the GET, so it
+   can only ever delete the caller's own rows. `node -c app.js` clean.
+   - `home_provider.dart`: new `clearNotifications()` calls the DELETE, clears the in-memory list,
+     and toasts on success.
+   - `utils.dart`: new `clearNotificationsDialog()`, a Yes/No confirm dialog mirroring the existing
+     `logoutDialog()`'s exact style (this codebase's only other confirm-dialog actually in use —
+     `constant/dailog.dart`'s `confirmDelete` exists but has zero call sites, so not the pattern to
+     follow).
+   - `notification.dart` (`NotificationsScreen`): new app-bar "Clear all" icon action
+     (`Icons.delete_sweep_outlined`), shown only when the list is non-empty, confirms via the new
+     dialog before calling `clearNotifications()`.
+
+`flutter analyze` on all 4 changed files: only pre-existing style `info`s (mostly
+`prefer_const_constructors`/`avoid_print`), none introduced by this change. **Not committed, not
+pushed, not click-tested on a device** — per this ecosystem's standing convention for a live,
+already-published mobile app, needs the user's explicit go-ahead before commit/build/republish;
+`node_app_server`'s change likewise not committed/pushed (it's the live backend both this app and
+CareConnect depend on).
+
+---
+
 ### 2026-09-11 (continued 3) — Android 71 submitted; found this Flutter SDK's real minSdk floor is 24
 
 **Cut and submitted a new Android release carrying the day's two fixes below.** Bumped

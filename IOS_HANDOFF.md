@@ -1,5 +1,46 @@
 # iOS Testing Handoff — SmartQ Mobile Redesign
 
+## 2026-09-14 handoff — Home burger-menu removal + Notifications "Clear all"
+
+> Supersedes everything below for "what do I build right now." Both changes are plain Dart/UI,
+> no platform-specific code — same shared `lib/` this ecosystem's Android builds come from, no
+> Android-only gating like the 2026-09-11 handoff's notification-sound item had.
+
+**Repo/branch**: `vicdlr/sq_appt_app_2`, `fix/android-15-compliance`, at `077c6ab` as of this
+writing (`git pull` to be sure). One feature commit on top of the 2026-09-11 handoff's
+`5da74e6` (iOS 1.0.8+7 bump, already landed): `077c6ab` "Remove Home's redundant burger menu; add
+Clear all for Notifications". A second commit, `664644d` (Android versionCode 71→72), is
+**Android-only** — does not touch `pubspec.yaml`, iOS needs its own bump below. Backend change
+(`node_app_server`'s new `DELETE /notifications/user`, commit `90e8de1` on `main`, fast-forwarded
+to `peer-notification`) is already live on Render — no iOS-side dependency beyond that endpoint
+existing, which it now does.
+
+### What's in it, iOS relevance
+
+1. **Removed Home's burger-menu drawer (`home_dashboard.dart`).** Every drawer item duplicated a
+   Home Quick Action/card already on screen. Pure UI removal — no navigation route disappears,
+   just the redundant duplicate entry point. Nothing iOS-specific; the top-left hamburger icon
+   Flutter's `Scaffold` auto-renders when `drawer:` is set will simply stop appearing on iOS too.
+2. **Notifications screen gained a "Clear all" action.** New app-bar icon
+   (`Icons.delete_sweep_outlined`), shown only when the list is non-empty, confirms via a Yes/No
+   dialog before calling the new `DELETE /notifications/user`. Same code path on both platforms —
+   nothing gated by `Platform.isAndroid`/`isIOS`.
+
+### To ship this on iOS
+
+1. `git pull` on `fix/android-15-compliance`.
+2. Bump `pubspec.yaml`'s `version:` — currently `1.0.8+7`, bump the build number to `1.0.8+8`
+   (marketing version stays `1.0.8`; only the `+N` build number needs to be new).
+3. `flutter pub get`, `pod install` (no new dependencies this round, but run it anyway per this
+   file's own standing convention).
+4. Archive via Xcode, upload, add to External Testing, submit for Beta App Review — same
+   mechanics as every prior iOS handoff in this file.
+5. **Not click-tested on iOS at all yet** — same standing gap as every recent round. Once
+   processed: confirm the Home screen has no burger icon/swipe-to-open drawer, and confirm
+   Notifications' new "Clear all" button appears, confirms, and actually empties the list.
+
+---
+
 ## 2026-09-11 handoff — notification-sound settings + caching re-enable
 
 > Supersedes everything below for the purpose of "what do I build right now" — the rest of this

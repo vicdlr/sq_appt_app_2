@@ -7,12 +7,20 @@
 
 ---
 
-## Open / needs attention (as of 2026-09-11)
+## Open / needs attention (as of 2026-09-14)
 
 Full narrative for everything below lives in `DEVLOG.md`'s dated entries — this is just the
 still-open punch list, trimmed of everything already resolved/superseded/shipped.
 
-- **Android versionCode 71 (48.0.23) submitted to Open Testing, not yet confirmed published.**
+- **Android versionCode 72 (48.0.24) — Home burger-menu removal + Notifications "Clear all" —
+  submitted to Open Testing 2026-09-14, not yet confirmed published.** Committed/pushed on both
+  `sq_appt_app_2` (`077c6ab` feature, `664644d` version bump) and `node_app_server` (`90e8de1`,
+  fast-forwarded to `peer-notification`, live in production). Supersedes build 71, which had been
+  approved but was still only "ready to publish," never actually rolled out. **Not click-tested on
+  a device.**
+- **iOS handoff drafted and sent to a Mac Claude session** (`IOS_HANDOFF.md`'s new top section:
+  bump `pubspec.yaml` to `1.0.8+8`, archive, submit to TestFlight External Testing) — outcome not
+  yet confirmed back.
   Carries notification-sound settings, WebView caching re-enable, and the minSdk-24 fix. Check
   Publishing overview for the outcome.
 - **Real constraint for any future build of this project**: `C:\flutter_stable_2026` is required
