@@ -2,6 +2,36 @@
 
 ---
 
+### 2026-09-15 — Promoted Android 72 (48.0.24) from Open Testing to Production
+
+Per the user's go-ahead ("let's promote 48.0.24 to production once it gets approved for open
+testing release"). Checked Play Console (account `vicsq10809@gmail.com`/"Vic10809") and confirmed
+72 had cleared Google's review on Open Testing — status "Ready to publish," i.e. approved but not
+yet live.
+
+**Found the actual mechanism isn't just "approved → promote."** Play Console's "Promote release"
+option only appears on a release that's already *live* — confirmed by comparing rows in the Open
+Testing releases list: 70 ("Available to unlimited testers") had a "Promote release" control, but
+72 ("Ready to publish") and 71 ("Superseded by another release," never went live) did not. So
+publishing 72 to Open Testing first was a required step to reach the user's actual goal, not
+optional scope creep — did that via Publishing overview → "Publish 1 change" → confirmed (took
+effect immediately, "Last published on September 15, 2026").
+
+**Then promoted 72 → Production** via Open Testing's now-available Promote release → Production.
+Reviewed the single warning Play Console raised before saving (857 phones / 151 tablets / 1 TV no
+longer supported vs. the previous production release) — matches the already-known
+`minSdkVersion` 24 floor from `flutter_stable_2026`/`device_info_plus`, not a new regression, same
+reasoning as build 64's promotion on 2026-09-03. Left rollout at 100% / all countries (only 18
+active installs on Production, same call as build 64). Saved, then submitted via Publishing
+overview → "Submit 1 change for review" → confirmed ("1 change sent for review").
+
+**Status: sent for review, not yet published.** Google's automated quick checks were running
+(~14 min) as of submission; full review typically completes within 7 days per Google's own
+estimate, though build 64 cleared overnight last time. Needs a follow-up check once that clears —
+same pattern as the 2026-09-01 build-64 confirmation below.
+
+---
+
 ### 2026-09-14 (continued) — Committed, pushed, and published Android 72 (48.0.24) to Open Testing
 
 Per the user's go-ahead ("commit, push and publish for open/external testing"):
